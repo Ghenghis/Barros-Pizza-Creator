@@ -20,7 +20,7 @@
       },
       "pizza_creator_runtime": "certified_source_and_exact_assembly_compile; live runtime gates still required",
       "studio_asset_tools": "allowed only after this build is separately scanned/indexed",
-      "source": "docs/REVERSE_ENGINEERING_EVIDENCE.md"
+      "source_ref": "Ghenghis/Barros-Pizza-Creator:docs/REVERSE_ENGINEERING_EVIDENCE.md"
     },
     "studio-1.11.403": {
       "role": "Runtime Proof Studio primary PC3 extraction/conversion target",
@@ -34,7 +34,7 @@
       },
       "pizza_creator_runtime": "not certified by the Creator 0.11.272 assembly evidence; do not install the RC1 Creator plugin unless separately ported and proven",
       "studio_asset_tools": "primary verified Studio profile",
-      "source": "PC3_Barros_Runtime_Proof_Studio/config/pc3_build_1.11.403.json"
+      "source_ref": "Ghenghis/PC3_Barros_Runtime_Proof_Studio:config/pc3_build_1.11.403.json"
     }
   },
   "routing_rules": [
