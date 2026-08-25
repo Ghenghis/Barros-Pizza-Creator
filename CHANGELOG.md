@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.1.0-rc1 — 2026-08-25
+
+- Hardened visual attachments with decoded magic-byte parsing for PNG, JPEG and WebP instead of trusting file extensions.
+- Added bounded visual input limits, decoded dimension validation, SHA-256 metadata, MIME mismatch rejection and `/inspect-attachment`.
+- Added the shared `pc3-image-handoff` schema with build-profile routing and the shared dual-build compatibility matrix.
+- Added explicit separation between the Creator `0.11.272 / Unity 2017.3.1p4` runtime and Studio `1.11.403 / Unity 2017.4.40f1` runtime.
+- Added the v2.2 ecosystem completion contract covering Workbench, Studio, exact image handoff, agents, recovery, publication and attachment-parser proof.
+- Added Workbench/Studio ecosystem architecture and recovery diagrams plus safe GitLab mirroring helpers.
+- Added one-command three-repository ecosystem audit/recovery evidence generation.
+- Extended public CI with deterministic release ZIP reconstruction/verification and operator recovery-tool syntax checks.
+
 ## 1.0.0-rc1 — 2026-08-24
 
 - Added the compact `BARRO'S PIZZA CREATOR` in-game header asset and runtime aspect-fit behavior for the stock Bakehouse title strip.
