@@ -1,0 +1,86 @@
+{
+  "ingredients": [
+    {
+      "id": "PizzaSauce",
+      "type": "Sauce",
+      "name": "Pizza Sauce",
+      "min_g": 50.0,
+      "max_g": 200.0,
+      "base_price": 0.12,
+      "allowed_sizes": ["Small", "Medium", "Large"],
+      "taste_rating": 60
+    },
+    {
+      "id": "Mozzarella",
+      "type": "Cheese",
+      "name": "Mozzarella",
+      "min_g": 75.0,
+      "max_g": 250.0,
+      "base_price": 0.45,
+      "allowed_sizes": ["Small", "Medium", "Large"],
+      "taste_rating": 75
+    },
+    {
+      "id": "Bacon",
+      "type": "Meat",
+      "name": "Bacon",
+      "min_g": 25.0,
+      "max_g": 90.0,
+      "base_price": 1.20,
+      "allowed_sizes": ["Small", "Medium"],
+      "taste_rating": 80
+    },
+    {
+      "id": "Chicken",
+      "type": "Meat",
+      "name": "CookedChicken",
+      "min_g": 50.0,
+      "max_g": 150.0,
+      "base_price": 0.80,
+      "allowed_sizes": ["Small", "Medium"],
+      "taste_rating": 70
+    },
+    {
+      "id": "Jalapeño",
+      "type": "Vegetable",
+      "name": "Jalapeño",
+      "min_g": 12.0,
+      "max_g": 50.0,
+      "base_price": 0.40,
+      "allowed_sizes": ["Small", "Medium"],
+      "taste_rating": 70
+    },
+    {
+      "id": "Tomato",
+      "type": "Vegetable",
+      "name": "Tomato",
+      "min_g": 25.0,
+      "max_g": 100.0,
+      "base_price": 0.30,
+      "allowed_sizes": ["Small", "Medium"],
+      "taste_rating": 65
+    }
+  ],
+  "dough": {
+    "shapes": ["Round", "Square", "Star", "Triangle"],
+    "sizes": ["Small", "Medium", "Large"],
+    "default_radius_units": 1.0
+  },
+  "placement": {
+    "y_layer_height": 1.0,
+    "y_layer_spacing": 0.01,
+    "rotation_axis": "Y",
+    "x_range": [-5.5, -0.5],
+    "z_range": [-2.5, 2.5],
+    "dough_positions_source": "IDatabaseService.GetPizzaShape(shapeId).DoughPositions",
+    "note": "Dough positions are derived from the shape, not a unit-circle schema. Place ingredients within the shape's actual dough positions."
+  },
+  "size_enum": {
+    "Large": 0,
+    "Medium": 1,
+    "Small": 2,
+    "note": "Matches C# enum in _decompiled/Assembly-CSharp/IngredientModel.cs:12-17. Large=0, Medium=1, Small=2. Drizzle was removed because it is NOT in the actual C# IngredientSize enum."
+  },
+  "price_formula": "price = (amount_g / 100) * base_price",
+  "unit_note": "Amounts are in GRAMS, not ounces. Price = (amount_g / 100) * base_price per _decompiled/Assembly-CSharp/IngredientModel.cs:402."
+}

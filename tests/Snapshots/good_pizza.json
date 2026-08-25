@@ -1,0 +1,10 @@
+{
+  "ID": "guid-good",
+  "Ingredients": [
+    {"IngredientID": "PizzaSauce", "Rotation": {"x":0,"y":0,"z":0}, "Position": {"x":0,"y":0,"z":0.95}, "Size": 1}
+  ],
+  "DoughPositions": [{"x":0,"y":0,"z":0}],
+  "ProfitFactor": 1.5,
+  "Owner": null,
+  "Texture": "iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAADIklEQVR4nO3UMQHAIADAMJgkNCEWV0MGRxMFvTrPXv8Akr7XAcA7BgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgBhBgCj6wIiIgRdIkFx+wAAAABJRU5ErkJggg=="
+}
