@@ -1,0 +1,53 @@
+{
+  "schema_version": "1.0",
+  "program": "Pizza Connection 3 / Barro's Pizza",
+  "scope": {
+    "allowed": [
+      "Pizza Connection 3",
+      "PC3 Pizza Creator"
+    ],
+    "forbidden": [
+      "Pizza Connection 2",
+      "Fast Food Tycoon 2",
+      "PC2 assets, schemas, tools, reverse engineering, patches, plans and release work"
+    ]
+  },
+  "workstreams": {
+    "claude": {
+      "owner": "Claude",
+      "primary": "PC3 Pizza Creator",
+      "roots": [
+        "S:\\Unity_Games\\PC3 - Pizza Creator",
+        "S:\\Unity_Games\\PC3 - Pizza Creator\\_pizza-agent"
+      ],
+      "responsibilities": [
+        "Pizza Creator plugin and unified AI tab",
+        "pizza-agent composer/solver/scoring/render/verifier pipeline",
+        "Chat, AI Lab, Design Crew and Chef Voice",
+        "Creator Preview/Restore/Apply and save/reload proof",
+        "Creator BepInEx/runtime proof and Creator-specific acceptance gates"
+      ]
+    },
+    "chatgpt": {
+      "owner": "ChatGPT",
+      "primary": "Pizza Connection 3 main ecosystem",
+      "repositories": [
+        "Ghenghis/PC3_Barros_Runtime_Proof_Studio",
+        "Ghenghis/barros-workbench"
+      ],
+      "responsibilities": [
+        "PC3 extraction, catalogs, PathIDs and runtime evidence",
+        "Runtime Proof Studio",
+        "Barro's Workbench",
+        "PC3 asset replacement and Workbench-to-Studio handoff",
+        "Windows-MCP integration for PC3 runtime proof",
+        "GitHub/GitLab release integration and ecosystem release ledger"
+      ]
+    }
+  },
+  "coordination": {
+    "rule": "Do not duplicate implementation across workstreams. Read the other workstream only for contracts, evidence and integration compatibility.",
+    "handoff": "Cross-workstream changes should be expressed as a contract/evidence handoff or an explicit requested integration change, not parallel competing implementations.",
+    "scope_override": "Only an explicit user instruction may change this ownership split or re-enable a forbidden game track."
+  }
+}
