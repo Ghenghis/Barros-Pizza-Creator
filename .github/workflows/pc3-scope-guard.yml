@@ -14,5 +14,5 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Reject PC2 contamination and wrong repository identity
+      - name: Enforce PC3-only repository scope and identity
         run: python scripts/check_pc3_scope.py
