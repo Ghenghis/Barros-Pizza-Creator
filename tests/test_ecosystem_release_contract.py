@@ -9,6 +9,11 @@ ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "contracts" / "ecosystem.release.acceptance.json"
 ALLOWED_STATES = {"not_run", "pass", "fail", "blocked"}
 EXPECTED_GATES = {f"REL-{index:03d}" for index in range(1, 9)}
+EXPECTED_REFERENCED_CONTRACTS = {
+    "creator_rc1": "contracts/rc1.acceptance.json",
+    "ecosystem_base": "contracts/ecosystem.acceptance.json",
+    "image_handoff": "contracts/ecosystem.image.acceptance.json",
+}
 
 
 class EcosystemReleaseContractTests(unittest.TestCase):
@@ -32,13 +37,15 @@ class EcosystemReleaseContractTests(unittest.TestCase):
 
     def test_referenced_contracts_resolve_inside_repository(self) -> None:
         referenced = self.payload["referenced_contracts"]
-        self.assertEqual(
-            {"creator_rc1", "ecosystem_base", "image_handoff"},
-            set(referenced),
-        )
+        self.assertEqual(EXPECTED_REFERENCED_CONTRACTS, referenced)
+        repository_root = ROOT.resolve()
         for name, relative in referenced.items():
             with self.subTest(name=name):
-                path = ROOT / relative
+                path = (repository_root / relative).resolve()
+                self.assertTrue(
+                    path.is_relative_to(repository_root),
+                    f"Referenced contract escapes repository root: {path}",
+                )
                 self.assertTrue(path.is_file(), f"Referenced contract does not exist: {path}")
 
     def test_release_gates_are_unique_required_and_unpromoted_without_evidence(self) -> None:
