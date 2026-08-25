@@ -1,0 +1,17 @@
+# Local build products
+artifacts/
+*.dll
+*.pdb
+
+# Python runtime state
+**/__pycache__/
+*.py[cod]
+backend/data/conversation_history.json
+backend/settings.json
+
+# Installed runtime trees must never be committed
+BepInEx/
+BarrosAI/
+
+# Local diagnostics
+Barros-AI-diagnostics-*.txt
