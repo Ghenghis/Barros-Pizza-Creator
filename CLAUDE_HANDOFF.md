@@ -6,12 +6,13 @@
 > **Windows product root:** `S:\Unity_Games\PC3 - Pizza Creator`  
 > **Isolated workspace:** `S:\Unity_Games\PC3 - Pizza Creator\_agent-workspaces\claude-pc3-creator`  
 > **Current execution queue:** `CLAUDE_NEXT_TASKS_PC3_CREATOR.md`  
+> **Skip-ahead implementation packet:** `docs/CLAUDE_SKIP_AHEAD_RUNTIME_IMPLEMENTATION_PACKET.md`  
 > **Machine-readable queue:** `contracts/claude-creator-task-queue.json`  
 > **Complete access/location map:** `CLAUDE_ACCESS_MAP_PC3_CREATOR.md`  
 > **Machine-readable access map:** `contracts/claude-access-map.json`  
 > **Verified shared Google Drive root ID:** `1v_EZAxzNZQbi5DjpwWxBTiMyPHaIut34`  
 > **Ownership:** Claude owns PC3 Pizza Creator. ChatGPT owns Runtime Proof Studio, Barro's Workbench, and the main PC3 ecosystem. Studio/Workbench/main-PC3 locations are READ-ONLY integration references for Claude unless the user explicitly changes ownership.  
-> **Forbidden:** Pizza Connection 2 / Fast Food Tycoon 2 work unless the user explicitly changes scope.
+> **Forbidden:** work outside the locked PC3 program scope unless the user explicitly changes scope.
 
 ## Access rule — read this before doing any work
 
@@ -28,9 +29,9 @@ The verified shared Google Drive root contains separate Creator and main-PC3 fol
 
 For GitLab, use only `SYNC_GITLAB_SAFE.bat` / `scripts/Sync-GitLabSafe.ps1`. The remote name is normally `gitlab`, but the URL is intentionally not guessed or committed. Fetch first, verify ancestry, never force-push, and verify the remote SHA after a normal push.
 
-Before editing, read `00_READ_FIRST_PC3_ONLY.md`, `PC3_ONLY_SCOPE.md`, `WORKSTREAM_OWNERSHIP.md`, `contracts/pc3-only-scope.json`, `contracts/workstream-ownership.json`, `CLAUDE_ACCESS_MAP_PC3_CREATOR.md`, and `contracts/claude-access-map.json`. If the checkout origin, path, runtime profile, permissions, or game target conflicts with those files, stop rather than adapting the wrong project.
+Before editing, read `00_READ_FIRST_PC3_ONLY.md`, `PC3_ONLY_SCOPE.md`, `WORKSTREAM_OWNERSHIP.md`, `contracts/pc3-only-scope.json`, `contracts/workstream-ownership.json`, `CLAUDE_ACCESS_MAP_PC3_CREATOR.md`, `contracts/claude-access-map.json`, and `docs/CLAUDE_SKIP_AHEAD_RUNTIME_IMPLEMENTATION_PACKET.md`. If the checkout origin, path, runtime profile, permissions, or game target conflicts with those files, stop rather than adapting the wrong project.
 
-Finish the active `_pizza-agent` Slice-1 housekeeping first, then execute the numbered Creator tasks in the current queue. Do not ask for, inspect, enumerate, print, or commit credential values/credential filenames; use the existing secrets/runtime credential abstraction only.
+Finish the active `_pizza-agent` Slice-1 housekeeping first, then execute the numbered Creator tasks in the current queue. Use the skip-ahead implementation packet to avoid repeating settled architecture research. Do not ask for, inspect, enumerate, print, or commit credential values/credential filenames; use the existing secrets/runtime credential abstraction only.
 
 # Confirmed method-level handoff for the parallel backend
 
@@ -52,6 +53,6 @@ Finish the active `_pizza-agent` Slice-1 housekeeping first, then execute the nu
 - `contracts/rc1.acceptance.json` and `scripts/Invoke-ProofContract.ps1` are the source of truth for status. No runtime gate may be inferred from source or mockups.
 - F8 captures the canonical live screenshot for the active mode. After stock recipe-book reload, F9 compares the real `PizzaModel` with the saved snapshot and records `action.reload.verified` only on an exact modeled match.
 - `docs/ENGINEERING_PLAYBOOK.md` is the complete reproducible notebook; `docs/PROJECT_STATUS.md` is the factual gate snapshot. Current combined evidence is 7 pass, 1 Windows-only blocked, 16 not run and 0 fail out of 24 gates.
-- User-owned audio is now staged at `S:\Unity_Games\PC3 - Pizza Creator\Barros_Music`. `CONVERT_BARROS_MUSIC.bat` produces decode-validated Ogg Vorbis files and per-file hashes without shipping or inventing music. Automatic scene playback remains intentionally separate until the live audio mixer route is observed.
+- User-owned audio is staged under the Creator product root in `Barros_Music`. `CONVERT_BARROS_MUSIC.bat` produces decode-validated Ogg Vorbis files and per-file hashes without shipping or inventing music. Automatic scene playback remains intentionally separate until the live audio mixer route is observed.
 
 Please align any Slice 1 interchange schema to these facts before the UI consumes it.
