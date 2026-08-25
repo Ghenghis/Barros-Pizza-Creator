@@ -1,7 +1,6 @@
 using NUnit.Framework;
 using creator_ui.LLM;
 using creator_ui.Recipe;
-using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
 
 namespace creator_ui.tests.EditMode
@@ -21,9 +20,9 @@ namespace creator_ui.tests.EditMode
             }");
             var composer = new RecipeComposer(stubClient);
             var recipe = await composer.ComposeAsync("system", "user");
-            Assert.AreEqual("Test Pizza", (string?)recipe["name"]);
-            Assert.IsNotNull(recipe["scores"]);
-            Assert.That(recipe["scores"]!["taste"]!.Value<double>(), Is.GreaterThan(0));
+            Assert.AreEqual("Test Pizza", recipe.name);
+            Assert.IsNotNull(recipe.scores);
+            Assert.That(recipe.scores.taste, Is.GreaterThan(0));
         }
 
         [Test]
@@ -46,7 +45,7 @@ namespace creator_ui.tests.EditMode
             }");
             var composer = new RecipeComposer(stubClient);
             var recipe = await composer.ComposeAsync("system", "user");
-            Assert.AreEqual(1, (int?)recipe["_meta"]!["unknown_ingredient_count"]);
+            Assert.AreEqual(1, recipe._meta.unknown_ingredient_count);
         }
     }
 

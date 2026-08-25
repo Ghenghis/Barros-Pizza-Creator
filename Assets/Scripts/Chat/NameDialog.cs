@@ -1,5 +1,4 @@
 using creator_ui.Recipe;
-using Newtonsoft.Json.Linq;
 using System;
 using System.IO;
 using UnityEngine;
@@ -14,9 +13,9 @@ namespace creator_ui.Chat
         public Action<string> onSaved;
 
         private TextField _input;
-        private JObject? _currentRecipe;
+        private RecipeData _currentRecipe;
 
-        public void Show(JObject recipe)
+        public void Show(RecipeData recipe)
         {
             _currentRecipe = recipe;
             var root = document.rootVisualElement;
@@ -35,7 +34,7 @@ namespace creator_ui.Chat
             layer.Add(dialogTree.Instantiate());
             _input = root.Q<TextField>("name-dialog__input");
             if (_input != null)
-                _input.value = (string?)recipe["name"] ?? "Pizza Nonamo";
+                _input.value = string.IsNullOrEmpty(recipe.name) ? "Pizza Nonamo" : recipe.name;
             var continueBtn = root.Q<Button>("name-dialog__continue");
             var cancelBtn = root.Q<Button>("name-dialog__cancel");
             if (continueBtn != null) continueBtn.clicked += OnContinue;
@@ -47,7 +46,7 @@ namespace creator_ui.Chat
             if (_currentRecipe == null) return;
             var name = _input?.value?.Trim() ?? "";
             if (string.IsNullOrEmpty(name)) name = "Pizza Nonamo";
-            _currentRecipe["name"] = name;
+            _currentRecipe.name = name;
             var outDir = Path.Combine(Application.dataPath, "..", "output");
             Directory.CreateDirectory(outDir);
             var recipePath = Path.Combine(outDir, $"{name}.recipe.json");

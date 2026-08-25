@@ -1,6 +1,5 @@
 using creator_ui.LLM;
 using creator_ui.Recipe;
-using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -13,7 +12,7 @@ namespace creator_ui.Chat
         public LLMClient llmClient;
         public NameDialog nameDialog;
 
-        private JObject? _currentRecipe;
+        private RecipeData _currentRecipe;
         private readonly List<(string agent, string message, bool warning)> _discussion = new();
 
         private const string FLAVOR_CHEF_SYS = "You are Flavor Chef. Suggest bold, craveable pizza combinations. One short sentence.";
@@ -69,23 +68,22 @@ namespace creator_ui.Chat
             }
         }
 
-        private void UpdateConsensus(JObject recipe)
+        private void UpdateConsensus(RecipeData recipe)
         {
             var root = GetComponent<UIDocument>().rootVisualElement;
             var nameLabel = root.Q<Label>("crew__pizza-name");
-            if (nameLabel != null) nameLabel.text = (string?)recipe["name"] ?? "Proposed";
-            var scores = recipe["scores"];
-            if (scores == null) return;
-            SetBar(root, "bar-flavor", "bar-flavor-val", scores["taste"]?.Value<double>() ?? 0);
-            SetBar(root, "bar-profit", "bar-profit-val", scores["profit_percent"]?.Value<double>() ?? 0);
+            if (nameLabel != null) nameLabel.text = string.IsNullOrEmpty(recipe.name) ? "Proposed" : recipe.name;
+            if (recipe.scores == null) return;
+            SetBar(root, "bar-flavor", "bar-flavor-val", recipe.scores.taste);
+            SetBar(root, "bar-profit", "bar-profit-val", recipe.scores.profit_percent);
             SetBar(root, "bar-popularity", "bar-popularity-val", 75);
-            SetBar(root, "bar-originality", "bar-originality-val", scores["novelty"]?.Value<double>() ?? 0);
+            SetBar(root, "bar-originality", "bar-originality-val", recipe.scores.novelty);
         }
 
-        private void SetBar(VisualElement root, string barName, string valName, double value)
+        private void SetBar(VisualElement root, string barName, string valName, float value)
         {
             var bar = root.Q<VisualElement>(barName);
-            if (bar != null) bar.style.width = new Length(System.Math.Min(100, value), LengthUnit.Percent);
+            if (bar != null) bar.style.width = new Length(Mathf.Min(100, value), LengthUnit.Percent);
             var valLabel = root.Q<Label>(valName);
             if (valLabel != null) valLabel.text = ((int)value).ToString();
         }

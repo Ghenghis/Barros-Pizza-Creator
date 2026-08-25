@@ -1,6 +1,5 @@
 using creator_ui.LLM;
 using creator_ui.Recipe;
-using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -13,13 +12,13 @@ namespace creator_ui.Chat
         public LLMClient llmClient;
         public NameDialog nameDialog;
 
-        private readonly List<JObject> _recipes = new();
-        private JObject? _selected;
+        private readonly List<RecipeData> _recipes = new();
+        private RecipeData _selected;
 
         public async Task GenerateBatchAsync(string[] tags)
         {
             var tagStr = string.Join(", ", tags);
-            var tasks = new List<Task<JObject>>();
+            var tasks = new List<Task<RecipeData>>();
             for (int i = 0; i < 3; i++)
             {
                 tasks.Add(GenerateOneAsync($"Tags: {tagStr}. Variant {i + 1}."));
@@ -27,13 +26,11 @@ namespace creator_ui.Chat
             var results = await Task.WhenAll(tasks);
             _recipes.Clear();
             _recipes.AddRange(results);
-            _recipes.Sort((a, b) =>
-                (b["scores"]?["taste"]?.Value<double>() ?? 0)
-                .CompareTo(a["scores"]?["taste"]?.Value<double>() ?? 0));
+            _recipes.Sort((a, b) => b.scores.taste.CompareTo(a.scores.taste));
             RenderRecipeCards();
         }
 
-        private async Task<JObject> GenerateOneAsync(string prompt)
+        private async Task<RecipeData> GenerateOneAsync(string prompt)
         {
             var composer = new RecipeComposer(llmClient);
             return await composer.ComposeAsync(
@@ -56,16 +53,15 @@ namespace creator_ui.Chat
                 card.Add(thumb);
                 var body = new VisualElement();
                 body.AddToClassList("card-recipe-card__body");
-                var name = new Label((string?)recipe["name"] ?? "Recipe");
+                var name = new Label(string.IsNullOrEmpty(recipe.name) ? "Recipe" : recipe.name);
                 name.AddToClassList("card-recipe-card__name");
                 body.Add(name);
-                var scores = recipe["scores"];
-                if (scores != null)
+                if (recipe.scores != null)
                 {
-                    AddScoreRow(body, "Taste", scores["taste"]?.Value<double>() ?? 0);
-                    AddScoreRow(body, "Cost", scores["cost_dollars"]?.Value<double>() ?? 0);
-                    AddScoreRow(body, "Profit", scores["profit_percent"]?.Value<double>() ?? 0);
-                    AddScoreRow(body, "Novelty", scores["novelty"]?.Value<double>() ?? 0);
+                    AddScoreRow(body, "Taste", recipe.scores.taste);
+                    AddScoreRow(body, "Cost", recipe.scores.cost_dollars);
+                    AddScoreRow(body, "Profit", recipe.scores.profit_percent);
+                    AddScoreRow(body, "Novelty", recipe.scores.novelty);
                 }
                 card.Add(body);
                 var actions = new VisualElement();
@@ -85,7 +81,7 @@ namespace creator_ui.Chat
             }
         }
 
-        private void AddScoreRow(VisualElement parent, string label, double value)
+        private void AddScoreRow(VisualElement parent, string label, float value)
         {
             var row = new VisualElement();
             row.AddToClassList("bar-row");
@@ -96,7 +92,7 @@ namespace creator_ui.Chat
             track.AddToClassList("bar-row__track");
             var fill = new VisualElement();
             fill.AddToClassList("bar__fill");
-            fill.style.width = new Length(System.Math.Min(100, value), LengthUnit.Percent);
+            fill.style.width = new Length(Mathf.Min(100, value), LengthUnit.Percent);
             track.Add(fill);
             row.Add(track);
             var val = new Label(((int)value).ToString());

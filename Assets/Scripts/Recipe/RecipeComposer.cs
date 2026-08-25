@@ -1,5 +1,4 @@
 using creator_ui.LLM;
-using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -11,13 +10,14 @@ namespace creator_ui.Recipe
 
         public RecipeComposer(LLMClient client) { _client = client; }
 
-        public async Task<JObject> ComposeAsync(string systemPrompt, string userPrompt)
+        public async Task<RecipeData> ComposeAsync(string systemPrompt, string userPrompt)
         {
             var llmJson = await _client.CompleteAsync(systemPrompt, userPrompt);
-            JObject recipe;
+            RecipeData recipe;
             try
             {
-                recipe = JObject.Parse(llmJson);
+                recipe = JsonUtility.FromJson<RecipeData>(llmJson);
+                if (recipe == null) throw new System.Exception("JsonUtility returned null");
             }
             catch (System.Exception ex)
             {
@@ -26,26 +26,21 @@ namespace creator_ui.Recipe
             }
 
             var catalog = IngredientCatalog.Load();
-            var ingredients = recipe["ingredients"] as JArray;
             int unknownCount = 0;
-            if (ingredients != null)
+            if (recipe.ingredients != null)
             {
-                foreach (var ing in ingredients)
+                foreach (var ing in recipe.ingredients)
                 {
-                    var id = (string?)ing["id"];
-                    if (!IngredientCatalog.ContainsId(catalog, id!))
+                    if (!IngredientCatalog.ContainsId(catalog, ing.id))
                     {
-                        Debug.LogWarning($"[RecipeComposer] Unknown ingredient '{id}' - keeping but flagging");
+                        Debug.LogWarning($"[RecipeComposer] Unknown ingredient '{ing.id}' - keeping but flagging");
                         unknownCount++;
                     }
                 }
             }
 
-            recipe["scores"] = ScoringEngine.Compute(recipe, catalog);
-            recipe["_meta"] = new JObject
-            {
-                ["unknown_ingredient_count"] = unknownCount
-            };
+            recipe.scores = ScoringEngine.Compute(recipe, catalog);
+            recipe._meta = new MetaData { unknown_ingredient_count = unknownCount };
             return recipe;
         }
     }

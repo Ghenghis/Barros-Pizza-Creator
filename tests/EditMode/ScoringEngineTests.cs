@@ -1,6 +1,6 @@
 using NUnit.Framework;
 using creator_ui.Recipe;
-using Newtonsoft.Json.Linq;
+using UnityEngine;
 
 namespace creator_ui.tests.EditMode
 {
@@ -9,57 +9,85 @@ namespace creator_ui.tests.EditMode
         [Test]
         public void Taste_WeightedAverage_ReturnsCorrectValue()
         {
-            var recipe = new JObject
+            var recipe = new RecipeData
             {
-                ["ingredients"] = new JArray(
-                    new JObject { ["id"] = "PizzaSauce", ["amount_g"] = 100.0 },
-                    new JObject { ["id"] = "Mozzarella", ["amount_g"] = 50.0 }
-                )
+                ingredients = new[]
+                {
+                    new IngredientSelectionData { id = "PizzaSauce", amount_g = 100f },
+                    new IngredientSelectionData { id = "Mozzarella", amount_g = 50f }
+                }
             };
-            var catalog = new JObject
+            var catalog = new CatalogData
             {
-                ["ingredients"] = new JArray(
-                    new JObject { ["id"] = "PizzaSauce", ["taste_rating"] = 60, ["base_price"] = 0.12 },
-                    new JObject { ["id"] = "Mozzarella", ["taste_rating"] = 80, ["base_price"] = 0.15 }
-                )
+                ingredients = new[]
+                {
+                    new IngredientData { id = "PizzaSauce", taste_rating = 60, base_price = 0.12f },
+                    new IngredientData { id = "Mozzarella", taste_rating = 80, base_price = 0.15f }
+                }
             };
             var scores = ScoringEngine.Compute(recipe, catalog);
             // weighted avg: (60*100 + 80*50) / 150 = 66.67
-            Assert.That(scores["taste"].Value<double>(), Is.EqualTo(66.67).Within(0.1));
+            Assert.That(scores.taste, Is.EqualTo(66.7f).Within(0.1f));
         }
 
         [Test]
         public void Cost_PC3Formula_MatchesIngredientModelLine402()
         {
-            var recipe = new JObject
+            var recipe = new RecipeData
             {
-                ["ingredients"] = new JArray(
-                    new JObject { ["id"] = "PizzaSauce", ["amount_g"] = 100.0 }
-                )
+                ingredients = new[]
+                {
+                    new IngredientSelectionData { id = "PizzaSauce", amount_g = 100f }
+                }
             };
-            var catalog = new JObject
+            var catalog = new CatalogData
             {
-                ["ingredients"] = new JArray(
-                    new JObject { ["id"] = "PizzaSauce", ["taste_rating"] = 60, ["base_price"] = 0.12 }
-                )
+                ingredients = new[]
+                {
+                    new IngredientData { id = "PizzaSauce", taste_rating = 60, base_price = 0.12f }
+                }
             };
             var scores = ScoringEngine.Compute(recipe, catalog);
             // PC3: Price = Amount / 100 * BasePrice = 100/100 * 0.12 = 0.12
-            Assert.That(scores["cost_dollars"].Value<double>(), Is.EqualTo(0.12).Within(0.001));
+            Assert.That(scores.cost_dollars, Is.EqualTo(0.12f).Within(0.001f));
         }
 
         [Test]
         public void Cost_UnknownIngredient_Skipped()
         {
-            var recipe = new JObject
+            var recipe = new RecipeData
             {
-                ["ingredients"] = new JArray(
-                    new JObject { ["id"] = "UnknownIngredient", ["amount_g"] = 100.0 }
-                )
+                ingredients = new[]
+                {
+                    new IngredientSelectionData { id = "UnknownIngredient", amount_g = 100f }
+                }
             };
-            var catalog = new JObject { ["ingredients"] = new JArray() };
+            var catalog = new CatalogData { ingredients = new IngredientData[0] };
             var scores = ScoringEngine.Compute(recipe, catalog);
-            Assert.That(scores["cost_dollars"].Value<double>(), Is.EqualTo(0).Within(0.001));
+            Assert.That(scores.cost_dollars, Is.EqualTo(0).Within(0.001f));
+        }
+
+        [Test]
+        public void Cost_PC3Formula_At200g()
+        {
+            // PC3: 200g * (1/100) * base_price = 2 * base_price
+            var recipe = new RecipeData
+            {
+                ingredients = new[]
+                {
+                    new IngredientSelectionData { id = "Mozzarella", amount_g = 200f }
+                }
+            };
+            var catalog = new CatalogData
+            {
+                ingredients = new[]
+                {
+                    new IngredientData { id = "Mozzarella", taste_rating = 70, base_price = 0.10f }
+                }
+            };
+            var scores = ScoringEngine.Compute(recipe, catalog);
+            // 200/100 * 0.10 = 0.20
+            Assert.That(scores.cost_dollars, Is.EqualTo(0.20f).Within(0.001f));
         }
     }
 }

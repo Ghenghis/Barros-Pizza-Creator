@@ -1,7 +1,5 @@
 using creator_ui.LLM;
 using creator_ui.Recipe;
-using Newtonsoft.Json.Linq;
-using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -14,9 +12,9 @@ namespace creator_ui.Chat
         public NameDialog nameDialog;
 
         private const string SYSTEM_PROMPT =
-            @"You are Chef AI for Barro's Pizza Creator. Help the user design a pizza. Return JSON: { name, dough: {size, shape}, ingredients: [{id, amount_g, position:[x,y,z], rotation:[x,y,z], size}] }. Ingredient IDs MUST be from the catalog.";
+            @"You are Chef AI for Barro's Pizza Creator. Help the user design a pizza. Return JSON with fields: name, dough:{size,shape}, ingredients:[{id, amount_g, position:[x,y,z], rotation:[x,y,z], size}]. Ingredient IDs MUST be from the catalog.";
 
-        private JObject? _currentRecipe;
+        private RecipeData _currentRecipe;
         private bool _isComposing;
 
         private void OnEnable()
@@ -43,7 +41,7 @@ namespace creator_ui.Chat
             {
                 var composer = new RecipeComposer(llmClient);
                 _currentRecipe = await composer.ComposeAsync(SYSTEM_PROMPT, userText);
-                int ingCount = (_currentRecipe["ingredients"] as JArray)?.Count ?? 0;
+                int ingCount = _currentRecipe.ingredients?.Length ?? 0;
                 var aiLabel = root.Q<Label>("chef-voice__msg-ai-text");
                 if (aiLabel != null) aiLabel.text = $"I can build that. Medium heat or hot? ({ingCount} ingredients)";
                 UpdateRecipeCard(_currentRecipe);
@@ -51,36 +49,34 @@ namespace creator_ui.Chat
             finally { _isComposing = false; }
         }
 
-        private void UpdateRecipeCard(JObject recipe)
+        private void UpdateRecipeCard(RecipeData recipe)
         {
             var root = GetComponent<UIDocument>().rootVisualElement;
             var nameLabel = root.Q<Label>("chef-voice__recipe-name");
-            if (nameLabel != null) nameLabel.text = (string?)recipe["name"] ?? "Recipe";
+            if (nameLabel != null) nameLabel.text = string.IsNullOrEmpty(recipe.name) ? "Recipe" : recipe.name;
             var ingContainer = root.Q<VisualElement>("chef-voice__recipe-ingredients");
             if (ingContainer != null)
             {
                 ingContainer.Clear();
-                var arr = recipe["ingredients"] as JArray;
-                if (arr != null)
+                if (recipe.ingredients != null)
                 {
-                    foreach (var ing in arr)
+                    foreach (var ing in recipe.ingredients)
                     {
-                        var row = new Label($"{(string?)ing["id"]} -- {(double?)ing["amount_g"]:0.#}g");
+                        var row = new Label($"{ing.id} -- {ing.amount_g:0.#}g");
                         row.style.fontSize = 13;
                         ingContainer.Add(row);
                     }
                 }
             }
-            var scores = recipe["scores"];
-            if (scores != null)
+            if (recipe.scores != null)
             {
                 var costLabel = root.Q<Label>("stat-cost");
                 var priceLabel = root.Q<Label>("stat-price");
                 var profitLabel = root.Q<Label>("stat-profit");
-                double cost = scores["cost_dollars"]?.Value<double>() ?? 0;
+                float cost = recipe.scores.cost_dollars;
                 if (costLabel != null) costLabel.text = $"Cost ${cost:0.00}";
-                if (priceLabel != null) priceLabel.text = $"Price ${cost * 1.5:0.00}";
-                if (profitLabel != null) profitLabel.text = $"Profit {scores["profit_percent"]?.Value<double>() ?? 0:0.#}%";
+                if (priceLabel != null) priceLabel.text = $"Price ${cost * 1.5f:0.00}";
+                if (profitLabel != null) profitLabel.text = $"Profit {recipe.scores.profit_percent:0.#}%";
             }
         }
 

@@ -1,6 +1,5 @@
 using creator_ui.LLM;
 using creator_ui.Recipe;
-using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -12,7 +11,7 @@ namespace creator_ui.Chat
         public LLMClient llmClient;
         public NameDialog nameDialog;
 
-        private JObject? _currentRecipe;
+        private RecipeData _currentRecipe;
         private string _mode = "build";
 
         public void SetMode(string mode) { _mode = mode; }
@@ -34,20 +33,19 @@ namespace creator_ui.Chat
             UpdateRecipeCard(_currentRecipe);
         }
 
-        private void UpdateRecipeCard(JObject recipe)
+        private void UpdateRecipeCard(RecipeData recipe)
         {
             var root = GetComponent<UIDocument>().rootVisualElement;
             var nameLabel = root.Q<Label>("designer__recipe-name");
-            if (nameLabel != null) nameLabel.text = (string?)recipe["name"] ?? "Recipe";
-            var scores = recipe["scores"];
-            if (scores != null)
+            if (nameLabel != null) nameLabel.text = string.IsNullOrEmpty(recipe.name) ? "Recipe" : recipe.name;
+            if (recipe.scores != null)
             {
                 var tasteLabel = root.Q<Label>("designer__taste");
                 var costLabel = root.Q<Label>("designer__cost");
                 var popLabel = root.Q<Label>("designer__pop");
-                if (tasteLabel != null) tasteLabel.text = ((int)(scores["taste"]?.Value<double>() ?? 0)).ToString();
-                if (costLabel != null) costLabel.text = ((int)((scores["cost_dollars"]?.Value<double>() ?? 0) * 100)).ToString();
-                if (popLabel != null) popLabel.text = ((int)(scores["novelty"]?.Value<double>() ?? 0)).ToString();
+                if (tasteLabel != null) tasteLabel.text = ((int)recipe.scores.taste).ToString();
+                if (costLabel != null) costLabel.text = ((int)(recipe.scores.cost_dollars * 100)).ToString();
+                if (popLabel != null) popLabel.text = ((int)recipe.scores.novelty).ToString();
             }
         }
 

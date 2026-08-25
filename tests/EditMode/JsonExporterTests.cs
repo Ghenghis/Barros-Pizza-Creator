@@ -1,6 +1,5 @@
 using NUnit.Framework;
 using creator_ui.Recipe;
-using Newtonsoft.Json.Linq;
 using System.IO;
 
 namespace creator_ui.tests.EditMode
@@ -10,31 +9,32 @@ namespace creator_ui.tests.EditMode
         [Test]
         public void WriteFinal_ProducesValidPC3DataContractShape()
         {
-            var recipe = new JObject
+            var recipe = new RecipeData
             {
-                ["name"] = "Test Pizza",
-                ["dough"] = new JObject { ["size"] = "Large", ["shape"] = "Round" },
-                ["ingredients"] = new JArray(
-                    new JObject
+                name = "Test Pizza",
+                dough = new DoughSelectionData { size = "Large", shape = "Round" },
+                ingredients = new[]
+                {
+                    new IngredientSelectionData
                     {
-                        ["id"] = "PizzaSauce",
-                        ["amount_g"] = 100.0,
-                        ["position"] = new JArray(0, 0, 0.95),
-                        ["rotation"] = new JArray(0, 0, 0),
-                        ["size"] = "Medium"
+                        id = "PizzaSauce",
+                        amount_g = 100f,
+                        position = new[] { 0f, 0f, 0.95f },
+                        rotation = new[] { 0f, 0f, 0f },
+                        size = "Medium"
                     }
-                )
+                }
             };
             var tmpPath = Path.GetTempFileName();
             try
             {
                 JsonExporter.WriteFinal(recipe, tmpPath);
-                var written = JObject.Parse(File.ReadAllText(tmpPath));
-                Assert.IsNotNull(written["ID"]);
-                Assert.IsNotNull(written["Ingredients"]);
-                Assert.AreEqual("PizzaSauce", (string?)written["Ingredients"]![0]!["IngredientID"]);
-                // PC3 IngredientSize: Medium=1
-                Assert.AreEqual(1, (int?)written["Ingredients"]![0]!["Size"]);
+                var written = File.ReadAllText(tmpPath);
+                Assert.IsTrue(written.Contains("\"ID\""));
+                Assert.IsTrue(written.Contains("\"IngredientID\":\"PizzaSauce\""));
+                Assert.IsTrue(written.Contains("\"Size\":1"));  // PC3 IngredientSize: Medium=1
+                Assert.IsTrue(written.Contains("\"DoughPositions\""));
+                Assert.IsTrue(written.Contains("\"ProfitFactor\":1.5"));
             }
             finally { File.Delete(tmpPath); }
         }
@@ -42,25 +42,26 @@ namespace creator_ui.tests.EditMode
         [Test]
         public void WriteFinal_SizeEnum_LargeMapsToZero()
         {
-            var recipe = new JObject
+            var recipe = new RecipeData
             {
-                ["ingredients"] = new JArray(
-                    new JObject
+                ingredients = new[]
+                {
+                    new IngredientSelectionData
                     {
-                        ["id"] = "Mozzarella",
-                        ["amount_g"] = 50.0,
-                        ["position"] = new JArray(0, 0, 0.95),
-                        ["rotation"] = new JArray(0, 0, 0),
-                        ["size"] = "Large"
+                        id = "Mozzarella",
+                        amount_g = 50f,
+                        position = new[] { 0f, 0f, 0.95f },
+                        rotation = new[] { 0f, 0f, 0f },
+                        size = "Large"
                     }
-                )
+                }
             };
             var tmpPath = Path.GetTempFileName();
             try
             {
                 JsonExporter.WriteFinal(recipe, tmpPath);
-                var written = JObject.Parse(File.ReadAllText(tmpPath));
-                Assert.AreEqual(0, (int?)written["Ingredients"]![0]!["Size"]);  // Large=0
+                var written = File.ReadAllText(tmpPath);
+                Assert.IsTrue(written.Contains("\"Size\":0"));  // Large=0
             }
             finally { File.Delete(tmpPath); }
         }
@@ -68,25 +69,26 @@ namespace creator_ui.tests.EditMode
         [Test]
         public void WriteFinal_SizeEnum_SmallMapsToTwo()
         {
-            var recipe = new JObject
+            var recipe = new RecipeData
             {
-                ["ingredients"] = new JArray(
-                    new JObject
+                ingredients = new[]
+                {
+                    new IngredientSelectionData
                     {
-                        ["id"] = "Jalapeno",
-                        ["amount_g"] = 25.0,
-                        ["position"] = new JArray(0, 0, 0.95),
-                        ["rotation"] = new JArray(0, 0, 0),
-                        ["size"] = "Small"
+                        id = "Jalapeno",
+                        amount_g = 25f,
+                        position = new[] { 0f, 0f, 0.95f },
+                        rotation = new[] { 0f, 0f, 0f },
+                        size = "Small"
                     }
-                )
+                }
             };
             var tmpPath = Path.GetTempFileName();
             try
             {
                 JsonExporter.WriteFinal(recipe, tmpPath);
-                var written = JObject.Parse(File.ReadAllText(tmpPath));
-                Assert.AreEqual(2, (int?)written["Ingredients"]![0]!["Size"]);  // Small=2
+                var written = File.ReadAllText(tmpPath);
+                Assert.IsTrue(written.Contains("\"Size\":2"));  // Small=2
             }
             finally { File.Delete(tmpPath); }
         }
@@ -94,14 +96,28 @@ namespace creator_ui.tests.EditMode
         [Test]
         public void WriteRecipe_StoresRecipeJson()
         {
-            var recipe = new JObject { ["name"] = "Test", ["ingredients"] = new JArray() };
+            var recipe = new RecipeData { name = "Test" };
             var tmpPath = Path.GetTempFileName();
             try
             {
                 JsonExporter.WriteRecipe(recipe, tmpPath);
                 Assert.IsTrue(File.Exists(tmpPath));
-                var written = JObject.Parse(File.ReadAllText(tmpPath));
-                Assert.AreEqual("Test", (string?)written["name"]);
+                var written = File.ReadAllText(tmpPath);
+                Assert.IsTrue(written.Contains("\"name\":\"Test\""));
+            }
+            finally { File.Delete(tmpPath); }
+        }
+
+        [Test]
+        public void WriteFinal_EmptyIngredients_ProducesEmptyArray()
+        {
+            var recipe = new RecipeData { name = "Empty", ingredients = new IngredientSelectionData[0] };
+            var tmpPath = Path.GetTempFileName();
+            try
+            {
+                JsonExporter.WriteFinal(recipe, tmpPath);
+                var written = File.ReadAllText(tmpPath);
+                Assert.IsTrue(written.Contains("\"Ingredients\":[]"));
             }
             finally { File.Delete(tmpPath); }
         }

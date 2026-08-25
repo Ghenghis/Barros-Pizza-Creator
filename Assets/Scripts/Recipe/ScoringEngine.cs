@@ -1,37 +1,34 @@
-using Newtonsoft.Json.Linq;
+using UnityEngine;
 
 namespace creator_ui.Recipe
 {
     public static class ScoringEngine
     {
-        public static JObject Compute(JObject recipe, JObject catalog)
+        public static ScoresData Compute(RecipeData recipe, CatalogData catalog)
         {
-            var ingredients = recipe["ingredients"]!;
-            double totalAmount = 0;
-            double weightedTaste = 0;
-            double totalCost = 0;
-            foreach (var ing in ingredients)
+            var scores = new ScoresData();
+            if (recipe?.ingredients == null) return scores;
+            float totalAmount = 0;
+            float weightedTaste = 0;
+            float totalCost = 0;
+            foreach (var ing in recipe.ingredients)
             {
-                var id = (string?)ing["id"];
-                var amount = (double?)ing["amount_g"] ?? 0;
-                var cat = IngredientCatalog.GetIngredient(catalog, id!);
-                if (cat == null) continue;
-                var taste = (double?)cat["taste_rating"] ?? 0;
-                var basePrice = (double?)cat["base_price"] ?? 0;
+                var cat = IngredientCatalog.GetIngredient(catalog, ing.id);
+                if (!cat.HasValue) continue;
+                var ingredient = cat.Value;
+                float amount = ing.amount_g;
+                float taste = ingredient.taste_rating;
+                float basePrice = ingredient.base_price;
                 weightedTaste += taste * amount;
                 totalAmount += amount;
                 // PC3 formula: Price = Amount / 100 * BasePrice (IngredientModel.cs:402)
-                totalCost += (amount / 100.0) * basePrice;
+                totalCost += (amount / 100f) * basePrice;
             }
-            var tasteScore = totalAmount > 0 ? weightedTaste / totalAmount : 0;
-            // Profit: assumed suggested = cost * 1.5
-            return new JObject
-            {
-                ["taste"] = System.Math.Round(tasteScore, 1),
-                ["cost_dollars"] = System.Math.Round(totalCost, 2),
-                ["profit_percent"] = 50.0,
-                ["novelty"] = 75.0
-            };
+            scores.taste = totalAmount > 0 ? Mathf.Round(weightedTaste / totalAmount * 10f) / 10f : 0;
+            scores.cost_dollars = Mathf.Round(totalCost * 100f) / 100f;
+            scores.profit_percent = 50f;
+            scores.novelty = 75f;
+            return scores;
         }
     }
 }

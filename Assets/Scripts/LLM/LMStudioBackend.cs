@@ -1,7 +1,7 @@
+using System;
 using System.Net.Http;
-using System.Text;
-using System.Text.Json;
 using System.Threading.Tasks;
+using UnityEngine;
 
 namespace creator_ui.LLM
 {
@@ -15,29 +15,47 @@ namespace creator_ui.LLM
         {
             _baseUrl = baseUrl;
             _model = model;
-            _http = new HttpClient { Timeout = System.TimeSpan.FromSeconds(5) };
+            _http = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
         }
 
         public async Task<string> CompleteAsync(string systemPrompt, string userPrompt)
         {
-            var payload = new
+            var messages = new[]
             {
-                model = _model,
-                messages = new[]
-                {
-                    new LLMMessage { Role = "system", Content = systemPrompt },
-                    new LLMMessage { Role = "user", Content = userPrompt }
-                },
-                temperature = 0.7,
-                response_format = new { type = "json_object" }
+                new LLMMessage("system", systemPrompt),
+                new LLMMessage("user", userPrompt)
             };
-            var json = JsonSerializer.Serialize(payload);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            // Manual JSON building to avoid System.Text.Json namespace issues
+            var payload = "{\"model\":\"" + _model + "\",\"messages\":" +
+                          LLMJson.ArrayOf(messages) +
+                          ",\"temperature\":0.7,\"response_format\":{\"type\":\"json_object\"}}";
+            var content = new StringContent(payload, System.Text.Encoding.UTF8, "application/json");
             var resp = await _http.PostAsync($"{_baseUrl}/v1/chat/completions", content);
             resp.EnsureSuccessStatusCode();
             var body = await resp.Content.ReadAsStringAsync();
-            using var doc = JsonDocument.Parse(body);
-            return doc.RootElement.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString();
+            var parsed = JsonUtility.FromJson<LLMResponse>(body);
+            return parsed.choices[0].message.content;
+        }
+    }
+
+    public static class LLMJson
+    {
+        public static string ArrayOf(LLMMessage[] msgs)
+        {
+            var sb = new System.Text.StringBuilder("[");
+            for (int i = 0; i < msgs.Length; i++)
+            {
+                if (i > 0) sb.Append(",");
+                sb.Append("{\"role\":\"").Append(Escape(msgs[i].role)).Append("\",\"content\":\"").Append(Escape(msgs[i].content)).Append("\"}");
+            }
+            sb.Append("]");
+            return sb.ToString();
+        }
+
+        private static string Escape(string s)
+        {
+            if (s == null) return "";
+            return s.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "\\r").Replace("\t", "\\t");
         }
     }
 }
