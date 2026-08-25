@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.3",
+  "schema_version": "1.4",
   "contract_id": "claude-pc3-pizza-creator-next-tasks",
   "owner": "Claude",
   "workstream": "PC3 Pizza Creator",
@@ -7,12 +7,35 @@
   "human_handoff": "CLAUDE_NEXT_TASKS_PC3_CREATOR.md",
   "truth_contract": "contracts/rc1.acceptance.json",
   "jpeg_research_start_here": "CLAUDE_JPEG_RESEARCH_START_HERE.md",
+  "studio_jpeg_research_interop": {
+    "owner": "ChatGPT / Runtime Proof Studio",
+    "repository": "Ghenghis/PC3_Barros_Runtime_Proof_Studio",
+    "known_good_research_control_baseline": "f822de627b3391c8639b74a8b4b72043e101b678",
+    "baseline_rule": "Known-good interoperability reference only. Verify current Studio main is clean/green and schema-compatible before live research; do not reset Studio to this SHA merely because it is recorded here.",
+    "shared_schema": "contracts/creator-controlled-stimulus.schema.json",
+    "control_panel": "CREATOR_JPEG_RESEARCH_CONTROL_PANEL.bat",
+    "generate_and_seal_corpus": "GENERATE_CREATOR_CANONICAL_STIMULI.bat",
+    "run_next_case": "RUN_NEXT_CREATOR_JPEG_CASE.bat",
+    "capture_selected_case": "CAPTURE_CREATOR_CANONICAL_STIMULUS.bat",
+    "campaign_status": "CREATOR_JPEG_CAMPAIGN_STATUS.bat",
+    "jre_input_readiness": "CREATOR_JPEG_JRE_READINESS.bat",
+    "independent_parser_cross_check": "CROSS_VALIDATE_CREATOR_JPEG_FINGERPRINT.bat",
+    "mcp_read_only_tools": [
+      "pc3_creator_jpeg_campaign_status",
+      "pc3_creator_jpeg_next_case",
+      "pc3_creator_jpeg_jre_readiness"
+    ],
+    "canonical_case_count": 60,
+    "experiments": ["E00","E01","E02","E03","E04","E05","E06","E07","E08","E09","E10"],
+    "ownership_rule": "Claude consumes Studio-generated stimuli/evidence/control status read-only and owns only the Creator exact-model/native-operation executor. Claude does not edit Studio/Workbench implementation."
+  },
   "rules": {
     "pc2_forbidden": true,
     "runtime_pass_requires_retained_evidence": true,
     "do_not_duplicate_chatgpt_pc3_main": true,
     "do_not_expose_credentials": true,
-    "do_not_commit_secret_paths_or_values": true
+    "do_not_commit_secret_paths_or_values": true,
+    "do_not_create_competing_jpeg_campaign_generator_observer_or_ledger": true
   },
   "tasks": [
     {"id":"CLD-000","priority":0,"title":"Finish Slice-1 housekeeping","state":"in_progress","deliverable":"green Python/.NET tests plus evidence/claude/slice1-housekeeping.json"},
@@ -63,15 +86,22 @@
     },
     {
       "id":"CLD-JPEG-LIVE",
-      "title":"Run controlled native JPEG placement/orientation/render experiments",
+      "title":"Execute exact canonical E00-E10 native JPEG campaign through Studio control plane",
       "state":"not_run",
       "depends_on":["CLD-302","CLD-501","CLD-JPEG-FIXTURE-EXECUTOR"],
       "does_not_block_core_queue":true,
       "contract":"contracts/jpeg-reverse-engineering.acceptance.json",
       "targets":["JRE-003","JRE-004","JRE-005","JRE-006","JRE-007","JRE-008","JRE-009","JRE-010","JRE-011","JRE-012"],
       "roadmap":"docs/NATIVE_PIZZA_JPEG_REVERSE_ENGINEERING_ROADMAP.md",
+      "studio_control_panel":"CREATOR_JPEG_RESEARCH_CONTROL_PANEL.bat in Ghenghis/PC3_Barros_Runtime_Proof_Studio",
+      "studio_generate_and_seal":"GENERATE_CREATOR_CANONICAL_STIMULI.bat in Ghenghis/PC3_Barros_Runtime_Proof_Studio",
+      "studio_run_next_case":"RUN_NEXT_CREATOR_JPEG_CASE.bat in Ghenghis/PC3_Barros_Runtime_Proof_Studio",
       "studio_observer":"CAPTURE_CREATOR_CANONICAL_STIMULUS.bat in Ghenghis/PC3_Barros_Runtime_Proof_Studio",
-      "studio_creator_parser_cross_check":"CROSS_VALIDATE_CREATOR_JPEG_FINGERPRINT.bat in Ghenghis/PC3_Barros_Runtime_Proof_Studio"
+      "studio_campaign_status":"CREATOR_JPEG_CAMPAIGN_STATUS.bat in Ghenghis/PC3_Barros_Runtime_Proof_Studio",
+      "studio_jre_input_readiness":"CREATOR_JPEG_JRE_READINESS.bat in Ghenghis/PC3_Barros_Runtime_Proof_Studio",
+      "studio_creator_parser_cross_check":"CROSS_VALIDATE_CREATOR_JPEG_FINGERPRINT.bat in Ghenghis/PC3_Barros_Runtime_Proof_Studio",
+      "execution_rule":"Use the sealed Studio corpus and run-next-case/status workflow. Do not create/hand-pick a competing case corpus or silently skip unresolved current cases.",
+      "truth_rule":"Studio cross_validated or 60/60 means controlled observation-layer completion only; JRE states still require their own source/runtime/analysis evidence."
     },
     {
       "id":"CLD-JPEG-FINAL",
