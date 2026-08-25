@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
+from .attachments import AttachmentError, normalize_attachment, normalize_attachments
 from .history import HistoryStore
 from .orchestrator import PizzaOrchestrator
 from .providers import ProviderClient, ProviderError, ProviderSettings
@@ -37,7 +38,7 @@ class App:
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "BarrosPizzaAI/1.0"
+    server_version = "BarrosPizzaAI/1.1"
 
     @property
     def app(self) -> App:
@@ -79,9 +80,10 @@ class Handler(BaseHTTPRequestHandler):
                 {
                     "ok": True,
                     "name": "Barro's AI Pizza Designer",
-                    "version": "1.0.0-rc1",
+                    "version": "1.1.0-rc1",
                     "provider": self.app.settings.provider,
                     "online": self.app.provider.online,
+                    "image_parser": "png+jpeg+webp-v1",
                     "uptime_seconds": round(time.time() - self.app.started, 1),
                 },
             )
@@ -95,7 +97,18 @@ class Handler(BaseHTTPRequestHandler):
         path = urlparse(self.path).path
         try:
             payload = self._body()
+            if path == "/inspect-attachment":
+                attachment = normalize_attachment(payload)
+                public = {
+                    "name": attachment.get("name", "attachment"),
+                    "mime_type": attachment.get("mime_type", ""),
+                    "image_metadata": attachment.get("image_metadata"),
+                    "text_chars": len(str(attachment.get("text", ""))),
+                }
+                self._json(HTTPStatus.OK, {"ok": True, "attachment": public})
+                return
             if path in {"/compose", "/chat", "/lab"}:
+                payload["attachments"] = normalize_attachments(payload.get("attachments") or [])
                 if path == "/lab":
                     payload["count"] = 3
                 result = self.app.orchestrator.compose(payload)
@@ -103,6 +116,7 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(HTTPStatus.OK, result)
                 return
             if path == "/crew":
+                payload["attachments"] = normalize_attachments(payload.get("attachments") or [])
                 result = self.app.orchestrator.crew(payload)
                 self.app.history.append("crew", str(payload.get("prompt", "")), result)
                 self._json(HTTPStatus.OK, result)
@@ -125,7 +139,7 @@ class Handler(BaseHTTPRequestHandler):
                 threading.Thread(target=self.server.shutdown, daemon=True).start()
                 return
             self._json(HTTPStatus.NOT_FOUND, {"ok": False, "error": "Unknown endpoint."})
-        except (ValueError, json.JSONDecodeError, ProviderError) as exc:
+        except (ValueError, AttachmentError, json.JSONDecodeError, ProviderError) as exc:
             self._json(HTTPStatus.BAD_REQUEST, {"ok": False, "error": str(exc)})
         except Exception as exc:
             self._json(HTTPStatus.INTERNAL_SERVER_ERROR, {"ok": False, "error": "%s: %s" % (type(exc).__name__, exc)})
