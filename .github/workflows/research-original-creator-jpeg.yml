@@ -1,0 +1,118 @@
+name: Research original PC3 Creator JPEG writer
+
+on:
+  push:
+    branches: [creator-jpeg-research-20260825]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reverse-engineer-original-creator:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download official SteamCMD
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $ProgressPreference = 'SilentlyContinue'
+          New-Item -ItemType Directory -Force -Path "$env:RUNNER_TEMP\steamcmd" | Out-Null
+          Invoke-WebRequest 'https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip' -OutFile "$env:RUNNER_TEMP\steamcmd.zip"
+          Expand-Archive "$env:RUNNER_TEMP\steamcmd.zip" -DestinationPath "$env:RUNNER_TEMP\steamcmd" -Force
+
+      - name: Acquire official free Pizza Creator app 851330
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $creator = "$env:RUNNER_TEMP\pc3-creator"
+          New-Item -ItemType Directory -Force -Path $creator | Out-Null
+          $steam = "$env:RUNNER_TEMP\steamcmd\steamcmd.exe"
+          & $steam +@ShutdownOnFailedCommand 1 +@NoPromptForPassword 1 +force_install_dir $creator +login anonymous +app_license_request 851330 +app_update 851330 validate +quit
+          if ($LASTEXITCODE -ne 0) { throw "SteamCMD failed with exit code $LASTEXITCODE" }
+          $assembly = Get-ChildItem $creator -Recurse -Filter Assembly-CSharp.dll -File | Select-Object -First 1
+          if (-not $assembly) { throw 'Assembly-CSharp.dll was not downloaded.' }
+          "ASSEMBLY=$($assembly.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          $firstpass = Get-ChildItem $creator -Recurse -Filter Assembly-CSharp-firstpass.dll -File | Select-Object -First 1
+          if ($firstpass) { "FIRSTPASS=$($firstpass.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8 }
+          New-Item -ItemType Directory -Force -Path research-output | Out-Null
+          Get-FileHash $assembly.FullName -Algorithm SHA256 | Format-List | Out-File research-output/assembly-sha256.txt
+          Get-ChildItem $creator -Recurse -File | Select-Object FullName,Length | Out-File research-output/original-file-inventory.txt
+
+      - name: Install ILSpy command-line decompiler
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          dotnet tool install ilspycmd --tool-path "$env:RUNNER_TEMP\ilspy"
+
+      - name: Decompile in ephemeral runner workspace
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $out = "$env:RUNNER_TEMP\creator-decompiled"
+          New-Item -ItemType Directory -Force -Path $out | Out-Null
+          & "$env:RUNNER_TEMP\ilspy\ilspycmd.exe" -p -o $out $env:ASSEMBLY
+          if ($LASTEXITCODE -ne 0) { throw "ilspycmd failed with exit code $LASTEXITCODE" }
+          "DECOMPILED=$out" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Find JPEG recipe save/import and crypto/compression paths
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $patterns = @(
+            'EncodeToJPG','EncodeToJPEG','EncodeToJpeg','\.jpg','\.jpeg',
+            'SaveCurrentPizzaToRecipes','GetAllRecipes','LoadPizzaFromModel','CurrentPizzaSaved',
+            'UserData','PizzaCreator','Screenshot','Share','Facebook',
+            'WriteAllBytes','ReadAllBytes','FileStream','BinaryWriter','BinaryReader',
+            'Jil','Newtonsoft','Ionic\.Zip','ZipFile','GZip','Deflate','Compress','Decompress',
+            'Aes','Rijndael','CryptoStream','Encrypt','Decrypt','Cipher','SHA','MD5',
+            'Convert\.ToBase64String','Convert\.FromBase64String'
+          )
+          $files = Get-ChildItem $env:DECOMPILED -Recurse -Filter *.cs -File
+          $hits = foreach ($pattern in $patterns) {
+            Select-String -Path $files.FullName -Pattern $pattern -Context 6,10 -ErrorAction SilentlyContinue
+          }
+          $hits | Sort-Object Path,LineNumber -Unique | ForEach-Object {
+            "===== $($_.Path):$($_.LineNumber) ====="
+            $_.Context.PreContext
+            $_.Line
+            $_.Context.PostContext
+          } | Out-File research-output/jpeg-writer-targeted-context.txt -Width 4096 -Encoding utf8
+
+          $likely = $files | Where-Object {
+            Select-String -Path $_.FullName -Pattern 'EncodeToJPG|\.jpg|SaveCurrentPizzaToRecipes|CurrentPizzaSaved|UserData' -Quiet -ErrorAction SilentlyContinue
+          }
+          $likely | Select-Object FullName,Length | Out-File research-output/likely-source-files.txt -Encoding utf8
+
+          # Retain only targeted likely source files in the short-lived artifact.
+          $targetDir = 'research-output/likely-source'
+          New-Item -ItemType Directory -Force -Path $targetDir | Out-Null
+          foreach ($file in $likely) {
+            $safe = ($file.FullName.Substring($env:DECOMPILED.Length).TrimStart('\') -replace '[\\/:*?"<>|]', '_')
+            Copy-Item $file.FullName (Join-Path $targetDir $safe) -Force
+          }
+
+      - name: Summarize dependency clues without making encryption claims
+        shell: pwsh
+        run: |
+          $assemblyDir = Split-Path -Parent $env:ASSEMBLY
+          @{
+            assembly = $env:ASSEMBLY
+            assembly_sha256 = (Get-FileHash $env:ASSEMBLY -Algorithm SHA256).Hash.ToLowerInvariant()
+            has_jil = Test-Path (Join-Path $assemblyDir 'Jil.dll')
+            has_newtonsoft = Test-Path (Join-Path $assemblyDir 'Newtonsoft.Json.dll')
+            has_ionic_zip = Test-Path (Join-Path $assemblyDir 'Ionic.Zip.dll')
+            encryption_proven_by_dependency_presence = $false
+            note = 'Dependency presence is only a clue. The matched writer/reader method body decides serialization, compression, obfuscation, or encryption.'
+          } | ConvertTo-Json -Depth 5 | Out-File research-output/dependency-clues.json -Encoding utf8
+
+      - name: Upload derived reverse-engineering evidence only
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-creator-jpeg-research
+          path: research-output
+          retention-days: 1
+          if-no-files-found: error
