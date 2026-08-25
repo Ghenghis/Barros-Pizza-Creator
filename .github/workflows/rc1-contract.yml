@@ -23,6 +23,8 @@ jobs:
         run: |
           python -m json.tool contracts/rc1.acceptance.json >/dev/null
           python -m json.tool contracts/ecosystem.acceptance.json >/dev/null
+          python -m json.tool contracts/ecosystem.image.acceptance.json >/dev/null
+          python -m json.tool contracts/ecosystem.release.acceptance.json >/dev/null
           python -m json.tool contracts/pc3-image-handoff.schema.json >/dev/null
           python -m json.tool contracts/pc3-build-compatibility.json >/dev/null
           python -m json.tool artifacts/build-provenance.json >/dev/null
