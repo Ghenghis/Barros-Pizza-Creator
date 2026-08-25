@@ -1,5 +1,4 @@
 import importlib.util
-import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -50,75 +49,62 @@ class JpegEncoderFingerprintTests(unittest.TestCase):
         self.assertTrue(result["ijg_standard_quality_match"]["exact_joint_match"])
 
 
-class FixtureGeneratorTests(unittest.TestCase):
+class SharedControlledStimulusDiffTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.fx = load_script("generate_jpeg_experiment_fixtures.py")
+        cls.diff = load_script("compare_controlled_stimuli.py")
 
     @staticmethod
-    def base_fixture():
+    def fixture(case_id="a", yaw=0.0, x=-3.0):
         return {
             "schema_version": "1.0",
-            "experiment_id": "BASE",
-            "variant": "BASE",
+            "experiment_id": "E01",
+            "case_id": case_id,
             "runtime_profile": "creator-0.11.272",
-            "name": "BASE",
-            "shape": "Round",
-            "profit_factor": 0.6,
-            "placements": [
-                {
-                    "sequence": 0,
-                    "ingredient_id": "Bacon",
-                    "size": "Medium",
-                    "position": {"x": -3.0, "y": 1.0, "z": 0.0},
-                    "rotation": {"x": 0.0, "y": 0.0, "z": 0.0},
-                },
-                {
-                    "sequence": 1,
-                    "ingredient_id": "Chicken",
-                    "size": "Small",
-                    "position": {"x": -2.5, "y": 1.01, "z": 0.5},
-                    "rotation": {"x": 0.0, "y": 15.0, "z": 0.0},
-                },
-            ],
+            "model": {
+                "name": "JPEG-E01-CONTROLLED",
+                "shape": "Round",
+                "profit_factor": 1.0,
+                "placements": [
+                    {
+                        "ingredient_id": "Bacon",
+                        "size": "Medium",
+                        "position": {"x": x, "y": 1.0, "z": 0.0},
+                        "rotation": {"x": 0.0, "y": yaw, "z": 0.0},
+                    }
+                ],
+            },
+            "operation": {
+                "preview_exact_model": True,
+                "native_recipe_save": True,
+                "reload_verify": False,
+                "native_resave_after_reload": False,
+            },
+            "notes": "controlled evidence label",
         }
 
-    def test_rotation_variant_diff_proof_allows_only_rotation_family(self):
-        base = self.base_fixture()
-        label, variant, allowed = next(item for item in self.fx.rotation_variants(base) if item[0] == "R090")
-        proof = self.fx.diff_proof(base, variant, allowed, "E01", label)
-        self.assertTrue(proof["valid_one_variable_family"])
-        self.assertEqual(proof["unexpected_changes"], [])
-        self.assertIn("placements[*].rotation.y", proof["observed_changed_field_families"])
-        self.assertNotIn("placements[*].position.x", proof["observed_changed_field_families"])
+    def test_rotation_pair_passes_rotation_only_allow_rule(self):
+        a = self.fixture("yaw-000", 0.0)
+        b = self.fixture("yaw-090", 90.0)
+        result = self.diff.compare(a, b, ["model.placements[*].rotation.y"])
+        self.assertTrue(result["allowed_check_pass"])
+        self.assertEqual(result["unexpected_substantive_changes"], [])
+        self.assertEqual(result["substantive_changed_field_families"], ["model.placements[*].rotation.y"])
+        self.assertIn("case_id", result["evidence_label_changed_fields"])
 
-    def test_unexpected_position_change_is_rejected_by_rotation_rule(self):
-        base = self.base_fixture()
-        label, variant, allowed = next(item for item in self.fx.rotation_variants(base) if item[0] == "R090")
-        variant["placements"][0]["position"]["x"] = -2.75
-        proof = self.fx.diff_proof(base, variant, allowed, "E01", label)
-        self.assertFalse(proof["valid_one_variable_family"])
-        self.assertIn("placements[0].position.x", proof["unexpected_changes"])
+    def test_rotation_rule_rejects_hidden_x_change(self):
+        a = self.fixture("yaw-000", 0.0)
+        b = self.fixture("yaw-090", 90.0, x=-2.5)
+        result = self.diff.compare(a, b, ["model.placements[*].rotation.y"])
+        self.assertFalse(result["allowed_check_pass"])
+        self.assertIn("model.placements[0].position.x", result["unexpected_substantive_changes"])
 
-    def test_e09_reverse_order_preserves_same_placement_records_as_a_multiset(self):
-        base = self.base_fixture()
-        variants = {label: fixture for label, fixture, _ in self.fx.e09_variants(base, 90.0, 0.35, 0.2)}
-        a = variants["A"]
-        d = variants["D"]
-
-        def identity_without_sequence(item):
-            item = json.loads(json.dumps(item))
-            item.pop("sequence", None)
-            return json.dumps(item, sort_keys=True)
-
-        self.assertEqual(
-            sorted(identity_without_sequence(x) for x in a["placements"]),
-            sorted(identity_without_sequence(x) for x in d["placements"]),
-        )
-        self.assertNotEqual(
-            [x["ingredient_id"] for x in a["placements"]],
-            [x["ingredient_id"] for x in d["placements"]],
-        )
+    def test_shared_schema_allows_empty_e00_placement_array(self):
+        fixture = self.fixture("repeat-01", 0.0)
+        fixture["experiment_id"] = "E00"
+        fixture["model"]["name"] = "JPEG-E00-IDENTICAL"
+        fixture["model"]["placements"] = []
+        self.diff.validate_fixture(fixture)
 
 
 class StaticSourceTracerTests(unittest.TestCase):
