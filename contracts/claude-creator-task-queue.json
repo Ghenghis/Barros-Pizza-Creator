@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.1",
+  "schema_version": "1.2",
   "contract_id": "claude-pc3-pizza-creator-next-tasks",
   "owner": "Claude",
   "workstream": "PC3 Pizza Creator",
@@ -38,14 +38,34 @@
       "roadmap":"docs/NATIVE_PIZZA_JPEG_REVERSE_ENGINEERING_ROADMAP.md"
     },
     {
+      "id":"CLD-JPEG-FIXTURE-EXECUTOR",
+      "title":"Implement research-only exact controlled stimulus executor",
+      "state":"not_run",
+      "depends_on":["CLD-102"],
+      "does_not_block_core_queue":true,
+      "shared_contract":"contracts/creator-controlled-stimulus.schema.json",
+      "studio_generator":"scripts/generate_creator_controlled_stimuli.py in Ghenghis/PC3_Barros_Runtime_Proof_Studio",
+      "requirements":[
+        "Accept only creator-0.11.272 fixture documents that validate against the shared schema.",
+        "Build/bind PizzaModel directly from the explicit fixture; do not run the Barro's placement generator or invent transforms.",
+        "Resolve each exact ingredient ID and size through IDatabaseService and native dough positions through GetPizzaShape(shape).DoughPositions.",
+        "Use IPizzaCreatorService.LoadPizzaFromModel for the exact fixture model.",
+        "When requested, invoke SaveCurrentPizzaToRecipes through the existing native service; do not encode or rewrite the JPEG in the research executor.",
+        "When requested, reload through the native recipe-book route, require exact ModelSignature agreement, then invoke the same native save path again.",
+        "Emit retained model signature, experiment_id, case_id, runtime profile, operation timestamps and native success/failure events; never promote JPEG research gates by itself.",
+        "Keep Studio/Workbench implementation read-only and outside this change."
+      ]
+    },
+    {
       "id":"CLD-JPEG-LIVE",
       "title":"Run controlled native JPEG placement/orientation/render experiments",
       "state":"not_run",
-      "depends_on":["CLD-302","CLD-501"],
+      "depends_on":["CLD-302","CLD-501","CLD-JPEG-FIXTURE-EXECUTOR"],
       "does_not_block_core_queue":true,
       "contract":"contracts/jpeg-reverse-engineering.acceptance.json",
       "targets":["JRE-003","JRE-004","JRE-005","JRE-006","JRE-007","JRE-008","JRE-009","JRE-010","JRE-011","JRE-012"],
-      "roadmap":"docs/NATIVE_PIZZA_JPEG_REVERSE_ENGINEERING_ROADMAP.md"
+      "roadmap":"docs/NATIVE_PIZZA_JPEG_REVERSE_ENGINEERING_ROADMAP.md",
+      "studio_observer":"CAPTURE_CREATOR_CONTROLLED_JPEG_EXPERIMENT.bat in Ghenghis/PC3_Barros_Runtime_Proof_Studio"
     },
     {
       "id":"CLD-JPEG-FINAL",
@@ -66,6 +86,7 @@
     "four F8 screenshots and comparison reports",
     "Preview/Restore/Apply/Save/Reload evidence",
     "Chef Voice evidence",
+    "controlled stimulus executor endpoint/command and exact shared schema version",
     "native JPEG reverse-engineering status and final algorithm evidence when available",
     "shared schema/API delta if any"
   ]
