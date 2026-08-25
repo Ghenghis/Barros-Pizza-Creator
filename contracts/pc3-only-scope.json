@@ -1,28 +1,23 @@
 {
-  "schema_version": "1.1",
+  "schema_version": "1.2",
   "contract_id": "barros-pc3-only-scope",
   "title": "Pizza Connection 3 / Barro's Pizza exclusive project scope",
   "status": "locked",
   "scope_label_required": true,
+  "repository_assignment": {
+    "repository": "Ghenghis/Barros-Pizza-Creator",
+    "owner": "Claude",
+    "workstream": "PC3 Pizza Creator",
+    "primary_runtime_profile": "creator-0.11.272",
+    "primary_product_root": "S:\\Unity_Games\\PC3 - Pizza Creator",
+    "isolated_workspace": "S:\\Unity_Games\\PC3 - Pizza Creator\\_agent-workspaces\\claude-pc3-creator"
+  },
   "allowed": {
-    "games": [
-      "Pizza Connection 3",
-      "Pizza Connection 3 - Pizza Creator"
-    ],
+    "games": ["Pizza Connection 3", "Pizza Connection 3 - Pizza Creator"],
     "branding": "Pizza Connection 3 / Barro's Pizza",
-    "runtime_profiles": [
-      "studio-1.11.403",
-      "creator-0.11.272"
-    ],
-    "repositories": [
-      "Ghenghis/Barros-Pizza-Creator",
-      "Ghenghis/barros-workbench",
-      "Ghenghis/PC3_Barros_Runtime_Proof_Studio"
-    ],
-    "product_roots": [
-      "S:\\Unity_Games\\PC3",
-      "S:\\Unity_Games\\PC3 - Pizza Creator"
-    ],
+    "runtime_profiles": ["studio-1.11.403", "creator-0.11.272"],
+    "repositories": ["Ghenghis/Barros-Pizza-Creator", "Ghenghis/barros-workbench", "Ghenghis/PC3_Barros_Runtime_Proof_Studio"],
+    "product_roots": ["S:\\Unity_Games\\PC3", "S:\\Unity_Games\\PC3 - Pizza Creator"],
     "isolated_agent_workspaces": [
       "S:\\Unity_Games\\PC3\\_agent-workspaces\\chatgpt-pc3-main",
       "S:\\Unity_Games\\PC3\\_agent-workspaces\\chatgpt-pc3-workbench",
@@ -30,11 +25,7 @@
     ]
   },
   "prohibited": {
-    "games": [
-      "Pizza Connection 2",
-      "Fast Food Tycoon 2",
-      "Pizza Tycoon 2"
-    ],
+    "games": ["Pizza Connection 2", "Fast Food Tycoon 2", "Pizza Tycoon 2"],
     "rule": "Do not inspect, edit, generate for, reverse engineer, migrate, test, package, document as active work, or continue tasks for PC2/Fast Food Tycoon 2 under this program. Do not reuse PC2 assets, formats, catalogs, counts, tools, plans, contracts, evidence, or assumptions as PC3 truth."
   },
   "workspace_policy": {
@@ -46,7 +37,7 @@
     "required_root_marker": "00_READ_FIRST_PC3_ONLY.md"
   },
   "documentation_policy": {
-    "active_pc3_docs": "must state Scope: PC3 ONLY or live beneath a repository with the root PC3-only marker",
+    "active_pc3_docs": "must state Scope: PC3 ONLY or inherit PC3-only scope from this repository root marker",
     "retained_pc2_archive_docs": "must state Scope: PC2 ONLY and must not live in an active PC3 repository",
     "unlabeled_legacy_docs": "non_authoritative_until_classified"
   },
