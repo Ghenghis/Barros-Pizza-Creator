@@ -3,7 +3,10 @@
 **Owner:** Claude — PC3 Pizza Creator native executor/source-side research  
 **Runtime:** `creator-0.11.272`  
 **Independent stimulus producer/observer:** ChatGPT-owned Runtime Proof Studio  
+**Certified Studio research-control baseline:** `f822de627b3391c8639b74a8b4b72043e101b678`  
 **Status:** research architecture ready; stock/native JPEG algorithm remains **PARTIALLY CHARACTERIZED** until retained runtime evidence closes the JRE contract.
+
+The Studio baseline above is a known-good interoperability reference, not a permanent pin. Before a live campaign, verify current Studio `main` is clean/green and still exposes the same shared stimulus contract rather than resetting Studio to an old SHA.
 
 ## 1. Do not rediscover the architecture
 
@@ -31,13 +34,15 @@ contracts/rc1.acceptance.json
 
 ## 2. One controlled-experiment authority
 
-Do **not** create a Creator-side E00–E10 generator.
+Do **not** create a Creator-side E00–E10 generator, observer, campaign ledger, or replacement JPEG writer.
 
 Shared schema:
 
 ```text
 contracts/creator-controlled-stimulus.schema.json
 ```
+
+Creator and Studio copies must remain semantically identical.
 
 Studio canonical generator:
 
@@ -51,9 +56,118 @@ Studio canonical observer:
 Ghenghis/PC3_Barros_Runtime_Proof_Studio/CAPTURE_CREATOR_CANONICAL_STIMULUS.bat
 ```
 
-The Studio generator produces 60 controlled E00–E10 cases with constant model names inside each sweep so model name cannot become a hidden native-save/JPEG confound.
+The Studio generator produces 60 controlled E00–E10 cases with constant model names inside one-variable sweeps so model name cannot become a hidden native-save/JPEG confound.
 
-## 3. Claude's unique implementation task
+## 3. Use Studio's certified campaign control plane — do not manually assemble E00–E10
+
+Studio now owns the complete resumable campaign shell. Claude consumes it read-only while owning only the Creator native executor.
+
+Primary Studio entry point:
+
+```text
+Ghenghis/PC3_Barros_Runtime_Proof_Studio/CREATOR_JPEG_RESEARCH_CONTROL_PANEL.bat
+```
+
+The control panel exposes:
+
+```text
+GENERATE_CREATOR_CANONICAL_STIMULI.bat
+RUN_NEXT_CREATOR_JPEG_CASE.bat
+CAPTURE_CREATOR_CANONICAL_STIMULUS.bat
+CREATOR_JPEG_CAMPAIGN_STATUS.bat
+CREATOR_JPEG_JRE_READINESS.bat
+CROSS_VALIDATE_CREATOR_JPEG_FINGERPRINT.bat
+INSTALL_CREATOR_JPEG_RESEARCH_TOOLS.bat
+CAPTURE_CREATOR_JPEG_FORENSICS.bat
+```
+
+### Canonical corpus identity
+
+`GENERATE_CREATOR_CANONICAL_STIMULI.bat` uses Studio's one canonical generator, then seals the emitted corpus with:
+
+```text
+per-case exact stimulus SHA-256
+shared schema SHA-256
+deterministic whole-corpus SHA-256
+```
+
+Default PC3 evidence location:
+
+```text
+S:\Unity_Games\PC3\_ecosystem-evidence\creator-jpeg-stimuli\canonical-e00-e10
+```
+
+The seal proves stimulus bytes only. It is not native runtime proof.
+
+### Resume / next case
+
+Use:
+
+```text
+RUN_NEXT_CREATOR_JPEG_CASE.bat
+```
+
+rather than manually choosing the next case. Studio:
+
+1. reads the current sealed campaign ledger;
+2. selects the next case needing attention;
+3. verifies that exact stimulus file still matches its sealed SHA-256;
+4. retains BEFORE UserData;
+5. asks Claude's Creator executor to apply that exact stimulus and requested native operation;
+6. retains AFTER UserData/native JPEG deltas;
+7. performs Studio analysis plus independent Creator-parser cross-check;
+8. refreshes campaign status even when the case remains unresolved.
+
+### Campaign status
+
+Use:
+
+```text
+CREATOR_JPEG_CAMPAIGN_STATUS.bat
+```
+
+Case states:
+
+```text
+not_run
+observed
+cross_validated
+unresolved
+mismatch
+```
+
+Only evidence matching the exact current:
+
+```text
+experiment_id
+case_id
+creator-0.11.272 profile
+stimulus SHA-256
+```
+
+can satisfy the current case. Stale corpus revisions remain visible but never count as current completion.
+
+### JRE controlled-input readiness
+
+Use:
+
+```text
+CREATOR_JPEG_JRE_READINESS.bat
+```
+
+This shows which JRE questions now have all mapped E00–E10 controlled-output inputs available. It **never edits or promotes** the Claude-owned JRE acceptance contract. Source/runtime/conclusion evidence remains separately required.
+
+Studio MCP v1.2 also exposes read-only agent surfaces:
+
+```text
+pc3_creator_jpeg_campaign_status
+pc3_creator_jpeg_next_case
+pc3_creator_jpeg_jre_readiness
+```
+
+These tools select/report only. They do not launch Creator, mutate the campaign, or promote a JRE gate.
+
+## 4. Claude's unique implementation task
 
 Implement the **exact-model stimulus executor** in Creator.
 
@@ -80,6 +194,7 @@ It must **not**:
 - run the Barro's golden-angle placement generator for controlled stimuli;
 - encode/create/patch the JPEG;
 - create a competing evidence root;
+- create a competing campaign/status ledger;
 - edit Studio/Workbench implementation.
 
 Implementation spec:
@@ -98,7 +213,7 @@ plugin-src/Models.cs
 plugin-src/EvidenceRecorder.cs
 ```
 
-## 4. Static source research Claude can do before live experiments
+## 5. Static source research Claude can do before live experiments
 
 Run:
 
@@ -137,9 +252,9 @@ save/event publishing
 
 Use ILSpy to verify lexical/call relationships; use dnSpyEx for actual live call stacks/arguments. Use RenderDoc only when render target/draw/depth/camera state remains unresolved.
 
-## 5. One-variable input proof
+## 6. One-variable input proof
 
-Before interpreting an A/B pair, run:
+Before interpreting an A/B pair, use:
 
 ```text
 scripts/compare_controlled_stimuli.py
@@ -156,9 +271,11 @@ E04 allow model.placements[*].position.y
 
 `case_id` and `notes` are evidence labels, not substantive model changes.
 
-If unexpected substantive fields change, do not run/adjudicate the pair as a one-variable experiment.
+If unexpected substantive fields change, do not adjudicate the pair as a one-variable experiment.
 
-## 6. Native JPEG analysis layers
+Studio's canonical generator is also regression-tested for constant model names within one-variable sweeps.
+
+## 7. Native JPEG analysis layers
 
 ### Primary independent observation — Studio
 
@@ -170,13 +287,15 @@ experiment_id / case_id
 exact Creator assembly identity
 before UserData tree
 stock native operation
-post-operation UserData tree
+after UserData tree
 changed/created JPEGs
 codec fingerprint
 pixel differential
 DCT differential
 single-piece centroid/orientation measurement where applicable
 ```
+
+The canonical wrapper retains the base observation first, then independently cross-validates each observed native JPEG using both Studio and Creator parsers.
 
 ### Creator independent cross-check
 
@@ -189,21 +308,23 @@ scripts/fit_jpeg_camera_mapping.py
 scripts/fit_jpeg_orientation_transfer.py
 ```
 
-Studio can cross-validate its parser against Creator's parser with:
+Studio automatic/standalone cross-validation:
 
 ```text
 Ghenghis/PC3_Barros_Runtime_Proof_Studio/CROSS_VALIDATE_CREATOR_JPEG_FINGERPRINT.bat
 ```
 
-If the two independent parsers disagree on file hash, SOF/component sampling, DQT, DHT, restart interval, metadata fingerprints, or IJG quality-family candidates, keep the disputed forensic fact unresolved.
+If independent parsers disagree on file hash, SOF/component sampling, DQT, DHT, restart interval, metadata fingerprints, or IJG quality-family candidates, keep the disputed forensic fact unresolved.
 
-## 7. Mathematical tests
+Parser agreement proves only common JPEG structural observations. It does not prove the native Unity writer/camera/save call chain.
+
+## 8. Mathematical tests
 
 ### Camera/framing
 
 Canonical E02/E03 produce known X/Z stimuli.
 
-Collect measured piece centroids and fit:
+Studio's primary pixel measurement uses noise-aware component isolation and measured centroid/bounds/PCA. Fit:
 
 ```text
 affine mapping
@@ -211,23 +332,29 @@ vs
 projective homography
 ```
 
-with:
+Creator-side independent fitter:
 
 ```text
 scripts/fit_jpeg_camera_mapping.py
 ```
 
-Held-out residuals provide inference about whether the capture behaves approximately affine/orthographic-like or requires projective mapping. Source/runtime evidence still decides the actual Unity Camera path.
+Held-out residuals provide inference about whether capture behaves approximately affine/orthographic-like or requires projective mapping. Source/runtime evidence still decides the actual Unity Camera path.
 
 ### Rotation
 
 Canonical E01 holds the model constant except Y yaw.
 
-Use Studio's automatic component/PCA measurement as the primary observation. Creator's `fit_jpeg_orientation_transfer.py` can independently fit native yaw -> image axial orientation.
+Use Studio's automatic component/PCA measurement as the primary observation. Creator's:
+
+```text
+scripts/fit_jpeg_orientation_transfer.py
+```
+
+can independently fit native yaw -> image axial orientation.
 
 Use a visibly asymmetric topping; rotationally symmetric toppings cannot prove yaw transfer.
 
-## 8. JPEG encoder forensics
+## 9. JPEG encoder forensics
 
 Read:
 
@@ -248,7 +375,7 @@ file hash
 
 Do not call the encoder `libjpeg`, `Unity EncodeToJPG`, or anything else from DQT similarity alone.
 
-## 9. Online/paper-backed enhanced placement research
+## 10. Online/paper-backed enhanced placement research
 
 Read:
 
@@ -289,25 +416,28 @@ Key literature families:
 
 Do not replace stock behavior with this enhanced algorithm until stock behavior is characterized and `NATIVE_MATCH` remains available.
 
-## 10. Fastest research order
+## 11. Fastest research order
 
 ```text
 A. finish Creator exact-model stimulus executor
 B. static save->render->JPEG source trace in parallel
-C. E00 repeated identical native saves
-D. E01 rotation
-E. E02/E03 camera mapping
-F. E04/E05 depth/order
-G. E07 size footprint
-H. E08 dough shape/framing
-I. E09 A/B/C/D user experiment
-J. E10 native save/reload/re-save determinism
-K. confirm static candidates with dnSpyEx/RenderDoc
-L. fill NATIVE_PIZZA_JPEG_ALGORITHM.md
-M. decide native reuse vs controlled capture vs optional enhanced placement
+C. Studio generate + seal canonical E00-E10 corpus
+D. use RUN_NEXT_CREATOR_JPEG_CASE.bat repeatedly; do not hand-pick around unresolved cases silently
+E. E00 repeated identical native saves
+F. E01 rotation
+G. E02/E03 camera mapping
+H. E04/E05 depth/order
+I. E07 size footprint
+J. E08 dough shape/framing
+K. E09 A/B/C/D controlled differential
+L. E10 native save/reload/re-save determinism
+M. use campaign status + JRE input-readiness boards
+N. confirm static candidates with dnSpyEx/RenderDoc
+O. fill NATIVE_PIZZA_JPEG_ALGORITHM.md
+P. decide native reuse vs controlled capture vs optional enhanced placement
 ```
 
-## 11. Completion rule
+## 12. Completion rule
 
 Do not call the native image/JPEG algorithm complete until every required gate in:
 
@@ -316,3 +446,5 @@ contracts/jpeg-reverse-engineering.acceptance.json
 ```
 
 is supported by retained evidence and `docs/NATIVE_PIZZA_JPEG_ALGORITHM.md` no longer has unresolved required `UNKNOWN` components.
+
+A Studio campaign state of `cross_validated` or even `60/60` means the controlled **observation layer** is complete. It does not replace required source/runtime proof or automatically set a JRE gate to PASS.
