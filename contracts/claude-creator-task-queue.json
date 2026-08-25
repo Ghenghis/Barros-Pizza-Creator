@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.5",
+  "schema_version": "1.6",
   "contract_id": "claude-pc3-pizza-creator-next-tasks",
   "owner": "Claude",
   "workstream": "PC3 Pizza Creator",
@@ -7,6 +7,7 @@
   "human_handoff": "CLAUDE_NEXT_TASKS_PC3_CREATOR.md",
   "truth_contract": "contracts/rc1.acceptance.json",
   "jpeg_research_start_here": "CLAUDE_JPEG_RESEARCH_START_HERE.md",
+  "jpeg_studio_interop_v12": "CLAUDE_STUDIO_JPEG_INTEROP_V12.md",
   "studio_jpeg_research_interop": {
     "owner": "ChatGPT / Runtime Proof Studio",
     "repository": "Ghenghis/PC3_Barros_Runtime_Proof_Studio",
@@ -15,22 +16,32 @@
     "shared_stimulus_schema": "contracts/creator-controlled-stimulus.schema.json",
     "shared_execution_evidence_schema": "contracts/creator-controlled-execution-evidence.schema.json",
     "control_panel": "CREATOR_JPEG_RESEARCH_CONTROL_PANEL.bat",
+    "recommended_next_action": "RUN_CREATOR_JPEG_NEXT_ACTION.bat",
     "generate_and_seal_corpus": "GENERATE_CREATOR_CANONICAL_STIMULI.bat",
     "run_next_case": "RUN_NEXT_CREATOR_JPEG_CASE.bat",
     "capture_selected_case": "CAPTURE_CREATOR_CANONICAL_STIMULUS.bat",
     "campaign_status": "CREATOR_JPEG_CAMPAIGN_STATUS.bat",
-    "jre_input_readiness": "CREATOR_JPEG_JRE_READINESS.bat",
+    "family_analysis": "ANALYZE_CREATOR_JPEG_CAMPAIGN_FAMILIES.bat",
+    "e10_two_write_roundtrip": "CAPTURE_CREATOR_E10_ROUNDTRIP.bat",
+    "jre_readiness_v12": "CREATOR_JPEG_JRE_READINESS.bat",
     "independent_parser_cross_check": "CROSS_VALIDATE_CREATOR_JPEG_FINGERPRINT.bat",
     "mcp_read_only_tools": [
       "pc3_creator_jpeg_campaign_status",
       "pc3_creator_jpeg_next_case",
-      "pc3_creator_jpeg_jre_readiness"
+      "pc3_creator_jpeg_family_analysis",
+      "pc3_creator_jpeg_jre_readiness",
+      "pc3_creator_jpeg_next_action"
     ],
     "canonical_case_count": 60,
     "experiments": ["E00","E01","E02","E03","E04","E05","E06","E07","E08","E09","E10"],
     "strongest_case_state": "fully_bound",
     "fully_bound_definition": "Exact sealed stimulus + Studio-independent verification of Claude's execution receipt/model/actions on the exact Creator assembly + stock output observation + independent Studio/Creator JPEG parser agreement.",
-    "ownership_rule": "Claude consumes Studio-generated stimuli/evidence/control status read-only and owns only the Creator exact-model/native-operation executor. Claude does not edit Studio/Workbench implementation."
+    "family_measurement_rule": "Studio family analysis consumes fully_bound current-corpus cases only. measurement_ready is quantitative controlled evidence, not JRE PASS.",
+    "one_piece_reference_rule": "E01/E02/E03/E04/E07 geometry is remeasured by Studio against fully-bound native E00 dough-only output, with a second E00 repeat as native save/render noise reference when available.",
+    "e10_rule": "E10 action/model round-trip binding alone is insufficient for JPEG determinism. Studio must separately retain and bind first native Save and post-reload re-Save JPEG write events, independently cross-validate both, and complete their differential before E10 family measurement_ready is true.",
+    "jre_readiness_rule": "Studio v1.2 reports campaign inputs fully bound, mapped family measurements ready, and source/runtime proof still required as separate layers; only Claude may promote the JRE contract.",
+    "next_action_rule": "Studio next-action routing chooses work only. It may read the Creator JRE contract when locally available but never writes it or auto-executes Claude-owned JRE state changes.",
+    "ownership_rule": "Claude consumes Studio-generated stimuli/evidence/control status read-only and owns only the Creator exact-model/native-operation executor plus Creator source/runtime/JRE adjudication. Claude does not edit Studio/Workbench implementation."
   },
   "rules": {
     "pc2_forbidden": true,
@@ -38,7 +49,8 @@
     "do_not_duplicate_chatgpt_pc3_main": true,
     "do_not_expose_credentials": true,
     "do_not_commit_secret_paths_or_values": true,
-    "do_not_create_competing_jpeg_campaign_generator_observer_or_ledger": true
+    "do_not_create_competing_jpeg_campaign_generator_observer_or_ledger": true,
+    "do_not_create_competing_studio_family_analysis_or_next_action_router": true
   },
   "tasks": [
     {"id":"CLD-000","priority":0,"title":"Finish Slice-1 housekeeping","state":"in_progress","deliverable":"green Python/.NET tests plus evidence/claude/slice1-housekeeping.json"},
@@ -62,6 +74,7 @@
       "does_not_block_core_queue":true,
       "contract":"contracts/jpeg-reverse-engineering.acceptance.json",
       "start_here":"CLAUDE_JPEG_RESEARCH_START_HERE.md",
+      "studio_interop":"CLAUDE_STUDIO_JPEG_INTEROP_V12.md",
       "targets":["JRE-001","JRE-002"],
       "roadmap":"docs/NATIVE_PIZZA_JPEG_REVERSE_ENGINEERING_ROADMAP.md"
     },
@@ -72,6 +85,7 @@
       "depends_on":["CLD-102"],
       "does_not_block_core_queue":true,
       "start_here":"CLAUDE_JPEG_RESEARCH_START_HERE.md",
+      "studio_interop":"CLAUDE_STUDIO_JPEG_INTEROP_V12.md",
       "implementation_spec":"docs/NATIVE_JPEG_EXPERIMENT_HARNESS_SPEC.md",
       "shared_stimulus_contract":"contracts/creator-controlled-stimulus.schema.json",
       "shared_execution_evidence_contract":"contracts/creator-controlled-execution-evidence.schema.json",
@@ -85,7 +99,7 @@
         "When requested, invoke SaveCurrentPizzaToRecipes through the existing native service; do not encode or rewrite the JPEG in the research executor.",
         "When requested, reload through the native recipe-book route, require exact ModelSignature agreement, then invoke the same native save path again.",
         "For every executed case emit one JSON receipt conforming exactly to contracts/creator-controlled-execution-evidence.schema.json.",
-        "The receipt must include exact stimulus SHA, Creator repo SHA, exact Assembly-CSharp SHA, observed model/order/transforms, requested/attempted/success action receipts, and exact reloaded_model when reload verification is requested.",
+        "The receipt must include exact stimulus SHA, Creator repo SHA, exact Assembly-CSharp SHA, observed model/order/transforms, requested/attempted/success action receipts with timestamps, and exact reloaded_model when reload verification is requested.",
         "Return/provide the receipt path to Studio's canonical observer; a missing or mismatching receipt must keep the case below fully_bound.",
         "Keep Studio/Workbench implementation read-only and outside this change."
       ]
@@ -100,23 +114,29 @@
       "targets":["JRE-003","JRE-004","JRE-005","JRE-006","JRE-007","JRE-008","JRE-009","JRE-010","JRE-011","JRE-012"],
       "roadmap":"docs/NATIVE_PIZZA_JPEG_REVERSE_ENGINEERING_ROADMAP.md",
       "studio_control_panel":"CREATOR_JPEG_RESEARCH_CONTROL_PANEL.bat in Ghenghis/PC3_Barros_Runtime_Proof_Studio",
+      "studio_recommended_next_action":"RUN_CREATOR_JPEG_NEXT_ACTION.bat in Ghenghis/PC3_Barros_Runtime_Proof_Studio",
       "studio_generate_and_seal":"GENERATE_CREATOR_CANONICAL_STIMULI.bat in Ghenghis/PC3_Barros_Runtime_Proof_Studio",
       "studio_run_next_case":"RUN_NEXT_CREATOR_JPEG_CASE.bat in Ghenghis/PC3_Barros_Runtime_Proof_Studio",
       "studio_observer":"CAPTURE_CREATOR_CANONICAL_STIMULUS.bat in Ghenghis/PC3_Barros_Runtime_Proof_Studio",
       "studio_campaign_status":"CREATOR_JPEG_CAMPAIGN_STATUS.bat in Ghenghis/PC3_Barros_Runtime_Proof_Studio",
-      "studio_jre_input_readiness":"CREATOR_JPEG_JRE_READINESS.bat in Ghenghis/PC3_Barros_Runtime_Proof_Studio",
+      "studio_family_analysis":"ANALYZE_CREATOR_JPEG_CAMPAIGN_FAMILIES.bat in Ghenghis/PC3_Barros_Runtime_Proof_Studio",
+      "studio_e10_two_write":"CAPTURE_CREATOR_E10_ROUNDTRIP.bat in Ghenghis/PC3_Barros_Runtime_Proof_Studio",
+      "studio_jre_readiness_v12":"CREATOR_JPEG_JRE_READINESS.bat in Ghenghis/PC3_Barros_Runtime_Proof_Studio",
       "studio_creator_parser_cross_check":"CROSS_VALIDATE_CREATOR_JPEG_FINGERPRINT.bat in Ghenghis/PC3_Barros_Runtime_Proof_Studio",
-      "execution_rule":"Use the sealed Studio corpus and run-next-case/status workflow. Do not create/hand-pick a competing case corpus or silently skip unresolved current cases. Supply the exact execution-evidence receipt for every run so Studio can independently bind stimulus -> Creator model/actions -> stock output.",
-      "truth_rule":"cross_validated means stock-output/parser agreement without proven executor binding. fully_bound additionally requires Studio verification of the exact Creator execution receipt/model/actions. JRE controlled-input readiness requires fully_bound cases and still does not replace source/runtime/analysis proof."
+      "studio_mcp_next_action":"pc3_creator_jpeg_next_action",
+      "execution_rule":"Use Studio's next-action router/control panel as the default orchestration path. Do not create/hand-pick a competing case corpus, family analyzer, ledger, or next-action engine. Supply the exact execution-evidence receipt for every run so Studio can independently bind stimulus -> Creator model/actions -> stock output.",
+      "e10_execution_rule":"For E10, retain accurate native first-save/reload/re-save action timestamps in the execution receipt. Studio's specialized watcher must independently retain and bind the two native JPEG write events before JPEG round-trip determinism is considered measurement-ready.",
+      "truth_rule":"cross_validated means stock-output/parser agreement without proven executor binding. fully_bound additionally requires Studio verification of the exact Creator execution receipt/model/actions. measurement_ready is a Studio quantitative family result over fully_bound evidence and still does not replace source/runtime proof or promote a JRE gate."
     },
     {
       "id":"CLD-JPEG-FINAL",
       "title":"Document native JPEG algorithm and reuse/improvement decision",
       "state":"not_run",
-      "depends_on":["CLD-JPEG-LIVE"],
+      "depends_on":["CLD-JPEG-STATIC","CLD-JPEG-LIVE"],
       "does_not_block_core_queue":true,
       "contract":"contracts/jpeg-reverse-engineering.acceptance.json",
       "targets":["JRE-014","JRE-015"],
+      "precondition":"Do not begin JRE-014 until JRE-001 through JRE-013 are PASS in the Creator-owned contract; do not begin JRE-015 closeout until JRE-014 is PASS.",
       "deliverable":"docs/NATIVE_PIZZA_JPEG_ALGORITHM.md"
     }
   ],
@@ -131,6 +151,8 @@
     "controlled stimulus executor endpoint/command and exact shared schema version",
     "per-case creator-controlled-execution-evidence receipt path/schema version",
     "native JPEG reverse-engineering status and final algorithm evidence when available",
+    "Studio family-analysis/JRE-readiness evidence references used for Claude adjudication",
+    "E10 first-save/re-save two-write evidence reference when available",
     "shared schema/API delta if any"
   ]
 }
