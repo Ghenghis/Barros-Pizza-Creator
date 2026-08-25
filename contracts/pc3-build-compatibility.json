@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.0",
+  "contract_id": "barros-pc3-build-compatibility-v1",
+  "display_name": "Pizza Connection 3 / Barro's Pizza",
+  "truth_policy": "Build profiles are not interchangeable. Asset concepts and generic image-processing logic may be shared, but assembly hashes, data-folder layouts, scene/object IDs, PathIDs, runtime bridges and proof evidence are build-specific unless independently re-verified.",
+  "profiles": {
+    "creator-0.11.272": {
+      "role": "Barro's Pizza Creator RC1 certified reverse-engineering/runtime target",
+      "product_version": "0.11.272",
+      "steam_app": 851330,
+      "unity_player": "2017.3.1p4",
+      "data_dir_name": "Pizza Connection 3 - Pizza Creator_Data",
+      "assembly_csharp": {
+        "size": 3189248,
+        "sha256": "ebf8698df7cb4af904c98c299994705ea529efbdf1e8ccb3e7ca8cb42a1cbc1c"
+      },
+      "assembly_csharp_firstpass": {
+        "size": 657920,
+        "sha256": "f9cbf0951fc4d4b0788c47bbe41a3820fa333d293175bbb7cb398eb4728fd284"
+      },
+      "pizza_creator_runtime": "certified_source_and_exact_assembly_compile; live runtime gates still required",
+      "studio_asset_tools": "allowed only after this build is separately scanned/indexed",
+      "source": "docs/REVERSE_ENGINEERING_EVIDENCE.md"
+    },
+    "studio-1.11.403": {
+      "role": "Runtime Proof Studio primary PC3 extraction/conversion target",
+      "product_version": "1.11.403",
+      "custom_version": "Final",
+      "unity_player": "2017.4.40f1",
+      "data_dir_name": "Pizza Connection 3_Data",
+      "assembly_csharp": {
+        "sha256": null,
+        "truth_state": "must be discovered/retained from the operator's verified build before assembly-specific reuse"
+      },
+      "pizza_creator_runtime": "not certified by the Creator 0.11.272 assembly evidence; do not install the RC1 Creator plugin unless separately ported and proven",
+      "studio_asset_tools": "primary verified Studio profile",
+      "source": "PC3_Barros_Runtime_Proof_Studio/config/pc3_build_1.11.403.json"
+    }
+  },
+  "routing_rules": [
+    "Creator proof/build/install must use creator-0.11.272 and the exact two assembly SHA-256 values.",
+    "Studio 1.11.403 PathIDs, scene mappings and runtime bridge evidence must not be copied to creator-0.11.272 without re-extraction/re-verification.",
+    "A PNG/JPEG handoff should record target.build_profile whenever the intended binary build is known.",
+    "If target.build_profile is absent, Studio may validate the image file contract but must treat runtime mapping as NOT_RUN until a build-specific target is selected.",
+    "User-facing branding may be shared across profiles; technical filenames/IDs remain build-native."
+  ]
+}
