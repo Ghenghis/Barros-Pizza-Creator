@@ -9,8 +9,12 @@
 > **Skip-ahead implementation packet:** `docs/CLAUDE_SKIP_AHEAD_RUNTIME_IMPLEMENTATION_PACKET.md`  
 > **Method/file implementation atlas:** `docs/CLAUDE_METHOD_FILE_IMPLEMENTATION_ATLAS.md`  
 > **Native JPEG reverse-engineering roadmap:** `docs/NATIVE_PIZZA_JPEG_REVERSE_ENGINEERING_ROADMAP.md`  
+> **Research-backed algorithms/JPEG guide:** `docs/RESEARCH_BACKED_PLACEMENT_AND_JPEG_GUIDE.md`  
 > **Current placement algorithm reference:** `docs/CURRENT_PIZZA_PLACEMENT_ALGORITHM_REFERENCE.md`  
 > **JPEG research truth contract:** `contracts/jpeg-reverse-engineering.acceptance.json`  
+> **Machine-readable JPEG experiments:** `contracts/jpeg-experiment-plan.json`  
+> **JPEG tooling setup:** `docs/JPEG_RE_TOOLING_SETUP.md` + `DOWNLOAD_JPEG_RESEARCH_TOOLS.bat`  
+> **Native JPEG pair analyzer:** `ANALYZE_NATIVE_JPEG_PAIR.bat` + `scripts/analyze_jpeg_experiment.py`  
 > **Machine-readable queue:** `contracts/claude-creator-task-queue.json`  
 > **Complete access/location map:** `CLAUDE_ACCESS_MAP_PC3_CREATOR.md`  
 > **Machine-readable access map:** `contracts/claude-access-map.json`  
@@ -37,15 +41,25 @@ Before editing, read `00_READ_FIRST_PC3_ONLY.md`, `PC3_ONLY_SCOPE.md`, `WORKSTRE
 
 Finish the active `_pizza-agent` Slice-1 housekeeping first, then execute the numbered Creator tasks in the current queue. Use the skip-ahead implementation packet and method/file atlas to avoid repeating settled architecture research. Do not ask for, inspect, enumerate, print, or commit credential values/credential filenames; use the existing secrets/runtime credential abstraction only.
 
-## New parallel research lane — native pizza JPEG/image generation
+## Parallel research lane — native pizza JPEG/image generation
 
-The user specifically requires the native pizza-image/JPEG generation algorithm to be reverse engineered rather than guessed.
+The native pizza-image/JPEG generation algorithm must be reverse engineered rather than guessed.
 
 Canonical research files:
 
 - `docs/NATIVE_PIZZA_JPEG_REVERSE_ENGINEERING_ROADMAP.md`
+- `docs/RESEARCH_BACKED_PLACEMENT_AND_JPEG_GUIDE.md`
 - `docs/CURRENT_PIZZA_PLACEMENT_ALGORITHM_REFERENCE.md`
+- `docs/JPEG_RE_TOOLING_SETUP.md`
 - `contracts/jpeg-reverse-engineering.acceptance.json`
+- `contracts/jpeg-experiment-plan.json`
+
+Executable lab entry points:
+
+- `DOWNLOAD_JPEG_RESEARCH_TOOLS.bat` — stages pinned official ILSpy/dnSpyEx/AssetRipper/libjpeg-turbo downloads with SHA-256 validation, builds an isolated image-analysis Python environment, and offers optional RenderDoc/ImageMagick installation.
+- `ANALYZE_NATIVE_JPEG_PAIR.bat` — GUI file-picker wrapper for A/B native JPEG comparisons.
+- `scripts/analyze_jpeg_experiment.py` — hashes files, parses SOF/DQT/DHT/APP/COM/restart/scan structure, and adds decoded pixel metrics/diff/SSIM when optional dependencies are present.
+- `tests/test_jpeg_experiment_analyzer.py` — standard-library regression coverage using embedded known JPEG samples.
 
 This lane is **parallel research**, not permission to abandon the core Creator runtime gates. Static work (`JRE-001`, `JRE-002`, and any source-resolvable portions of the render path) may run as soon as Slice-1 housekeeping is stable. Live JPEG experiments should reuse the exact Creator runtime/save/reload work already required by the main queue instead of creating a competing test harness.
 
@@ -63,9 +77,11 @@ The controlled experiment program must include:
 - Round/Square/Star/Triangle comparison;
 - native Save -> native reload -> exact model verification -> JPEG re-save comparison.
 
-For every important A/B pair, retain exact model signature plus JPEG SHA-256 and quantitative image metrics. The roadmap calls for RMSE, SSIM, PHASH and difference bounds rather than visual judgment alone.
+For every important A/B pair, retain exact model signature plus JPEG SHA-256 and quantitative image metrics. The roadmap calls for raw JPEG structure, RMSE/PSNR, SSIM, difference bounds and PHASH where available rather than visual judgment alone.
 
 The research target is to identify the actual native chain from save/model through camera/render target/draw order/crop/scale/colorspace/JPEG encoder. Classify every discovered component as `PROVEN_FROM_SOURCE`, `PROVEN_FROM_RUNTIME`, `INFERRED_AND_VALIDATED`, or `UNKNOWN`.
+
+The research-backed enhanced-placement candidate is intentionally separate from native matching. The literature-backed route combines a deterministic golden-angle initializer, variable/anisotropic Poisson separation, sample elimination to preserve exact piece count, bounded capacity/Lloyd-style density relaxation, ingredient-aware orientation, exact native transforms, and the native renderer. Do not switch the default to this enhanced algorithm until stock/native behavior is characterized and the user can choose native-match vs enhanced behavior.
 
 Do not improve the stock image algorithm until it is characterized. After characterization, prefer in this order:
 
