@@ -32,7 +32,78 @@ def _evidence_roots(app_root: Path) -> list[Path]:
     return roots
 
 
-def _load_results(path: Path, expected_contract_id: str) -> dict[str, Any]:
+def _contract_gate_requirements(app_root: Path, expected_contract_id: str) -> dict[str, bool]:
+    """Load the installed acceptance contract and return its exact gate manifest.
+
+    Retained results are only meaningful when they are bound to the currently
+    installed contract. Matching the contract ID alone is insufficient because a
+    hand-edited results file could otherwise omit required gates or change their
+    ``release_required`` flags and still look complete.
+    """
+    candidates = (
+        app_root / "contracts" / "rc1.acceptance.json",
+        app_root.parent / "contracts" / "rc1.acceptance.json",
+    )
+    path = next((candidate for candidate in candidates if candidate.is_file()), None)
+    if path is None:
+        checked = ", ".join(str(candidate) for candidate in candidates)
+        raise ProofStatusError(f"Acceptance contract not found; checked: {checked}")
+    try:
+        contract = json.loads(path.read_text(encoding="utf-8-sig"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ProofStatusError(f"Invalid acceptance contract: {path}: {exc}") from exc
+    if not isinstance(contract, dict):
+        raise ProofStatusError("Acceptance contract root must be a JSON object.")
+
+    contract_id = str(contract.get("contract_id", "")).strip()
+    if not contract_id:
+        raise ProofStatusError("Acceptance contract lacks contract_id.")
+    if expected_contract_id and contract_id != expected_contract_id:
+        raise ProofStatusError(
+            f"Acceptance contract mismatch: expected {expected_contract_id!r}, got {contract_id!r}."
+        )
+
+    layers = contract.get("layers")
+    if not isinstance(layers, list):
+        raise ProofStatusError("Acceptance contract layers must be a JSON array.")
+
+    requirements: dict[str, bool] = {}
+    for layer in layers:
+        if not isinstance(layer, dict):
+            raise ProofStatusError("Acceptance contract layers must contain JSON objects.")
+        gates = layer.get("gates")
+        if not isinstance(gates, list) or not all(isinstance(row, dict) for row in gates):
+            raise ProofStatusError("Acceptance contract gates must be a JSON array of objects.")
+        for gate in gates:
+            gate_id = str(gate.get("id", "")).strip()
+            if not gate_id:
+                raise ProofStatusError("Acceptance contract contains a gate without id.")
+            if gate_id in requirements:
+                raise ProofStatusError(f"Acceptance contract contains duplicate gate id {gate_id!r}.")
+            release_required = gate.get("release_required")
+            if not isinstance(release_required, bool):
+                raise ProofStatusError(
+                    f"Acceptance contract gate {gate_id} lacks an explicit release_required boolean."
+                )
+            requirements[gate_id] = release_required
+    if not requirements:
+        raise ProofStatusError("Acceptance contract contains no proof gates.")
+    return requirements
+
+
+def _proof_binding(expected_gates: dict[str, bool]) -> dict[str, Any]:
+    return {
+        "contract_validated": True,
+        "contract_gate_count": len(expected_gates),
+        "contract_release_required_gate_count": sum(1 for required in expected_gates.values() if required),
+    }
+
+
+def _load_results(
+    path: Path,
+    expected_contract_id: str,
+    expected_gates: dict[str, bool],
+) -> dict[str, Any]:
     try:
         payload = json.loads(path.read_text(encoding="utf-8-sig"))
     except (OSError, json.JSONDecodeError) as exc:
@@ -62,32 +133,61 @@ def _load_results(path: Path, expected_contract_id: str) -> dict[str, Any]:
     required: list[dict[str, Any]] = []
     missing_referenced_evidence: list[str] = []
     normalized: list[dict[str, Any]] = []
+    observed_gate_ids: set[str] = set()
     for row in results:
         gate_id = str(row.get("gate_id", "")).strip()
         state = str(row.get("state", "")).strip().lower()
         if not gate_id:
             raise ProofStatusError("Creator proof results contain a gate without gate_id.")
+        if gate_id in observed_gate_ids:
+            raise ProofStatusError(f"Creator proof results contain duplicate gate_id {gate_id!r}.")
+        observed_gate_ids.add(gate_id)
+        if gate_id not in expected_gates:
+            raise ProofStatusError(f"Creator proof results contain unknown contract gate {gate_id!r}.")
         if state not in TRUTH_STATES:
             raise ProofStatusError(f"Creator proof gate {gate_id} has invalid state: {state!r}.")
         counts[state] += 1
-        release_required = bool(row.get("release_required", True))
+
+        release_required = row.get("release_required")
+        if not isinstance(release_required, bool):
+            raise ProofStatusError(
+                f"Creator proof gate {gate_id} lacks an explicit release_required boolean."
+            )
+        if release_required is not expected_gates[gate_id]:
+            raise ProofStatusError(
+                f"Creator proof gate {gate_id} release_required does not match the installed contract."
+            )
+
         evidence = row.get("evidence")
         if evidence is None:
             evidence = []
         if not isinstance(evidence, list):
             raise ProofStatusError(f"Creator proof gate {gate_id} evidence must be an array.")
+        normalized_evidence: list[str] = []
         for evidence_path in evidence:
-            value = str(evidence_path).strip()
-            if value and not Path(value).is_file():
+            if not isinstance(evidence_path, str) or not evidence_path.strip():
+                raise ProofStatusError(
+                    f"Creator proof gate {gate_id} evidence entries must be non-empty strings."
+                )
+            value = evidence_path.strip()
+            normalized_evidence.append(value)
+            if not Path(value).is_file():
                 missing_referenced_evidence.append(value)
+
         item = dict(row)
         item["gate_id"] = gate_id
         item["state"] = state
         item["release_required"] = release_required
-        item["evidence"] = [str(value) for value in evidence]
+        item["evidence"] = normalized_evidence
         normalized.append(item)
         if release_required:
             required.append(item)
+
+    missing_contract_gates = sorted(set(expected_gates) - observed_gate_ids)
+    if missing_contract_gates:
+        raise ProofStatusError(
+            "Creator proof results are missing contract gates: " + ", ".join(missing_contract_gates)
+        )
 
     reported_counts = payload.get("counts")
     if isinstance(reported_counts, dict):
@@ -133,6 +233,7 @@ def _load_results(path: Path, expected_contract_id: str) -> dict[str, Any]:
         "package_root": payload.get("package_root", ""),
         "results_path": str(path.resolve()),
         "results_sha256": _sha256(path),
+        "proof_binding": _proof_binding(expected_gates),
         "counts": counts,
         "release_required_gate_count": len(required),
         "release_required_pass_count": sum(1 for row in required if row["state"] == "pass"),
@@ -150,11 +251,14 @@ def _load_results(path: Path, expected_contract_id: str) -> dict[str, Any]:
 def latest_proof_status(app_root: str | Path, expected_contract_id: str) -> dict[str, Any]:
     """Read the newest retained Creator ``results.json`` without inventing proof.
 
-    The newest file is selected first. If that file is malformed or contract-
-    mismatched, the function fails closed instead of silently falling back to an
-    older run that might look healthier.
+    The newest file is selected first. If that file is malformed, contract-
+    mismatched, or does not exactly match the installed contract gate manifest,
+    the function fails closed instead of silently falling back to an older run
+    that might look healthier.
     """
     root = Path(app_root)
+    expected_gates = _contract_gate_requirements(root, expected_contract_id)
+    binding = _proof_binding(expected_gates)
     candidates: list[Path] = []
     for evidence_root in _evidence_roots(root):
         if not evidence_root.is_dir():
@@ -165,6 +269,7 @@ def latest_proof_status(app_root: str | Path, expected_contract_id: str) -> dict
             "ok": True,
             "available": False,
             "contract_id": expected_contract_id,
+            "proof_binding": binding,
             "certification": {
                 "state": "not_run",
                 "runtime_certified": False,
@@ -174,4 +279,4 @@ def latest_proof_status(app_root: str | Path, expected_contract_id: str) -> dict
         }
 
     newest = max(candidates, key=lambda path: (path.stat().st_mtime_ns, str(path)))
-    return _load_results(newest, expected_contract_id)
+    return _load_results(newest, expected_contract_id, expected_gates)
