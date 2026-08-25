@@ -130,6 +130,7 @@ Default: `http://127.0.0.1:48173`.
 |---|---|---|
 | GET | `/health` | version/provider/parser status |
 | GET | `/history` | retained design history |
+| GET | `/proof/latest` | retained proof/certification envelope consumed by Workbench and Studio; absence stays `not_run`/unavailable rather than fabricated PASS |
 | POST | `/inspect-attachment` | validate visual bytes and return metadata |
 | POST | `/compose` / `/chat` | design one pizza |
 | POST | `/lab` | three alternatives |
@@ -156,14 +157,24 @@ Creator is one part of the larger Pizza Connection 3 / Barro's Pizza workflow:
 
 ```mermaid
 flowchart LR
-    W[Workbench v2.2\nimage creation + agents] --> C[Creator 1.1\nrecipe/game semantics]
-    W --> H[build-tagged PNG/JPEG handoff]
-    H --> S[Studio v1.1\nreverse engineering + proof]
-    C --> CP[Creator 0.11.272 evidence]
+    W[Workbench v2.3\nimage creation + agents + ecosystem audit] --> C[Creator 1.1\nrecipe/game semantics]
+    W --> H[build-tagged exact PNG/JPEG/WebP handoff]
+    H --> S[Studio v1.2\nreverse engineering + validation + proof]
+    C --> CP[Creator 0.11.272 retained proof]
     S --> SP[Studio 1.11.403 evidence]
+    A[Claude / Codex / Kilo / Devin / Dave's Tools] <--> W
+    A <--> S
 ```
 
 Workbench/Studio do not duplicate Creator's recipe solver or binary attachment parser. Creator does not duplicate Studio's PathID/extraction/runtime-proof system.
+
+The shared release line is tracked by:
+
+- `contracts/ecosystem.acceptance.json` — base three-project gates;
+- `contracts/ecosystem.image.acceptance.json` — PNG/JPEG/image-handoff gates;
+- `contracts/ecosystem.release.acceptance.json` — Creator 1.1 / Workbench 2.3 / Studio 1.2 release overlay.
+
+Both Workbench v2.3 and Studio v1.2 expose the same conceptual **ecosystem audit**. It reports readiness/attention and never substitutes for retained Creator All-stage runtime certification.
 
 ## Diagnostics, truth and removal
 
@@ -199,17 +210,34 @@ or verify an existing archive with `--verify-only`.
 Durable state:
 
 1. Git commit SHAs;
-2. `contracts/rc1.acceptance.json` for Creator 0.11.272;
-3. `contracts/ecosystem.acceptance.json` for all three projects;
-4. `contracts/pc3-build-compatibility.json` for build routing;
-5. `contracts/pc3-image-handoff.schema.json` for shared image handoff;
-6. Creator timestamped evidence runs;
-7. Workbench image ledger + Studio evidence for asset work.
+2. `docs/ECOSYSTEM_RECOVERY_CHECKPOINT_2026-08-25.md` — current three-project recovery map;
+3. `contracts/rc1.acceptance.json` for Creator 0.11.272;
+4. `contracts/ecosystem.acceptance.json` for all three projects;
+5. `contracts/ecosystem.image.acceptance.json` for image/JPEG/PNG handoff;
+6. `contracts/ecosystem.release.acceptance.json` for the current release line;
+7. `contracts/pc3-build-compatibility.json` for build routing;
+8. `contracts/pc3-image-handoff.schema.json` for shared image handoff;
+9. Creator timestamped evidence runs;
+10. Workbench image ledger + Studio evidence for asset work.
 
-After interruption, run the static/tests/doctor path first, verify the intended build profile, and continue only gates that lack retained PASS evidence.
+After interruption, read the recovery checkpoint, run static/tests/doctor first, verify the intended build profile, then continue only gates that lack retained PASS evidence.
+
+## Current proof boundary
+
+The code/CI/tooling integration is substantially ahead of the live proof ledger, but the ecosystem is **not truthfully 100% complete** until the named runtime gates are retained. Important remaining live evidence includes:
+
+- actual Creator BepInEx/fifth-tab render;
+- live preview/restore/apply and save/reload;
+- live microphone/STT;
+- four live Creator mode screenshots;
+- live Workbench v2.3 and Studio v1.2 screenshots/audit outputs;
+- at least one full image generation -> Studio validation -> runtime apply screenshot -> restore/commit chain;
+- GitLab mirror SHA parity verification.
 
 ## Documentation
 
+- `docs/ECOSYSTEM_RECOVERY_CHECKPOINT_2026-08-25.md`
+- `docs/PIZZA_CONNECTION_3_BARROS_PIZZA_ECOSYSTEM.md`
 - `docs/ECOSYSTEM_V2_ARCHITECTURE.md`
 - `docs/ENGINEERING_PLAYBOOK.md`
 - `docs/PROJECT_STATUS.md`
