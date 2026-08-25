@@ -13,10 +13,17 @@ namespace Barros.PizzaCreator.AI
         private IPizzaCreatorService pizzaCreator;
         private IDatabaseService database;
         private PizzaModel restorePoint;
+        private PizzaModel savedPoint;
         private AiRecipe lastRecipe;
         private PizzaModel lastCandidate;
+        private readonly EvidenceRecorder evidence;
 
         public bool Ready { get { return pizzaCreator != null && database != null; } }
+
+        public GameBridge(EvidenceRecorder recorder)
+        {
+            evidence = recorder;
+        }
 
         [Inject]
         private void Initialize(IPizzaCreatorService pizzaCreatorService, IDatabaseService databaseService)
@@ -103,6 +110,7 @@ namespace Barros.PizzaCreator.AI
             CaptureRestorePoint();
             if (recipe != lastRecipe || lastCandidate == null) Prepare(recipe);
             pizzaCreator.LoadPizzaFromModel(lastCandidate);
+            evidence.Record("action.preview.success", DescribeCandidate(lastCandidate));
         }
 
         public void Apply(AiRecipe recipe)
@@ -111,6 +119,7 @@ namespace Barros.PizzaCreator.AI
             if (recipe != lastRecipe || lastCandidate == null) Prepare(recipe);
             pizzaCreator.LoadPizzaFromModel(lastCandidate);
             restorePoint = null;
+            evidence.Record("action.apply.success", DescribeCandidate(lastCandidate));
         }
 
         public bool Restore()
@@ -118,13 +127,41 @@ namespace Barros.PizzaCreator.AI
             if (!Ready || restorePoint == null) return false;
             pizzaCreator.LoadPizzaFromModel(restorePoint);
             restorePoint = null;
+            evidence.Record("action.restore.success", "Captured pre-preview PizzaModel reloaded.");
             return true;
         }
 
         public void SaveCurrentToRecipeBook()
         {
             if (!Ready) throw new InvalidOperationException("Pizza Creator services are not ready.");
+            PizzaModel current = pizzaCreator.GetCurrentPizza();
+            if (current == null) throw new InvalidOperationException("No current pizza is available to save.");
             pizzaCreator.SaveCurrentPizzaToRecipes();
+            savedPoint = new PizzaModel();
+            savedPoint.Bind();
+            savedPoint.CopyValues(current);
+            List<PizzaModel> recipes = pizzaCreator.GetAllRecipes();
+            bool present = false;
+            if (recipes != null)
+                for (int i = 0; i < recipes.Count; i++)
+                    if (recipes[i] != null && string.Equals(recipes[i].ID, current.ID, StringComparison.Ordinal)) present = true;
+            if (!present) throw new InvalidOperationException("Native save returned, but the recipe was not found in GetAllRecipes().");
+            evidence.Record("action.save.success", DescribeCandidate(savedPoint));
+        }
+
+        public bool VerifyLastSavedReload(out string detail)
+        {
+            if (!Ready) { detail = "Pizza Creator services are not ready."; return false; }
+            if (savedPoint == null) { detail = "Save a recipe with the AI panel before pressing F9."; return false; }
+            PizzaModel current = pizzaCreator.GetCurrentPizza();
+            if (current == null) { detail = "No pizza is currently loaded."; return false; }
+            string expected = ModelSignature(savedPoint);
+            string actual = ModelSignature(current);
+            bool match = string.Equals(expected, actual, StringComparison.Ordinal);
+            detail = match
+                ? "Reloaded pizza matches saved name, profit factor, dough positions, ingredient IDs, sizes, positions and rotations."
+                : "Reload mismatch. Expected " + ShortHash(expected) + " but observed " + ShortHash(actual) + ".";
+            return match;
         }
 
         private void CaptureRestorePoint()
@@ -135,6 +172,47 @@ namespace Barros.PizzaCreator.AI
             restorePoint = new PizzaModel();
             restorePoint.Bind();
             restorePoint.CopyValues(current);
+        }
+
+        private static string DescribeCandidate(PizzaModel model)
+        {
+            if (model == null) return "null PizzaModel";
+            return "id=" + model.ID + "; placements=" + model.ingredients.Count + "; dough=" + model.doughPositions.Count + "; profit_factor=" + model.ProfitFactor.ToString("0.000");
+        }
+
+        private static string ModelSignature(PizzaModel model)
+        {
+            if (model == null) return "null";
+            StringBuilder value = new StringBuilder();
+            value.Append(model.ID).Append('|').Append(model.ProfitFactor.ToString("R"));
+            value.Append("|d:").Append(model.doughPositions.Count);
+            for (int i = 0; i < model.doughPositions.Count; i++) AppendVector(value, model.doughPositions[i]);
+            value.Append("|i:").Append(model.ingredients.Count);
+            for (int i = 0; i < model.ingredients.Count; i++)
+            {
+                PizzaModel.IngredientContainerModel item = model.ingredients[i];
+                if (item == null) { value.Append("|null"); continue; }
+                string id = item.Ingredient != null ? item.Ingredient.ID : item.IngredientID;
+                value.Append('|').Append(id).Append(':').Append((int)item.Size);
+                AppendVector(value, item.Position);
+                AppendVector(value, item.Rotation);
+            }
+            return value.ToString();
+        }
+
+        private static void AppendVector(StringBuilder value, Vector3 vector)
+        {
+            value.Append(':').Append(vector.x.ToString("R")).Append(',').Append(vector.y.ToString("R")).Append(',').Append(vector.z.ToString("R"));
+        }
+
+        private static string ShortHash(string value)
+        {
+            unchecked
+            {
+                uint hash = 2166136261;
+                for (int i = 0; i < value.Length; i++) hash = (hash ^ value[i]) * 16777619;
+                return hash.ToString("X8");
+            }
         }
 
         private PizzaModel BuildModel(AiRecipe recipe)
@@ -273,4 +351,3 @@ namespace Barros.PizzaCreator.AI
         }
     }
 }
-

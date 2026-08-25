@@ -1,0 +1,100 @@
+{
+  "schema_version": "1.0",
+  "contract_id": "barros-pc3-rc1",
+  "product": "Barro's AI Pizza Designer for Pizza Connection 3 - Pizza Creator",
+  "release": "1.0.0-rc1",
+  "target": {
+    "game_path_default": "S:\\Unity_Games\\PC3 - Pizza Creator",
+    "game_version": "0.11.272",
+    "steam_app_id": 851330,
+    "unity": "2017.3.1p4 x64",
+    "assembly_csharp_sha256": "ebf8698df7cb4af904c98c299994705ea529efbdf1e8ccb3e7ca8cb42a1cbc1c",
+    "assembly_csharp_firstpass_sha256": "f9cbf0951fc4d4b0788c47bbe41a3820fa333d293175bbb7cb398eb4728fd284"
+  },
+  "truth_policy": {
+    "states": ["not_run", "pass", "fail", "blocked"],
+    "rule": "Only an observed command result with retained evidence may be PASS. Source presence, inference, or a mockup never proves runtime behavior.",
+    "promotion": "All release_required gates must PASS before the project may be described as runtime-certified."
+  },
+  "reference_images": [
+    {"mode": "chat", "path": "docs/mockups/01_chat.png", "sha256": "1cbc17a394eeb3c0a3ce012658f36bc4ed5ebb1c94f82997d409fd7458065b37"},
+    {"mode": "lab", "path": "docs/mockups/02_lab.png", "sha256": "608be4ae3958e3d8eb8a198fff11830814ec340cb4eb9610976a90006ec26a61"},
+    {"mode": "crew", "path": "docs/mockups/03_crew.png", "sha256": "5d37c0a93be4c44996cff01421fdc6ba8176216e10447bad5a6e9c7461bce894"},
+    {"mode": "voice", "path": "docs/mockups/04_voice.png", "sha256": "4787af6a45b431e7387e96a5ae4d2e65972205f18d6a16a924e586b4d8de0de9"}
+  ],
+  "layers": [
+    {
+      "id": "L0",
+      "name": "Source and package",
+      "runs_on": "any",
+      "gates": [
+        {"id": "SRC-001", "requirement": "Required source, assets, installer, and contract files exist", "release_required": true, "automation": "scripts/Invoke-ProofContract.ps1 -Stage Static", "evidence": "results.json"},
+        {"id": "SRC-002", "requirement": "All backend unit tests pass", "release_required": true, "automation": "python -m unittest discover -s tests -v", "evidence": "backend-tests.txt"},
+        {"id": "SRC-003", "requirement": "Catalog contains exactly 87 unique game ingredient IDs in six categories", "release_required": true, "automation": "scripts/Invoke-ProofContract.ps1 -Stage Static", "evidence": "results.json"},
+        {"id": "SRC-004", "requirement": "All four reference images match their locked hashes", "release_required": true, "automation": "scripts/Invoke-ProofContract.ps1 -Stage Static", "evidence": "results.json"}
+      ]
+    },
+    {
+      "id": "L1",
+      "name": "Exact assembly build",
+      "runs_on": "build host with supplied game DLLs",
+      "gates": [
+        {"id": "BLD-101", "requirement": "Both proprietary game assemblies match the locked target hashes", "release_required": true, "automation": "scripts/Invoke-ProofContract.ps1 -Stage Build -GameRoot <path>", "evidence": "assembly-hashes.json"},
+        {"id": "BLD-102", "requirement": "Plugin compiles with zero errors against the exact supplied game and Unity assemblies", "release_required": true, "automation": "scripts/Build-Plugin.ps1 -GameRoot <path>", "evidence": "compile.log and plugin SHA-256"},
+        {"id": "BLD-103", "requirement": "Prebuilt plugin hash and build provenance agree", "release_required": true, "automation": "scripts/Invoke-ProofContract.ps1 -Stage Build -GameRoot <path>", "evidence": "results.json"},
+        {"id": "BLD-104", "requirement": "Windows compiler parity build succeeds against the installed game DLLs", "release_required": true, "automation": "scripts/Invoke-ProofContract.ps1 -Stage Build -GameRoot <path>", "evidence": "windows-compile.log"}
+      ]
+    },
+    {
+      "id": "L2",
+      "name": "BepInEx loader",
+      "runs_on": "Windows game runtime",
+      "gates": [
+        {"id": "RUN-201", "requirement": "BepInEx 5 x64 initializes under the target Unity player", "release_required": true, "automation": "scripts/Invoke-ProofContract.ps1 -Stage Runtime -GameRoot <path>", "evidence": "BepInEx-LogOutput.log"},
+        {"id": "RUN-202", "requirement": "The Barro's plugin is discovered and Awake completes without a relevant exception", "release_required": true, "automation": "scripts/Invoke-ProofContract.ps1 -Stage Runtime -GameRoot <path>", "evidence": "BepInEx-LogOutput.log"}
+      ]
+    },
+    {
+      "id": "L3",
+      "name": "Live UI geometry",
+      "runs_on": "Windows game runtime",
+      "gates": [
+        {"id": "UI-301", "requirement": "A fifth tab is registered and remains inside the stock side rail", "release_required": true, "automation": "runtime marker plus screenshot", "evidence": "ui-tab.png and runtime-events.jsonl"},
+        {"id": "UI-302", "requirement": "BARRO'S PIZZA CREATOR header aspect-fits the title strip without covering the close button", "release_required": true, "automation": "runtime geometry marker plus screenshot", "evidence": "ui-header.png and runtime-events.jsonl"},
+        {"id": "UI-303", "requirement": "The stock Bakehouse header returns on stock tabs", "release_required": true, "automation": "runtime marker plus screenshot", "evidence": "ui-stock-header.png and runtime-events.jsonl"}
+      ]
+    },
+    {
+      "id": "L4",
+      "name": "Native pizza actions",
+      "runs_on": "Windows game runtime",
+      "gates": [
+        {"id": "ACT-401", "requirement": "Preview places a validated recipe through IPizzaCreatorService.LoadPizzaFromModel", "release_required": true, "automation": "runtime event", "evidence": "runtime-events.jsonl and preview.png"},
+        {"id": "ACT-402", "requirement": "Restore returns to the captured pre-preview PizzaModel", "release_required": true, "automation": "runtime event", "evidence": "runtime-events.jsonl and restore.png"},
+        {"id": "ACT-403", "requirement": "Apply commits the selected validated recipe", "release_required": true, "automation": "runtime event", "evidence": "runtime-events.jsonl and apply.png"},
+        {"id": "ACT-404", "requirement": "Save invokes the native recipe-book operation", "release_required": true, "automation": "runtime event", "evidence": "runtime-events.jsonl"},
+        {"id": "ACT-405", "requirement": "A saved AI recipe reloads with name, shape, placements, and profit factor intact", "release_required": true, "automation": "guided runtime comparison", "evidence": "saved-reload.json and reload.png"}
+      ]
+    },
+    {
+      "id": "L5",
+      "name": "Microphone and speech",
+      "runs_on": "Windows game runtime with configured STT",
+      "gates": [
+        {"id": "VOX-501", "requirement": "At least one Windows microphone device is enumerated and capture returns non-empty PCM", "release_required": true, "automation": "runtime event", "evidence": "runtime-events.jsonl"},
+        {"id": "VOX-502", "requirement": "The configured speech provider returns a non-empty transcript used as a recipe prompt", "release_required": true, "automation": "runtime event", "evidence": "runtime-events.jsonl and voice.png"}
+      ]
+    },
+    {
+      "id": "L6",
+      "name": "Reference-image comparison",
+      "runs_on": "Windows game runtime",
+      "gates": [
+        {"id": "VIS-601", "requirement": "Live Chat screenshot captured and compared with 01_chat.png", "release_required": true, "automation": "scripts/Compare-ReferenceImages.ps1", "evidence": "chat comparison report"},
+        {"id": "VIS-602", "requirement": "Live Lab screenshot captured and compared with 02_lab.png", "release_required": true, "automation": "scripts/Compare-ReferenceImages.ps1", "evidence": "lab comparison report"},
+        {"id": "VIS-603", "requirement": "Live Crew screenshot captured and compared with 03_crew.png", "release_required": true, "automation": "scripts/Compare-ReferenceImages.ps1", "evidence": "crew comparison report"},
+        {"id": "VIS-604", "requirement": "Live Voice screenshot captured and compared with 04_voice.png", "release_required": true, "automation": "scripts/Compare-ReferenceImages.ps1", "evidence": "voice comparison report"}
+      ]
+    }
+  ]
+}

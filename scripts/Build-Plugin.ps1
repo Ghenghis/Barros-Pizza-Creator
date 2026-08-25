@@ -43,7 +43,8 @@ $references = @(
     (Join-Path $managed "UnityEngine.TextRenderingModule.dll"),
     (Join-Path $managed "UnityEngine.AudioModule.dll"),
     (Join-Path $managed "UnityEngine.InputModule.dll"),
-    (Join-Path $managed "UnityEngine.ImageConversionModule.dll")
+    (Join-Path $managed "UnityEngine.ImageConversionModule.dll"),
+    (Join-Path $managed "UnityEngine.ScreenCaptureModule.dll")
 )
 foreach ($reference in $references) {
     if (-not (Test-Path $reference)) { throw "Required compile reference is missing: $reference" }

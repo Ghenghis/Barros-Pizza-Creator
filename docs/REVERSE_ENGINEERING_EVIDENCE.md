@@ -63,8 +63,9 @@ This is complete reverse-engineering coverage for the selected integration route
 | 3D Preview / Apply / Restore / Save | Complete in source | Uses the public native service path above |
 | Native scores | Complete in source | Game citizen and cost models replace backend estimates in Unity |
 | Barro's header branding | Complete in package | 1280×143 optimized banner plus full-resolution source; runtime aspect-fit and restoration |
-| Python verification | Passed | 14 tests plus byte-model catalog comparison |
-| Windows C# compile | Installer-ready, not run here | Installer compiles against the user's exact Managed DLLs |
+| Python verification | Passed | 20 backend/contract tests, including byte-model catalog and STT request checks |
+| Exact-game C# compile | Passed | Roslyn compiled a 66,560-byte PE32 AnyCPU plugin with zero errors against the supplied Managed DLLs; SHA-256 `63e18cce15e3faede1a18f9f32ec73768a2053f89fe29a8ca95240ebabab5501` |
+| Windows compiler parity | Pending target run | `RUN_RC1_PROOF.bat` rebuilds against the installed DLLs with Windows `csc.exe` and retains the log |
 | Live Unity scene / mic / visual fit | Pending first Windows launch | `DIAGNOSE_Barros_AI` and the acceptance checklist capture proof |
 
-Overall status: **feature-complete release-candidate source and installer; runtime certification pending**. A successful Windows compile, tab appearance, one Preview/Restore cycle and one saved/reloaded recipe are the remaining gates before calling the mod fully proven.
+Overall status: **feature-complete release-candidate source, certified exact-assembly plugin, and installer; Windows runtime certification pending**. Windows compiler parity, BepInEx loading, tab/header geometry, Preview/Restore/Apply/Save/reload, microphone/STT, and four live comparison screenshots remain explicit gates before calling the mod fully proven.

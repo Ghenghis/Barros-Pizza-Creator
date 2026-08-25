@@ -10,3 +10,16 @@
 - Added offline designer, OpenAI-compatible/LM Studio, Ollama and Anthropic provider routing.
 - Added multimodal image and text attachments, microphone WAV capture, STT and conversation history.
 - Added pinned dependency verification, source compilation, provider configuration, diagnostics and uninstall.
+
+### Proof hardening — 2026-08-25
+
+- Added the 24-gate layered proof contract, PowerShell runner, retained JSON/Markdown evidence, and explicit `not_run`/`blocked` states.
+- Compiled and shipped a certified 66,560-byte plugin against the exact supplied PC3/Unity assemblies with full build provenance.
+- Updated the installer to verify both game assembly hashes and use the certified DLL without requiring Visual Studio.
+- Added structured runtime events for loader/UI geometry, Preview, Restore, Apply, Save, reload verification, microphone capture, and STT.
+- Added F8 canonical mode screenshots, F9 saved/reloaded model verification, objective right-panel visual comparison, and difference images.
+- Added GitHub Actions and GitLab CI checks plus an upstream primary-source compatibility audit.
+- Expanded the automated suite from 14 to 20 passing tests, including the STT multipart request and educational/audio-pipeline contracts.
+- Added a complete engineering/reverse-engineering reproduction notebook and a factual 24-gate status snapshot.
+- Added a one-click, hash-manifested, decode-validated `Barros_Music` to Ogg Vorbis conversion pipeline without bundling placeholder audio.
+- Added a deterministic release builder that regenerates manifests and verifies ZIP membership, hashes and CRCs.

@@ -3,6 +3,7 @@ param(
     [string]$GameRoot = "S:\Unity_Games\PC3 - Pizza Creator",
     [string]$BepInExArchive = "",
     [string]$PythonArchive = "",
+    [switch]$ForceLocalCompile,
     [switch]$NoGui
 )
 
@@ -15,6 +16,8 @@ $bepUrl = "https://github.com/BepInEx/BepInEx/releases/download/v5.4.23.5/BepInE
 $bepSha = "82F9878551030F54657792C0740D9D51A09500EEAE1FBA21106B0C441E6732C4"
 $pythonUrl = "https://www.python.org/ftp/python/3.12.10/python-3.12.10-embed-amd64.zip"
 $pythonSha = "4ACBED6DD1C744B0376E3B1CF57CE906F9DC9E95E68824584C8099A63025A3C3"
+$assemblySha = "EBF8698DF7CB4AF904C98C299994705EA529EFBDF1E8CCB3E7CA8CB42A1CBC1C"
+$firstpassSha = "F9CBF0951FC4D4B0788C47BBE41A3820FA333D293175BBB7CB398EB4728FD284"
 
 function Select-GameRoot([string]$initial) {
     Add-Type -AssemblyName System.Windows.Forms
@@ -51,15 +54,22 @@ try {
     $gameExe = Join-Path $GameRoot $exeName
     $managed = Join-Path $GameRoot "Pizza Connection 3 - Pizza Creator_Data\Managed"
     $assembly = Join-Path $managed "Assembly-CSharp.dll"
-    if (-not (Test-Path $gameExe) -or -not (Test-Path $assembly)) {
-        throw "This is not the complete standalone Pizza Creator folder. Expected $gameExe and $assembly"
+    $firstpass = Join-Path $managed "Assembly-CSharp-firstpass.dll"
+    if (-not (Test-Path $gameExe) -or -not (Test-Path $assembly) -or -not (Test-Path $firstpass)) {
+        throw "This is not the complete standalone Pizza Creator folder. Expected $gameExe, $assembly and $firstpass"
     }
     $processName = [IO.Path]::GetFileNameWithoutExtension($exeName)
     $running = Get-Process -Name $processName -ErrorAction SilentlyContinue
     if ($running) { throw "Close Pizza Connection 3 - Pizza Creator before installing." }
 
+    $actualAssemblySha = (Get-FileHash -Algorithm SHA256 -LiteralPath $assembly).Hash
+    $actualFirstpassSha = (Get-FileHash -Algorithm SHA256 -LiteralPath $firstpass).Hash
     Write-Host "Target: $GameRoot"
-    Write-Host "Game Assembly-CSharp SHA256: $((Get-FileHash -Algorithm SHA256 -LiteralPath $assembly).Hash)"
+    Write-Host "Game Assembly-CSharp SHA256: $actualAssemblySha"
+    Write-Host "Game Assembly-CSharp-firstpass SHA256: $actualFirstpassSha"
+    if ($actualAssemblySha -ne $assemblySha -or $actualFirstpassSha -ne $firstpassSha) {
+        throw "Unsupported game build. This RC1 is locked to Pizza Creator 0.11.272. No game or plugin files were changed. Run RUN_RC1_PROOF.bat and retain its assembly-hashes.json for adapter review."
+    }
     $core = Join-Path $GameRoot "BepInEx\core\BepInEx.dll"
     if (Test-Path $core) {
         $installedVersion = [Reflection.AssemblyName]::GetAssemblyName($core).Version
@@ -104,8 +114,24 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "The bundled Python backend failed its import test." }
 
     $artifact = Join-Path $packageRoot "artifacts\Barros.PizzaCreator.AI.dll"
-    & (Join-Path $packageRoot "scripts\Build-Plugin.ps1") -GameRoot $GameRoot -PackageRoot $packageRoot -OutputPath $artifact
-    if ($LASTEXITCODE -ne 0 -or -not (Test-Path $artifact)) { throw "Plugin build failed." }
+    $provenancePath = Join-Path $packageRoot "artifacts\build-provenance.json"
+    $buildMode = "certified-prebuilt"
+    $prebuiltValid = $false
+    if ((Test-Path $artifact) -and (Test-Path $provenancePath)) {
+        $provenance = Get-Content -LiteralPath $provenancePath -Raw | ConvertFrom-Json
+        $prebuiltValid = ((Get-FileHash -Algorithm SHA256 -LiteralPath $artifact).Hash -eq ([string]$provenance.artifact_sha256).ToUpperInvariant()) -and
+            ($actualAssemblySha -eq ([string]$provenance.target.assembly_csharp_sha256).ToUpperInvariant()) -and
+            ($actualFirstpassSha -eq ([string]$provenance.target.assembly_csharp_firstpass_sha256).ToUpperInvariant())
+    }
+    if ($ForceLocalCompile -or -not $prebuiltValid) {
+        $buildMode = "local-windows-compile"
+        $artifact = Join-Path $packageRoot "artifacts\Barros.PizzaCreator.AI.local.dll"
+        & (Join-Path $packageRoot "scripts\Build-Plugin.ps1") -GameRoot $GameRoot -PackageRoot $packageRoot -OutputPath $artifact
+        if ($LASTEXITCODE -ne 0 -or -not (Test-Path $artifact)) { throw "Plugin build failed." }
+    }
+    else {
+        Write-Host "Using the SHA-256-certified plugin compiled against this exact game build."
+    }
     Copy-Item -LiteralPath $artifact -Destination (Join-Path $pluginTarget "Barros.PizzaCreator.AI.dll") -Force
     Copy-Item -LiteralPath (Join-Path $packageRoot "VERSION.txt") -Destination (Join-Path $pluginTarget "VERSION.txt") -Force
 
@@ -114,8 +140,10 @@ try {
         version = $version
         installed_utc = [DateTime]::UtcNow.ToString("o")
         game_root = $GameRoot
-        game_assembly_sha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $assembly).Hash
+        game_assembly_sha256 = $actualAssemblySha
+        game_firstpass_sha256 = $actualFirstpassSha
         plugin_sha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $pluginTarget "Barros.PizzaCreator.AI.dll")).Hash
+        plugin_build_mode = $buildMode
         loader = "BepInEx $bepVersion x64"
         backend = "Python 3.12.10 embedded; stdlib only"
     }

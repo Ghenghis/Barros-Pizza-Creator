@@ -11,6 +11,7 @@ namespace Barros.PizzaCreator.AI
     {
         private readonly GameBridge game;
         private readonly BackendClient backend;
+        private readonly EvidenceRecorder evidence;
         private readonly ManualLogSource log;
         private Tab aiTab;
         private TabBar tabBar;
@@ -21,10 +22,11 @@ namespace Barros.PizzaCreator.AI
             get { return aiTab != null && tabBar != null && content != null; }
         }
 
-        public RuntimeTabInstaller(GameBridge gameBridge, BackendClient backendClient, ManualLogSource logger)
+        public RuntimeTabInstaller(GameBridge gameBridge, BackendClient backendClient, EvidenceRecorder recorder, ManualLogSource logger)
         {
             game = gameBridge;
             backend = backendClient;
+            evidence = recorder;
             log = logger;
         }
 
@@ -105,7 +107,16 @@ namespace Barros.PizzaCreator.AI
                 Font font = header != null ? header.font : FindAnyFont(source.gameObject);
                 GameObject banner = CreateHeaderBanner(header);
                 PanelRenderer renderer = content.AddComponent<PanelRenderer>();
-                renderer.Configure(contentRect, aiTab, tabBar, game, backend, header, banner, font);
+                renderer.Configure(contentRect, aiTab, tabBar, game, backend, evidence, header, banner, font);
+                evidence.Record("ui.tab_installed", DescribeRect(tabRect));
+                if (banner != null)
+                {
+                    RectTransform bannerRect = banner.GetComponent<RectTransform>();
+                    RectTransform titleParent = header != null ? header.rectTransform.parent as RectTransform : null;
+                    float available = titleParent != null ? titleParent.rect.width - 78f : bannerRect.rect.width;
+                    bool safe = bannerRect.rect.width <= available + 0.5f;
+                    evidence.Record(safe ? "ui.header_fitted" : "ui.header_overlap", "banner_width=" + bannerRect.rect.width.ToString("0.0") + "; safe_width=" + available.ToString("0.0") + "; close_reserve=78");
+                }
                 log.LogInfo("Installed Barro's AI Designer as a live Pizza Creator tab.");
                 return true;
             }
@@ -135,6 +146,12 @@ namespace Barros.PizzaCreator.AI
             target.sizeDelta = source.sizeDelta;
             target.localScale = source.localScale;
             target.localRotation = source.localRotation;
+        }
+
+        private static string DescribeRect(RectTransform rect)
+        {
+            if (rect == null) return "null rect";
+            return "x=" + rect.anchoredPosition.x.ToString("0.0") + "; y=" + rect.anchoredPosition.y.ToString("0.0") + "; width=" + rect.rect.width.ToString("0.0") + "; height=" + rect.rect.height.ToString("0.0") + "; sibling=" + rect.GetSiblingIndex();
         }
 
         private static void PlaceAfterExistingTabs(Tab source, RectTransform target)

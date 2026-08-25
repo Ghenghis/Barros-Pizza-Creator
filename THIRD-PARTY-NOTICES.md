@@ -7,3 +7,4 @@ The installer downloads unmodified official dependency archives only when they a
 
 This ZIP does not redistribute either binary archive. It contains the original plugin/backend source and pinned install logic. Pizza Connection 3 files are never redistributed.
 
+The optional `scripts/Convert-BarrosMusic.ps1` invokes a separately installed FFmpeg build with `libvorbis`. FFmpeg is not downloaded or redistributed by this project. Users are responsible for the license of each music track they convert or distribute.

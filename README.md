@@ -22,9 +22,15 @@ The AI tab also replaces the plain **Bakehouse** text only while active with the
 5. Launch **Pizza Connection 3 - Pizza Creator** normally and enter the Bakehouse.
 6. Select the new chef-chat tab. Press **F10** to reopen it at any time in the Creator.
 
-The first installation downloads and SHA-256 verifies the official BepInEx 5.4.23.5 x64 loader and a private Python 3.12.10 embedded runtime. It makes no system Python or PATH changes. If either dependency is already installed and compatible, it is reused.
+The first installation downloads and SHA-256 verifies the official BepInEx 5.4.23.5 x64 loader and a private Python 3.12.10 embedded runtime. It makes no system Python or PATH changes. If either dependency is already installed and compatible, it is reused. RC1 now ships a certified plugin DLL compiled against the exact supplied 0.11.272 game assemblies, so a normal matching installation does not need Visual Studio or a C# compiler. The installer refuses a different game-assembly hash instead of gambling with an unverified ABI.
+
+Evidence shortcuts: **F8** captures the active Chat/Lab/Crew/Voice mode; **F9** verifies the currently loaded pizza against the last recipe-book save; **F10** reopens the AI tab.
+
+For a reproducible account of the reverse engineering, exact toolchain, corrected assumptions, implementation path and shortest route to all 24 proof gates, read [`docs/ENGINEERING_PLAYBOOK.md`](docs/ENGINEERING_PLAYBOOK.md). The current evidence ledger is [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md).
 
 Offline recipe design works immediately. Voice transcription and model-generated reasoning need a configured provider; double-click **`CONFIGURE_AI_PROVIDER.bat`** after installation.
+
+Optional music conversion is separate from RC1 runtime certification. If your owned tracks are under `S:\Unity_Games\PC3 - Pizza Creator\Barros_Music`, double-click **`CONVERT_BARROS_MUSIC.bat`** to create decode-validated Ogg Vorbis files and a per-file SHA-256 manifest. See [`docs/AUDIO_PIPELINE.md`](docs/AUDIO_PIPELINE.md); no music or FFmpeg binary is bundled.
 
 ## Using the panel
 
@@ -75,13 +81,16 @@ Keys are read only at runtime from the configured environment variable or `.env`
 
 ## Diagnostics and removal
 
-- Run **`DIAGNOSE_Barros_AI.bat`** after launching once. It checks the target, loader, plugin, private runtime, backend tests and BepInEx log evidence.
+- Run **`RUN_RC1_PROOF.bat`** for the layered source/build/loader/UI/action/voice/visual proof ledger. It retains a timestamped evidence bundle and never reports an unrun gate as passed.
+- Run **`DIAGNOSE_Barros_AI.bat`** for a shorter installation and loader health check.
 - BepInEx log: `S:\Unity_Games\PC3 - Pizza Creator\BepInEx\LogOutput.log`
 - Backend history: `S:\Unity_Games\PC3 - Pizza Creator\BarrosAI\backend\data\conversation_history.json`
 - Run **`UNINSTALL_Barros_AI_Designer.bat`** to remove only this plugin and its sidecar. It leaves game assemblies, saves and shared BepInEx files untouched.
 
 ## Compatibility boundary
 
-This release was built directly against the supplied Unity 2017.3.1p4 x64 files and decompiled interfaces. The backend and catalog paths are automated and tested in this package. The final live-scene smoke test must occur on Windows because Unity's native player, microphone and renderer cannot execute in this Linux workspace. The diagnostic script records that proof without changing the game.
+This release was compiled directly against the supplied Unity 2017.3.1p4 x64 assemblies with zero compiler errors; the certified DLL and machine-readable provenance are included. The backend, contract and catalog paths are automated and tested in this package. Windows compiler parity and the final live-scene smoke test remain distinct gates because Unity's native player, microphone and renderer cannot execute in this Linux workspace. The proof harness records those results without replacing `Assembly-CSharp.dll`.
 
-See `docs/ARCHITECTURE.md`, `docs/REVERSE_ENGINEERING_EVIDENCE.md`, `docs/UI_MOCKUP_MAPPING.md`, `docs/RUNTIME_ACCEPTANCE.md`, and `CLAUDE_HANDOFF.md` for exact implementation evidence.
+See `docs/ENGINEERING_PLAYBOOK.md`, `docs/PROJECT_STATUS.md`, `docs/PROOF_CONTRACT.md`, `docs/UPSTREAM_AUDIT.md`, `docs/ARCHITECTURE.md`, `docs/REVERSE_ENGINEERING_EVIDENCE.md`, `docs/UI_MOCKUP_MAPPING.md`, `docs/RUNTIME_ACCEPTANCE.md`, `docs/AUDIO_PIPELINE.md`, and `CLAUDE_HANDOFF.md` for exact implementation evidence.
+
+Maintainers can reproduce and self-verify the release archive with `python tools/build_release.py`.

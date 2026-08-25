@@ -152,6 +152,36 @@ class BackendTests(unittest.TestCase):
     def test_json_extraction_handles_fenced_response(self) -> None:
         self.assertEqual(extract_json("```json\n{\"recipes\": []}\n```"), {"recipes": []})
 
+    def test_openai_compatible_stt_request_is_valid_multipart(self) -> None:
+        client = ProviderClient(
+            ProviderSettings(
+                provider="openai-compatible",
+                endpoint="https://api.example.test/v1",
+                api_key="test-only-key",
+                stt_model="whisper-1",
+            )
+        )
+        observed: dict[str, object] = {}
+
+        def fake_request(request: urllib.request.Request) -> bytes:
+            observed["url"] = request.full_url
+            observed["headers"] = dict(request.header_items())
+            observed["body"] = request.data or b""
+            return b'{"text":"medium heat chicken pizza"}'
+
+        client._request = fake_request  # type: ignore[method-assign]
+        transcript = client.transcribe(b"RIFF-test-wav", "voice.wav")
+        self.assertEqual("medium heat chicken pizza", transcript)
+        self.assertEqual("https://api.example.test/v1/audio/transcriptions", observed["url"])
+        headers = observed["headers"]
+        self.assertIn("multipart/form-data; boundary=", headers["Content-type"])
+        self.assertEqual("Bearer test-only-key", headers["Authorization"])
+        body = observed["body"]
+        self.assertIn(b'name="model"', body)
+        self.assertIn(b"whisper-1", body)
+        self.assertIn(b'name="file"; filename="voice.wav"', body)
+        self.assertIn(b"RIFF-test-wav", body)
+
     def test_history_is_bounded(self) -> None:
         with tempfile.TemporaryDirectory() as folder:
             history = HistoryStore(Path(folder) / "history.json", max_entries=2)

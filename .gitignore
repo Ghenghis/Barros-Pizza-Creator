@@ -1,6 +1,10 @@
-# Local build products
-artifacts/
+# Local build products. The one certified release DLL and its provenance are tracked.
+artifacts/*
+!artifacts/README.md
+!artifacts/Barros.PizzaCreator.AI.dll
+!artifacts/build-provenance.json
 *.dll
+!artifacts/Barros.PizzaCreator.AI.dll
 *.pdb
 
 # Python runtime state
@@ -15,4 +19,5 @@ BarrosAI/
 
 # Local diagnostics
 Barros-AI-diagnostics-*.txt
-
+evidence/runs/
+releases/*.partial

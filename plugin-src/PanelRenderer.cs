@@ -26,6 +26,7 @@ namespace Barros.PizzaCreator.AI
         private TabBar tabBar;
         private GameBridge game;
         private BackendClient backend;
+        private EvidenceRecorder evidence;
         private Text gameHeader;
         private GameObject headerBanner;
         private string originalHeader = "Bakehouse";
@@ -80,13 +81,14 @@ namespace Barros.PizzaCreator.AI
 
         public DesignerMode Mode { get { return mode; } }
 
-        public void Configure(RectTransform rect, Tab ownerTab, TabBar ownerBar, GameBridge bridge, BackendClient client, Text header, GameObject banner, Font font)
+        public void Configure(RectTransform rect, Tab ownerTab, TabBar ownerBar, GameBridge bridge, BackendClient client, EvidenceRecorder recorder, Text header, GameObject banner, Font font)
         {
             panelRect = rect;
             tab = ownerTab;
             tabBar = ownerBar;
             game = bridge;
             backend = client;
+            evidence = recorder;
             gameHeader = header;
             headerBanner = banner;
             gameFont = font;
@@ -109,16 +111,39 @@ namespace Barros.PizzaCreator.AI
         private void OnEnable()
         {
             SetHeaderActive(true);
+            if (evidence != null) StartCoroutine(CaptureInitialUi());
         }
 
         private void OnDisable()
         {
             SetHeaderActive(false);
+            if (evidence != null)
+            {
+                evidence.Record("ui.stock_header_restored", originalHeader);
+                evidence.Capture("ui-stock-header");
+            }
         }
 
         private void Update()
         {
             if (recording && Time.realtimeSinceStartup - recordingStarted >= 29.5f) StopVoiceAndTranscribe();
+            if (Input.GetKeyDown(KeyCode.F8) && evidence != null) evidence.Capture(ModeFileName());
+        }
+
+        private IEnumerator CaptureInitialUi()
+        {
+            yield return null;
+            yield return new WaitForEndOfFrame();
+            evidence.Capture("ui-tab");
+            evidence.Capture("ui-header");
+        }
+
+        private string ModeFileName()
+        {
+            if (mode == DesignerMode.Lab) return "lab";
+            if (mode == DesignerMode.Crew) return "crew";
+            if (mode == DesignerMode.Voice) return "voice";
+            return "chat";
         }
 
         private void OnGUI()
@@ -638,7 +663,7 @@ namespace Barros.PizzaCreator.AI
                 selectedRecipe = Mathf.Max(0, index);
                 game.Preview(recipe);
                 status = "Previewing “" + recipe.Name + "” on the live pizza. Start over restores the previous pizza.";
-                StartCoroutine(ReactivateAiTab());
+                StartCoroutine(ReactivateAiTab("preview"));
             }
             catch (Exception exception) { status = "Preview failed: " + exception.Message; }
         }
@@ -651,7 +676,7 @@ namespace Barros.PizzaCreator.AI
                 game.Apply(recipe);
                 status = "Applied “" + recipe.Name + "” with real placed ingredients. Use the game's Save button when ready.";
                 conversation.Add(new ConversationLine("Barro's AI", status));
-                StartCoroutine(ReactivateAiTab());
+                StartCoroutine(ReactivateAiTab("apply"));
             }
             catch (Exception exception) { status = "Apply failed: " + exception.Message; }
         }
@@ -665,7 +690,7 @@ namespace Barros.PizzaCreator.AI
                 agents.Clear();
                 consensus = null;
                 status = restored ? "Restored the pizza from before the AI preview." : "Cleared the AI draft.";
-                if (restored) StartCoroutine(ReactivateAiTab());
+                if (restored) StartCoroutine(ReactivateAiTab("restore"));
             }
             catch (Exception exception) { status = "Restore failed: " + exception.Message; }
         }
@@ -681,13 +706,18 @@ namespace Barros.PizzaCreator.AI
             catch (Exception exception) { status = "Save failed: " + exception.Message; }
         }
 
-        private IEnumerator ReactivateAiTab()
+        private IEnumerator ReactivateAiTab(string captureName = "")
         {
             yield return null;
             yield return null;
             if (tabBar != null && tab != null) tabBar.ActivateTab(tab);
             yield return new WaitForSeconds(0.35f);
             if (tabBar != null && tab != null) tabBar.ActivateTab(tab);
+            if (evidence != null && !string.IsNullOrEmpty(captureName))
+            {
+                yield return new WaitForEndOfFrame();
+                evidence.Capture(captureName);
+            }
         }
 
         private void Attach()
@@ -711,6 +741,7 @@ namespace Barros.PizzaCreator.AI
             {
                 pendingVoiceError = "Windows did not report a microphone.";
                 status = pendingVoiceError;
+                if (evidence != null) evidence.Record("voice.capture.failed", pendingVoiceError);
                 return;
             }
             try
@@ -719,10 +750,16 @@ namespace Barros.PizzaCreator.AI
                 recording = voiceClip != null;
                 recordingStarted = Time.realtimeSinceStartup;
                 status = recording ? "Listening… click Stop when finished." : "Could not start the microphone.";
+                if (evidence != null) evidence.Record(recording ? "voice.capture.started" : "voice.capture.failed", "devices=" + Microphone.devices.Length + "; rate=16000");
                 mode = DesignerMode.Voice;
                 if (gameHeader != null && headerBanner == null) gameHeader.text = HeaderForMode();
             }
-            catch (Exception exception) { pendingVoiceError = exception.Message; status = "Microphone failed: " + exception.Message; }
+            catch (Exception exception)
+            {
+                pendingVoiceError = exception.Message;
+                status = "Microphone failed: " + exception.Message;
+                if (evidence != null) evidence.Record("voice.capture.failed", exception.Message);
+            }
         }
 
         private void StopVoiceAndTranscribe()
@@ -736,6 +773,7 @@ namespace Barros.PizzaCreator.AI
             voiceClip.GetData(samples, 0);
             trimmed.SetData(samples, 0);
             byte[] wav = WavEncoder.Encode(trimmed);
+            if (evidence != null) evidence.Record("voice.capture.success", "samples=" + samples.Length + "; wav_bytes=" + wav.Length + "; rate=" + voiceClip.frequency);
             Destroy(trimmed);
             Destroy(voiceClip);
             voiceClip = null;
@@ -748,12 +786,14 @@ namespace Barros.PizzaCreator.AI
                 {
                     pendingVoiceError = response == null ? "No transcription response." : response.Error;
                     status = pendingVoiceError;
+                    if (evidence != null) evidence.Record("voice.transcription.failed", pendingVoiceError);
                     return;
                 }
                 transcript = response.Text;
                 prompt = transcript;
                 conversation.Add(new ConversationLine("You (voice)", transcript));
                 status = "Voice transcribed. Building the recipe…";
+                if (evidence != null) evidence.Record("voice.transcription.success", "characters=" + transcript.Length);
                 Submit("/chat", 1);
             });
         }

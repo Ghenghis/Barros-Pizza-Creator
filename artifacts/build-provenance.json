@@ -1,0 +1,62 @@
+{
+  "schema_version": "1.0",
+  "artifact": "Barros.PizzaCreator.AI.dll",
+  "artifact_bytes": 66560,
+  "artifact_sha256": "63e18cce15e3faede1a18f9f32ec73768a2053f89fe29a8ca95240ebabab5501",
+  "built_utc": "2026-08-25T04:36:24Z",
+  "source_parent_commit": "d928282c6fac55cd65e3f73af54938e20291b149",
+  "source_tree_sha256": "16a58d217314c1b03614a047124bf108be319fd8f7c9c024eb0989e105634920",
+  "compiler": "Microsoft Roslyn csc 4.11.0-3.25569.22",
+  "compiler_host": ".NET SDK 8.0.424 Linux x64",
+  "output_kind": "PE32 AnyCPU .NET/Mono library",
+  "options": ["noconfig", "nostdlib+", "target:library", "optimize+", "debug-", "deterministic+", "platform:anycpu", "langversion:7.3"],
+  "target": {
+    "game_version": "0.11.272",
+    "unity": "2017.3.1p4 x64",
+    "assembly_csharp_sha256": "ebf8698df7cb4af904c98c299994705ea529efbdf1e8ccb3e7ca8cb42a1cbc1c",
+    "assembly_csharp_firstpass_sha256": "f9cbf0951fc4d4b0788c47bbe41a3820fa333d293175bbb7cb398eb4728fd284",
+    "bepinex_version": "5.4.23.5",
+    "bepinex_archive_sha256": "82f9878551030f54657792c0740d9d51a09500eeae1fba21106b0c441e6732c4",
+    "bepinex_dll_sha256": "8255b28902886085c578b9e427d3073c97002db85176d2090cdeda90ef14ce70"
+  },
+  "reference_sha256": {
+    "mscorlib.dll": "ab407e540fed93d3f6d42c648a5d01772432d04700a871dc12e2ab397caef384",
+    "System.dll": "133f23da3e4c3f4442e52810b536ca73683fc6470aa349b92f2c9b1816d85b62",
+    "System.Core.dll": "c063f1c9695af200fa27baad68ba7a6369f040c811d7dac1da66cf110afdf170",
+    "BepInEx.dll": "8255b28902886085c578b9e427d3073c97002db85176d2090cdeda90ef14ce70",
+    "Assembly-CSharp.dll": "ebf8698df7cb4af904c98c299994705ea529efbdf1e8ccb3e7ca8cb42a1cbc1c",
+    "Assembly-CSharp-firstpass.dll": "f9cbf0951fc4d4b0788c47bbe41a3820fa333d293175bbb7cb398eb4728fd284",
+    "Newtonsoft.Json.dll": "973fd70ce48e5ac433a101b42871680c51e2feba2aeec3d400dea4115af3a278",
+    "Zenject.dll": "4bc92362529e9463fde911c8569b189e6aac326f74764c5bd2ba5ce728ac3397",
+    "UnityEngine.dll": "7bd482e8494aaba675ade29527fa38a2d115d80286dea74d43c1f3faf7f81622",
+    "UnityEngine.CoreModule.dll": "3c5430bb78e917c1e2b8c8951e0906214314b7390e1ace65c23e24b63e590363",
+    "UnityEngine.IMGUIModule.dll": "7b6c656944ee68cab6cefb6d2f9e685d57d8c19e7475d5ff1b24ff5f2ca51ab4",
+    "UnityEngine.UI.dll": "a96ac860df32d9c11456617bfd1a452e197caa8c45dc31848ea340e00c3b1bf8",
+    "UnityEngine.UIModule.dll": "5c5fa6a1788c1c4c7475972b0898a083d4fd2fc20df8f0f88ea91274f3554e18",
+    "UnityEngine.TextRenderingModule.dll": "fbd69d33d916bb44e04f64e5caf5bc30a6cea7b7149a28411eb9db822868ed5e",
+    "UnityEngine.AudioModule.dll": "beb34573681fb395b9feba52bc56663dd695b9bbb965e52841318bfbb1b6c999",
+    "UnityEngine.InputModule.dll": "0fe93fb9abe4effd5ecf62112906c439b94a8ee96bda424b2970eeee3ec8c1ff",
+    "UnityEngine.ImageConversionModule.dll": "b4d4409dc2f66d4bfd2f08553d8a567f4149550bbc8183faa403aa452f454968",
+    "UnityEngine.ScreenCaptureModule.dll": "1edc04781756894c272f9011553ab81e456304448e9d6eb24298352a22743f40"
+  },
+  "source_files_sha256": {
+    "AssemblyInfo.cs": "3a817d064faa76a907a424ca77b157d967eefe7cd1dfcfaa57c8aff8c6317f48",
+    "BackendClient.cs": "6d26ae4dd0a65a71a5387cd90e352f3484e0e4323b5029a4af0751ada7b7f44a",
+    "BarrosAiPlugin.cs": "6617f5bba2950a05b1fdc436f79b386233ae306308da4dd66c9a6b7402b0db7d",
+    "EvidenceRecorder.cs": "b7a346a31e14f60ea48a05182cafbf0ec6030310f2599191b2927b32778dba2e",
+    "FileDialog.cs": "f6fe47361f5da0e1ffbce60449416f897564e92281ed90ed6ed9d48f43bf3f34",
+    "GameBridge.cs": "4c4a23077e8b45bc76fbfbc4a29bb9829f41df901695ff078d2fd8ff4462937c",
+    "MainThreadDispatcher.cs": "2789e3d9ee8a8d7526052505ea3f6f21f7be22a13e06a5646e7ed5740974b03f",
+    "Models.cs": "25f3c63e09316ce77b84a4425155c4c82392aa3f3b1bf19a2829dfd3a1b81fc2",
+    "PanelRenderer.cs": "7bd5de69d214c660b56faaccbebfa098200ad85cb094b1e244a4a3cf7d46063f",
+    "RuntimeTabInstaller.cs": "1ed53cf156fd14647c477f0a6b5a7604f2a4c014e412cf03f5e887cd926ef960",
+    "WavEncoder.cs": "7de6cfa1287a00979f512e4f16cb13863315e0aa7dc3fb47d78a862c1468356c"
+  },
+  "verification": {
+    "compile_exit_code": 0,
+    "compiler_errors": 0,
+    "absolute_build_path_embedded": false,
+    "backend_and_contract_tests": "20 passed"
+  },
+  "boundary": "This proves compilation against the exact supplied Windows game assemblies. Loading and behavior inside the Windows Unity player remain separate runtime gates."
+}

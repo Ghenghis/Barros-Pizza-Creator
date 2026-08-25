@@ -1,0 +1,13 @@
+stages:
+  - verify
+
+rc1-contract:
+  stage: verify
+  image: python:3.12-slim
+  script:
+    - python -m unittest discover -s tests -v
+    - python -m json.tool contracts/rc1.acceptance.json > /dev/null
+    - python -m json.tool artifacts/build-provenance.json > /dev/null
+
+# The public runner cannot receive proprietary Pizza Creator assemblies.
+# Exact-build and runtime gates are retained by the Windows proof harness.

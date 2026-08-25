@@ -1,0 +1,39 @@
+name: RC1 proof contract
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  portable-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run backend and contract tests
+        run: python -m unittest discover -s tests -v
+      - name: Validate locked JSON
+        run: |
+          python -m json.tool contracts/rc1.acceptance.json >/dev/null
+          python -m json.tool artifacts/build-provenance.json >/dev/null
+
+  windows-harness:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run static proof harness
+        shell: powershell
+        run: .\scripts\Invoke-ProofContract.ps1 -Stage Static
+
+# Proprietary PC3 assemblies are intentionally absent from public CI.
+# BLD-101/102/104 and all live gates run only against the user's exact game installation.

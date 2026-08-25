@@ -8,6 +8,7 @@ using UnityEngine;
 namespace Barros.PizzaCreator.AI
 {
     [BepInPlugin("com.barros.pizzacreator.ai", "Barro's AI Pizza Designer", "1.0.0-rc1")]
+    [BepInProcess("Pizza Connection 3 - Pizza Creator.exe")]
     public sealed class BarrosAiPlugin : BaseUnityPlugin
     {
         private ConfigEntry<string> backendUrl;
@@ -17,6 +18,7 @@ namespace Barros.PizzaCreator.AI
         private GameBridge game;
         private BackendClient backend;
         private RuntimeTabInstaller installer;
+        private EvidenceRecorder evidence;
         private Process backendProcess;
         private bool injected;
         private float nextInstallAttempt;
@@ -27,7 +29,8 @@ namespace Barros.PizzaCreator.AI
             autoStartBackend = Config.Bind("Backend", "AutoStart", true, "Start the bundled local sidecar with the game.");
             pythonOverride = Config.Bind("Backend", "PythonExecutable", "", "Optional full path to pythonw.exe.");
             dispatcher = gameObject.AddComponent<MainThreadDispatcher>();
-            game = new GameBridge();
+            evidence = new EvidenceRecorder(Logger);
+            game = new GameBridge(evidence);
             backend = new BackendClient(backendUrl.Value, dispatcher);
             if (autoStartBackend.Value) StartBackend();
             Logger.LogInfo("Barro's AI Pizza Designer 1.0.0-rc1 loaded. Waiting for Pizza Creator services.");
@@ -43,7 +46,7 @@ namespace Barros.PizzaCreator.AI
                     injected = game.Ready;
                     if (injected)
                     {
-                        installer = new RuntimeTabInstaller(game, backend, Logger);
+                        installer = new RuntimeTabInstaller(game, backend, evidence, Logger);
                         Logger.LogInfo("Injected the live Pizza Creator service and database bridge.");
                     }
                 }
@@ -54,11 +57,19 @@ namespace Barros.PizzaCreator.AI
                 nextInstallAttempt = Time.realtimeSinceStartup + 1.0f;
                 if (installer == null || !installer.Installed)
                 {
-                    installer = new RuntimeTabInstaller(game, backend, Logger);
+                    installer = new RuntimeTabInstaller(game, backend, evidence, Logger);
                     installer.TryInstall();
                 }
             }
             if (Input.GetKeyDown(KeyCode.F10) && installer != null) installer.Activate();
+            if (Input.GetKeyDown(KeyCode.F9) && game != null)
+            {
+                string detail;
+                bool verified = game.VerifyLastSavedReload(out detail);
+                evidence.Record(verified ? "action.reload.verified" : "action.reload.failed", detail);
+                if (verified) evidence.Capture("reload");
+                Logger.LogInfo("Reload verification: " + detail);
+            }
         }
 
         private void StartBackend()
@@ -119,4 +130,3 @@ namespace Barros.PizzaCreator.AI
         }
     }
 }
-

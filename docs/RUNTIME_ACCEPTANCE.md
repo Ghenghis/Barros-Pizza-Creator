@@ -23,6 +23,9 @@ Run this checklist against `S:\Unity_Games\PC3 - Pizza Creator` after installati
 11. With an STT provider configured, record a short voice request and confirm transcription becomes the prompt.
 12. Attach a small reference image and confirm a vision-capable provider uses it.
 13. Apply a recipe, save it to the recipe book, reload it through the stock recipe list, and confirm name, shape, placements and profit factor survive.
+14. In each of Chat, AI Lab, Design Crew and Chef Voice, press **F8** once the mode is populated. This writes the four canonical live screenshots.
+15. After reloading the saved recipe, press **F9**. Confirm the log reports `action.reload.verified`.
+16. Run `scripts\Compare-ReferenceImages.ps1` and inspect the four JSON reports and difference images.
 
 ## Evidence to retain
 

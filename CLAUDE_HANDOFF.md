@@ -14,5 +14,10 @@
 - The real 3D composer is the renderer. A flat generated texture is optional and must not replace ingredient placement.
 - The unified AI tab owns Chat, Lab, Crew and Voice. The Python sidecar is provider-agnostic, offline-capable and not authoritative over IDs/cost/native scores.
 - The package now includes `assets/barros-pizza-creator-header.png`; the runtime hides `Bakehouse` only on the AI tab, aspect-fits this mark into the title strip, leaves the stock close button clear, and restores the original label on other tabs.
+- The exact-game plugin now compiles with zero errors and is shipped as `artifacts/Barros.PizzaCreator.AI.dll` (66,560 bytes; SHA-256 `63e18cce15e3faede1a18f9f32ec73768a2053f89fe29a8ca95240ebabab5501`). `artifacts/build-provenance.json` locks every compiler reference and source hash.
+- `contracts/rc1.acceptance.json` and `scripts/Invoke-ProofContract.ps1` are the source of truth for status. No runtime gate may be inferred from source or mockups.
+- F8 captures the canonical live screenshot for the active mode. After stock recipe-book reload, F9 compares the real `PizzaModel` with the saved snapshot and records `action.reload.verified` only on an exact modeled match.
+- `docs/ENGINEERING_PLAYBOOK.md` is the complete reproducible notebook; `docs/PROJECT_STATUS.md` is the factual gate snapshot. Current combined evidence is 7 pass, 1 Windows-only blocked, 16 not run and 0 fail out of 24 gates.
+- User-owned audio is now staged at `S:\Unity_Games\PC3 - Pizza Creator\Barros_Music`. `CONVERT_BARROS_MUSIC.bat` produces decode-validated Ogg Vorbis files and per-file hashes without shipping or inventing music. Automatic scene playback remains intentionally separate until the live audio mixer route is observed.
 
 Please align any Slice 1 interchange schema to these facts before the UI consumes it.
