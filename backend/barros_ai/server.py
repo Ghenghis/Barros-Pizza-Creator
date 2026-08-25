@@ -75,7 +75,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802
         path = urlparse(self.path).path
         if path == "/health":
-            stt_available = bool(self.app.provider.online or self.app.settings.stt_endpoint)
+            stt_configured = bool(self.app.provider.online or self.app.settings.stt_endpoint)
             self._json(
                 HTTPStatus.OK,
                 {
@@ -93,12 +93,13 @@ class Handler(BaseHTTPRequestHandler):
                         "history": True,
                         "reload": True,
                         "attachment_inspection": True,
-                        "stt": stt_available,
+                        "stt_configured": stt_configured,
                     },
                     "stt": {
-                        "available": stt_available,
-                        "configured_endpoint": bool(self.app.settings.stt_endpoint),
+                        "configured": stt_configured,
+                        "dedicated_endpoint_configured": bool(self.app.settings.stt_endpoint),
                         "model": self.app.settings.stt_model,
+                        "reachability": "not_probed",
                     },
                     "uptime_seconds": round(time.time() - self.app.started, 1),
                 },
