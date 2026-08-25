@@ -1,5 +1,5 @@
 {
-  "schema_version": "2.1",
+  "schema_version": "2.2",
   "contract_id": "barros-pc3-ecosystem-v2",
   "title": "Pizza Connection 3 / Barro's Pizza Creator + Workbench + Runtime Proof Studio completion contract",
   "truth_policy": {
@@ -9,7 +9,8 @@
     "snapshot_rule": "Visual gates require retained screenshots from the actual running application or game. Reference mockups may be compared with them but may not substitute for them.",
     "publication_rule": "A repository publication gate passes only after the remote reports the expected commit SHA on the intended branch.",
     "technical_identity_rule": "User-facing branding may say Pizza Connection 3 / Barro's Pizza, but compatibility identifiers including Pizza Connection 3.exe, build-native Data folder names, Assembly-CSharp.dll, Unity scene/object IDs, PathIDs and verified hashes must not be renamed for branding.",
-    "build_routing_rule": "Creator 0.11.272 / Unity 2017.3.1p4 and Studio 1.11.403 / Unity 2017.4.40f1 are separate certified runtime profiles. Shared asset logic does not make their assemblies, PathIDs, scenes or runtime evidence interchangeable."
+    "build_routing_rule": "Creator 0.11.272 / Unity 2017.3.1p4 and Studio 1.11.403 / Unity 2017.4.40f1 are separate certified runtime profiles. Shared asset logic does not make their assemblies, PathIDs, scenes or runtime evidence interchangeable.",
+    "attachment_rule": "Visual attachments are accepted by decoded bytes, not filename extension. PNG/JPEG/WebP magic structure, dimensions, declared MIME and configured size/count limits must validate before provider use."
   },
   "projects": {
     "pizza_creator": "Ghenghis/Barros-Pizza-Creator",
@@ -107,10 +108,20 @@
       "name": "Agent orchestration, simplicity and recovery",
       "gates": [
         {"id": "AGENT-801", "requirement": "The unified Studio MCP exposes existing PC3 extraction/evidence/runtime tools plus Creator status/design, contract/evidence, image-handoff validation and Workbench launch in one tool surface", "release_required": true, "evidence": "tools/list capture + MCP smoke calls"},
-        {"id": "AGENT-802", "requirement": "Workbench chat exposes Creator, exact-image, shared ecosystem-path and guarded Studio-launch operations beside existing local/MCP tools", "release_required": true, "evidence": "tool-registry test + agent smoke transcript"},
+        {"id": "AGENT-802", "requirement": "Workbench chat exposes Creator, attachment parser, exact-image, shared ecosystem-path/build-profile and guarded Studio-launch operations beside existing local/MCP tools", "release_required": true, "evidence": "tool-registry test + agent smoke transcript"},
         {"id": "UX-803", "requirement": "One-click default launchers open the integrated Workbench and integrated Studio without requiring command-line knowledge, and each app can navigate to the other", "release_required": true, "evidence": "launcher source + real Windows launch screenshots"},
         {"id": "REC-804", "requirement": "All three projects document durable recovery state for power loss/crash, including Git checkpoint, truth contract, image handoff ledger, evidence, external-pack state and restore workflow", "release_required": true, "evidence": "repository documentation inspection"},
         {"id": "BRAND-805", "requirement": "User-facing ecosystem naming is Pizza Connection 3 / Barro's Pizza while build-native PC3 compatibility identifiers remain unchanged", "release_required": true, "evidence": "branding/technical-identity audit report"}
+      ]
+    },
+    {
+      "id": "E9",
+      "name": "Creator visual attachment parser and transport",
+      "gates": [
+        {"id": "PARSE-901", "requirement": "Creator accepts visual attachments by decoded PNG/JPEG/WebP structure, derives real dimensions from bytes, computes SHA-256, and rejects unsupported or malformed image structures", "release_required": true, "evidence": "tests/test_attachments.py magic-byte/dimension/malformed cases"},
+        {"id": "PARSE-902", "requirement": "Creator enforces per-image, attachment-count and aggregate decoded-byte limits and rejects declared image MIME values that do not match decoded format", "release_required": true, "evidence": "attachment limit + MIME spoof regression tests"},
+        {"id": "PARSE-903", "requirement": "Workbench attachment transport uses bounded base64 encoding, sends the normalized payload to the Creator /inspect-attachment endpoint and exposes it as a real agent tool without logging/returning raw binary bytes", "release_required": true, "evidence": "tests/test_ecosystem_attachment_bridge.py + Creator endpoint test"},
+        {"id": "PARSE-904", "requirement": "At least one real JPEG from the operator's PC3/Barro's asset workflow passes Creator inspection and its reported format/dimensions/SHA-256 agree with an independent Workbench file inspection", "release_required": true, "evidence": "retained local cross-check JSON/log; no provider call required"}
       ]
     }
   ]
