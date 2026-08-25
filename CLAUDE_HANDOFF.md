@@ -1,9 +1,16 @@
-# Claude handoff — PC3 Pizza Creator only
+# SCOPE: PC3 PIZZA CREATOR ONLY — Claude Handoff
 
+> **Repository:** `Ghenghis/Barros-Pizza-Creator`  
+> **Owner:** Claude  
+> **Runtime profile:** `creator-0.11.272`  
+> **Windows product root:** `S:\Unity_Games\PC3 - Pizza Creator`  
+> **Isolated workspace:** `S:\Unity_Games\PC3 - Pizza Creator\_agent-workspaces\claude-pc3-creator`  
 > **Current execution queue:** `CLAUDE_NEXT_TASKS_PC3_CREATOR.md`  
 > **Machine-readable queue:** `contracts/claude-creator-task-queue.json`  
 > **Ownership:** Claude owns PC3 Pizza Creator; ChatGPT owns the PC3 main Workbench/Studio ecosystem.  
 > **Forbidden:** Pizza Connection 2 / Fast Food Tycoon 2 work unless the user explicitly changes scope.
+
+Before editing, read `00_READ_FIRST_PC3_ONLY.md`, `PC3_ONLY_SCOPE.md`, `WORKSTREAM_OWNERSHIP.md`, `contracts/pc3-only-scope.json`, and `contracts/workstream-ownership.json`. If the checkout origin, path, runtime profile or game target conflicts with those files, stop rather than adapting the wrong project.
 
 Finish the active `_pizza-agent` Slice-1 housekeeping first, then execute the numbered Creator tasks in the current queue. Do not ask for, inspect, enumerate, print, or commit credential values/credential filenames; use the existing secrets/runtime credential abstraction only.
 
