@@ -30,6 +30,14 @@ Static package proof (safe anywhere with Python 3):
 powershell -ExecutionPolicy Bypass -File .\scripts\Invoke-ProofContract.ps1 -Stage Static
 ```
 
+The harness deliberately captures Python's stdout and stderr before checking
+its process exit code. Python's verbose `unittest` runner writes normal test
+progress to stderr; Windows PowerShell otherwise converts those lines into
+`NativeCommandError` records, which can incorrectly terminate a script using
+`$ErrorActionPreference = "Stop"`. A zero Python exit code remains the only
+condition that passes `SRC-002`, and the complete merged output is retained as
+`backend-tests.txt`.
+
 Exact Windows build proof:
 
 ```powershell

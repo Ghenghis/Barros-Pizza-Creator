@@ -78,8 +78,31 @@ function Invoke-StaticGates {
         Add-GateResult "SRC-002" "blocked" "Python 3 was not found."
     }
     else {
-        $testOutput = & $python -m unittest discover -s (Join-Path $PackageRoot "tests") -v 2>&1 | Out-String
-        $testExit = $LASTEXITCODE
+        # unittest's verbose runner intentionally writes progress to stderr.
+        # Windows PowerShell wraps native stderr as NativeCommandError; with the
+        # script-wide Stop preference that used to terminate this otherwise
+        # successful gate before LASTEXITCODE could be inspected. Capture the
+        # merged native streams under Continue, then restore every preference.
+        $savedErrorActionPreference = $ErrorActionPreference
+        $nativePreferenceExists = Test-Path Variable:PSNativeCommandUseErrorActionPreference
+        if ($nativePreferenceExists) {
+            $savedNativeErrorPreference = $PSNativeCommandUseErrorActionPreference
+        }
+        try {
+            $ErrorActionPreference = "Continue"
+            if ($nativePreferenceExists) {
+                $PSNativeCommandUseErrorActionPreference = $false
+            }
+            $testLines = @(& $python -m unittest discover -s (Join-Path $PackageRoot "tests") -v 2>&1)
+            $testExit = $LASTEXITCODE
+        }
+        finally {
+            $ErrorActionPreference = $savedErrorActionPreference
+            if ($nativePreferenceExists) {
+                $PSNativeCommandUseErrorActionPreference = $savedNativeErrorPreference
+            }
+        }
+        $testOutput = ($testLines | ForEach-Object { $_.ToString() }) -join [Environment]::NewLine
         $testOutput | Set-Content -LiteralPath $testLog -Encoding UTF8
         if ($testExit -eq 0) { Add-GateResult "SRC-002" "pass" "Backend and contract tests passed." @($testLog) }
         else { Add-GateResult "SRC-002" "fail" "Unit tests exited $testExit." @($testLog) }
