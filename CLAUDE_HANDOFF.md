@@ -1,3 +1,12 @@
+# Claude handoff — PC3 Pizza Creator only
+
+> **Current execution queue:** `CLAUDE_NEXT_TASKS_PC3_CREATOR.md`  
+> **Machine-readable queue:** `contracts/claude-creator-task-queue.json`  
+> **Ownership:** Claude owns PC3 Pizza Creator; ChatGPT owns the PC3 main Workbench/Studio ecosystem.  
+> **Forbidden:** Pizza Connection 2 / Fast Food Tycoon 2 work unless the user explicitly changes scope.
+
+Finish the active `_pizza-agent` Slice-1 housekeeping first, then execute the numbered Creator tasks in the current queue. Do not ask for, inspect, enumerate, print, or commit credential values/credential filenames; use the existing secrets/runtime credential abstraction only.
+
 # Confirmed method-level handoff for the parallel backend
 
 - Live target: `S:\Unity_Games\PC3 - Pizza Creator`.
