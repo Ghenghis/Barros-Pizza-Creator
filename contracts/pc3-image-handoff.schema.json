@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "barros-pc3-image-handoff-v1",
+  "title": "Pizza Connection 3 / Barro's Pizza image handoff",
+  "type": "object",
+  "required": ["schema_version", "items"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind", "source", "candidate_input", "output", "checks"],
+        "properties": {
+          "kind": {"const": "barros-pc3-image-handoff"},
+          "created_unix": {"type": "number"},
+          "target": {
+            "type": "object",
+            "properties": {
+              "asset_id": {"type": "string"},
+              "relative_path": {"type": "string"},
+              "path_id": {"type": ["integer", "null"]},
+              "family": {"type": "string"},
+              "usage": {"type": "string"}
+            },
+            "additionalProperties": true
+          },
+          "source": {"$ref": "#/$defs/imageContract"},
+          "candidate_input": {
+            "type": "object",
+            "required": ["path", "sha256"],
+            "properties": {
+              "path": {"type": "string"},
+              "sha256": {"type": "string", "pattern": "^[a-fA-F0-9]{64}$"}
+            },
+            "additionalProperties": true
+          },
+          "output": {"$ref": "#/$defs/imageContract"},
+          "checks": {
+            "type": "object",
+            "required": ["dimensions_match_source", "format", "source_required_alpha", "output_has_alpha"],
+            "properties": {
+              "dimensions_match_source": {"type": "boolean"},
+              "format": {"type": "string"},
+              "source_required_alpha": {"type": "boolean"},
+              "output_has_alpha": {"type": "boolean"}
+            },
+            "additionalProperties": true
+          },
+          "proof": {
+            "type": "object",
+            "properties": {
+              "state": {"enum": ["not_run", "pass", "fail", "blocked"]},
+              "before_snapshot": {"type": "string"},
+              "after_snapshot": {"type": "string"},
+              "restore_snapshot": {"type": "string"},
+              "notes": {"type": "string"}
+            },
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "$defs": {
+    "imageContract": {
+      "type": "object",
+      "required": ["source_path", "source_name", "width", "height", "source_format", "mode", "has_alpha", "sha256"],
+      "properties": {
+        "source_path": {"type": "string"},
+        "source_name": {"type": "string"},
+        "width": {"type": "integer", "minimum": 1},
+        "height": {"type": "integer", "minimum": 1},
+        "source_format": {"type": "string"},
+        "mode": {"type": "string"},
+        "has_alpha": {"type": "boolean"},
+        "sha256": {"type": "string", "pattern": "^[a-fA-F0-9]{64}$"}
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}
