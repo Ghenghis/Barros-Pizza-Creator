@@ -1,5 +1,6 @@
 param(
-    [string]$CreatorRoot = "S:\Unity_Games\PC3 - Pizza Creator"
+    [string]$CreatorRoot = "S:\Unity_Games\PC3 - Pizza Creator",
+    [string]$StudioRoot = ""
 )
 
 Set-StrictMode -Version Latest
@@ -7,7 +8,6 @@ $ErrorActionPreference = "Stop"
 
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
-Add-Type -AssemblyName Microsoft.VisualBasic
 
 $repoRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")).Path
 
@@ -19,6 +19,26 @@ function Find-Python {
     foreach ($name in @("py", "python", "python3")) {
         $cmd = Get-Command $name -ErrorAction SilentlyContinue
         if ($cmd) { return $cmd.Source }
+    }
+    return ""
+}
+
+function Find-StudioRoot {
+    $candidates = @()
+    if ($StudioRoot) { $candidates += $StudioRoot }
+    if ($env:BARROS_STUDIO_ROOT) { $candidates += $env:BARROS_STUDIO_ROOT }
+    $candidates += @(
+        "S:\Unity_Games\PC3\_agent-workspaces\chatgpt-pc3-main",
+        "S:\Unity_Games\PC3\_agent-workspaces\chatgpt-pc3-studio",
+        (Join-Path (Split-Path $repoRoot -Parent) "PC3_Barros_Runtime_Proof_Studio")
+    )
+    foreach ($candidate in $candidates) {
+        if (-not $candidate) { continue }
+        $generator = Join-Path $candidate "scripts\generate_creator_controlled_stimuli.py"
+        $scope = Join-Path $candidate "00_READ_FIRST_PC3_ONLY.md"
+        if ((Test-Path -LiteralPath $generator -PathType Leaf) -and (Test-Path -LiteralPath $scope -PathType Leaf)) {
+            return (Resolve-Path -LiteralPath $candidate).Path
+        }
     }
     return ""
 }
@@ -57,33 +77,28 @@ function Show-Error([string]$Message) {
     ) | Out-Null
 }
 
-function Show-Info([string]$Message) {
-    [System.Windows.Forms.MessageBox]::Show(
-        $Message,
-        "PC3 Native JPEG Research Lab",
-        [System.Windows.Forms.MessageBoxButtons]::OK,
-        [System.Windows.Forms.MessageBoxIcon]::Information
-    ) | Out-Null
-}
-
-function Invoke-PythonVisible {
-    param([string]$Script, [string[]]$Arguments)
+function Invoke-PythonFileVisible {
+    param([string]$ScriptPath, [string[]]$Arguments)
     $python = Find-Python
     if (-not $python) {
         Show-Error "Python was not found. Run 'Setup / Verify Research Tools' first."
         return $false
     }
-    $fullScript = Join-Path $repoRoot $Script
-    if (-not (Test-Path -LiteralPath $fullScript -PathType Leaf)) {
-        Show-Error "Research script is missing:`r`n$fullScript"
+    if (-not (Test-Path -LiteralPath $ScriptPath -PathType Leaf)) {
+        Show-Error "Research script is missing:`r`n$ScriptPath"
         return $false
     }
-    $quoted = @('"' + $fullScript + '"')
+    $quoted = @('"' + $ScriptPath + '"')
     foreach ($arg in $Arguments) { $quoted += ('"' + $arg.Replace('"','\"') + '"') }
     $command = '& "' + $python + '" ' + ($quoted -join ' ')
     $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($command + '; Write-Host ""; Read-Host "Press Enter to close"'))
     Start-Process powershell.exe -ArgumentList @("-NoProfile", "-EncodedCommand", $encoded)
     return $true
+}
+
+function Invoke-CreatorPythonVisible {
+    param([string]$RelativeScript, [string[]]$Arguments)
+    return Invoke-PythonFileVisible (Join-Path $repoRoot $RelativeScript) $Arguments
 }
 
 function Default-EvidenceRoot {
@@ -116,15 +131,15 @@ $title.Location = New-Object System.Drawing.Point(24, 20)
 $form.Controls.Add($title)
 
 $subtitle = New-Object System.Windows.Forms.Label
-$subtitle.Text = "Creator-only • creator-0.11.272 • controlled experiments • retained evidence"
+$subtitle.Text = "Creator executor + Studio canonical stimuli/observer • creator-0.11.272"
 $subtitle.AutoSize = $true
 $subtitle.ForeColor = [System.Drawing.Color]::Silver
 $subtitle.Location = New-Object System.Drawing.Point(27, 58)
 $form.Controls.Add($subtitle)
 
 $scope = New-Object System.Windows.Forms.Label
-$scope.Text = "This lab does not edit Runtime Proof Studio or Barro's Workbench. Native runtime PASS still requires the existing acceptance contracts."
-$scope.Size = New-Object System.Drawing.Size(690, 44)
+$scope.Text = "Ownership remains strict: this Creator lab may read/run Studio's canonical stimulus generator, but never edits Studio/Workbench. Runtime PASS still requires retained contract evidence."
+$scope.Size = New-Object System.Drawing.Size(690, 48)
 $scope.Location = New-Object System.Drawing.Point(27, 88)
 $scope.ForeColor = [System.Drawing.Color]::FromArgb(235, 190, 120)
 $form.Controls.Add($scope)
@@ -157,27 +172,27 @@ Add-Button "2. Trace Decompiled Save → JPEG Source" 390 145 {
         if (-not $source) { return }
         $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
         $out = Join-Path $evidenceRoot ("static-trace-" + $stamp)
-        Invoke-PythonVisible "scripts\trace_native_jpeg_source.py" @($source, "--out", $out) | Out-Null
+        Invoke-CreatorPythonVisible "scripts\trace_native_jpeg_source.py" @($source, "--out", $out) | Out-Null
     } catch { Show-Error $_.Exception.Message }
 } "Ranks save/render/readback/JPEG/file-write methods and probable caller references."
 
-Add-Button "3. Generate Controlled Fixtures" 28 215 {
+Add-Button "3. Generate Canonical Studio Stimuli" 28 215 {
     try {
-        $base = Select-File "Select canonical exact-placement base fixture" "JSON (*.json)|*.json|All files (*.*)|*.*"
-        if (-not $base) { return }
-        $experiment = [Microsoft.VisualBasic.Interaction]::InputBox(
-            "Experiment ID: E01 rotation, E02 X, E03 Z, E04 Y, E05 overlap/order, E09 A/B/C/D",
-            "Generate PC3 JPEG Research Fixtures",
-            "E09"
-        ).Trim().ToUpperInvariant()
-        if ($experiment -notin @("E01","E02","E03","E04","E05","E09")) {
-            Show-Error "Unsupported fixture experiment: $experiment"
+        $studio = Find-StudioRoot
+        if (-not $studio) {
+            $studio = Select-Folder "Select the READ-ONLY Runtime Proof Studio repository root containing scripts\generate_creator_controlled_stimuli.py"
+        }
+        if (-not $studio) { return }
+        $generator = Join-Path $studio "scripts\generate_creator_controlled_stimuli.py"
+        if (-not (Test-Path -LiteralPath $generator -PathType Leaf)) {
+            Show-Error "The selected folder is not the expected Studio repository; canonical generator not found.`r`n$generator"
             return
         }
-        $out = Join-Path $evidenceRoot "fixtures"
-        Invoke-PythonVisible "scripts\generate_jpeg_experiment_fixtures.py" @($base, $experiment, "--out", $out) | Out-Null
+        $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
+        $out = Join-Path $evidenceRoot ("canonical-stimuli-" + $stamp)
+        Invoke-PythonFileVisible $generator @("--output-root", $out) | Out-Null
     } catch { Show-Error $_.Exception.Message }
-} "Creates exact variants and machine-proves which JSON fields changed."
+} "Runs Studio's canonical E00-E10 generator read-only. Creator does not own or modify that generator."
 
 Add-Button "4. Analyze Native JPEG Pair" 390 215 {
     try {
@@ -194,7 +209,7 @@ Add-Button "5. Fingerprint JPEG Encoder Structure" 28 285 {
         $outDir = Join-Path $evidenceRoot ("encoder-fingerprint-" + $stamp)
         New-Item -ItemType Directory -Force -Path $outDir | Out-Null
         $out = Join-Path $outDir "jpeg-encoder-fingerprint.json"
-        Invoke-PythonVisible "scripts\fingerprint_jpeg_encoder.py" @($jpeg, "--out", $out) | Out-Null
+        Invoke-CreatorPythonVisible "scripts\fingerprint_jpeg_encoder.py" @($jpeg, "--out", $out) | Out-Null
     } catch { Show-Error $_.Exception.Message }
 } "DQT/DHT/SOF/APP fingerprint + exact IJG quality-family matching when applicable."
 
@@ -204,7 +219,7 @@ Add-Button "6. Fit World X/Z → JPEG Camera Map" 390 285 {
         if (-not $csv) { return }
         $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
         $out = Join-Path $evidenceRoot ("camera-mapping-" + $stamp + ".json")
-        Invoke-PythonVisible "scripts\fit_jpeg_camera_mapping.py" @($csv, "--out", $out) | Out-Null
+        Invoke-CreatorPythonVisible "scripts\fit_jpeg_camera_mapping.py" @($csv, "--out", $out) | Out-Null
     } catch { Show-Error $_.Exception.Message }
 } "Fits affine and homography models with held-out residuals."
 
@@ -216,7 +231,7 @@ Add-Button "7. Fit Native Yaw → JPEG Orientation" 28 355 {
         if (-not $csv) { return }
         $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
         $out = Join-Path $evidenceRoot ("orientation-transfer-" + $stamp + ".json")
-        Invoke-PythonVisible "scripts\fit_jpeg_orientation_transfer.py" @($baseline, $csv, "--out", $out) | Out-Null
+        Invoke-CreatorPythonVisible "scripts\fit_jpeg_orientation_transfer.py" @($baseline, $csv, "--out", $out) | Out-Null
     } catch { Show-Error $_.Exception.Message }
 } "Uses difference masks + PCA to estimate image orientation and fit native yaw transfer."
 
@@ -229,17 +244,15 @@ Add-Button "8. Open Research Evidence Folder" 390 355 {
 
 Add-Button "Open Research Roadmap / Papers Guide" 28 425 {
     try {
-        $roadmap = Join-Path $repoRoot "docs\NATIVE_PIZZA_JPEG_REVERSE_ENGINEERING_ROADMAP.md"
-        Start-Process $roadmap
+        Start-Process (Join-Path $repoRoot "docs\NATIVE_PIZZA_JPEG_REVERSE_ENGINEERING_ROADMAP.md")
     } catch { Show-Error $_.Exception.Message }
 } "Opens the native JPEG reverse-engineering roadmap."
 
 Add-Button "Open Exact Experiment Harness Spec" 390 425 {
     try {
-        $spec = Join-Path $repoRoot "docs\NATIVE_JPEG_EXPERIMENT_HARNESS_SPEC.md"
-        Start-Process $spec
+        Start-Process (Join-Path $repoRoot "docs\NATIVE_JPEG_EXPERIMENT_HARNESS_SPEC.md")
     } catch { Show-Error $_.Exception.Message }
-} "Opens Claude's implementation-ready exact-placement research harness specification."
+} "Opens Claude's implementation-ready exact-model stimulus executor specification."
 
 $status = New-Object System.Windows.Forms.TextBox
 $status.Multiline = $true
@@ -250,7 +263,7 @@ $status.ForeColor = [System.Drawing.Color]::Gainsboro
 $status.BorderStyle = "FixedSingle"
 $status.Location = New-Object System.Drawing.Point(28, 500)
 $status.Size = New-Object System.Drawing.Size(692, 82)
-$status.Text = "Repository: $repoRoot`r`nCreator root: $CreatorRoot`r`nEvidence root: $evidenceRoot`r`nPython: $(Find-Python)"
+$status.Text = "Creator repo: $repoRoot`r`nCreator root: $CreatorRoot`r`nStudio read-only root: $(Find-StudioRoot)`r`nEvidence: $evidenceRoot`r`nPython: $(Find-Python)"
 $form.Controls.Add($status)
 
 [void]$form.ShowDialog()
