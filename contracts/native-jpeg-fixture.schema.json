@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://barros.local/contracts/native-jpeg-fixture.schema.json",
+  "title": "PC3 Pizza Creator native JPEG exact-placement research fixture",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "experiment_id",
+    "variant",
+    "runtime_profile",
+    "name",
+    "shape",
+    "profit_factor",
+    "placements"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "experiment_id": {"type": "string", "minLength": 1, "maxLength": 32},
+    "variant": {"type": "string", "minLength": 1, "maxLength": 64},
+    "runtime_profile": {"const": "creator-0.11.272"},
+    "name": {"type": "string", "minLength": 1, "maxLength": 54},
+    "shape": {"enum": ["Round", "Square", "Star", "Triangle"]},
+    "profit_factor": {"type": "number", "minimum": 0.0, "maximum": 2.0},
+    "placements": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 180,
+      "items": {"$ref": "#/$defs/placement"}
+    }
+  },
+  "$defs": {
+    "position": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "z"],
+      "properties": {
+        "x": {"type": "number", "minimum": -5.5, "maximum": -0.5},
+        "y": {"type": "number", "minimum": 0.9, "maximum": 1.5},
+        "z": {"type": "number", "minimum": -2.5, "maximum": 2.5}
+      }
+    },
+    "rotation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "z"],
+      "properties": {
+        "x": {"type": "number"},
+        "y": {"type": "number"},
+        "z": {"type": "number"}
+      }
+    },
+    "placement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sequence", "ingredient_id", "size", "position", "rotation"],
+      "properties": {
+        "sequence": {"type": "integer", "minimum": 0, "maximum": 179},
+        "ingredient_id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "size": {"enum": ["Large", "Medium", "Small"]},
+        "position": {"$ref": "#/$defs/position"},
+        "rotation": {"$ref": "#/$defs/rotation"}
+      }
+    }
+  },
+  "x-pc3-research-invariants": [
+    "placements.sequence values must be unique and contiguous starting at zero",
+    "ingredient_id + size must resolve in the exact creator-0.11.272 installed catalog",
+    "runtime fixture validation must reject NaN/Infinity even though JSON itself does not encode them",
+    "the fixture controls native PizzaModel transforms only; it does not generate the JPEG"
+  ]
+}
