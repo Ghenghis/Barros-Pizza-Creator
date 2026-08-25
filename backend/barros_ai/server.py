@@ -37,6 +37,25 @@ class App:
         self.provider = ProviderClient(self.settings)
         self.orchestrator = PizzaOrchestrator(self.provider)
 
+    def _contract_path(self) -> Path:
+        """Resolve the RC contract in source and installed layouts.
+
+        ``backend/main.py`` deliberately passes the backend directory as the App
+        root. In a source checkout the contract is therefore one level above it;
+        the installer mirrors that layout as ``BarrosAI/backend`` plus
+        ``BarrosAI/contracts``. Keeping both candidates also supports focused
+        tests that construct an App directly at a temporary package root.
+        """
+        candidates = (
+            self.root / "contracts" / "rc1.acceptance.json",
+            self.root.parent / "contracts" / "rc1.acceptance.json",
+        )
+        for path in candidates:
+            if path.is_file():
+                return path
+        checked = ", ".join(str(path) for path in candidates)
+        raise ValueError(f"Acceptance contract not found; checked: {checked}")
+
     def contract_status(self) -> dict[str, Any]:
         """Expose the static acceptance contract without fabricating runtime proof.
 
@@ -46,19 +65,23 @@ class App:
         not evaluated here. Authoritative PASS promotion still belongs to the
         proof harness with retained evidence.
         """
-        path = self.root / "contracts" / "rc1.acceptance.json"
-        if not path.is_file():
-            raise ValueError(f"Acceptance contract not found: {path}")
+        path = self._contract_path()
         contract = json.loads(path.read_text(encoding="utf-8-sig"))
         if not isinstance(contract, dict):
             raise ValueError("Acceptance contract root must be a JSON object.")
 
+        layers = contract.get("layers")
+        if not isinstance(layers, list):
+            raise ValueError("Acceptance contract layers must be a JSON array.")
+
         gates: list[dict[str, Any]] = []
         layer_summary: list[dict[str, Any]] = []
-        for layer in contract.get("layers") or []:
+        for layer in layers:
             if not isinstance(layer, dict):
-                continue
-            layer_gates = [row for row in (layer.get("gates") or []) if isinstance(row, dict)]
+                raise ValueError("Acceptance contract layers must contain JSON objects.")
+            layer_gates = layer.get("gates")
+            if not isinstance(layer_gates, list) or not all(isinstance(row, dict) for row in layer_gates):
+                raise ValueError("Acceptance contract gates must be a JSON array of objects.")
             gates.extend(layer_gates)
             layer_summary.append({
                 "id": layer.get("id", ""),
