@@ -1,0 +1,41 @@
+{
+  "schema_version": "1.0",
+  "contract_id": "barros-pc3-only-scope",
+  "title": "Pizza Connection 3 / Barro's Pizza exclusive project scope",
+  "status": "locked",
+  "allowed": {
+    "games": [
+      "Pizza Connection 3",
+      "Pizza Connection 3 - Pizza Creator"
+    ],
+    "branding": "Pizza Connection 3 / Barro's Pizza",
+    "runtime_profiles": [
+      "studio-1.11.403",
+      "creator-0.11.272"
+    ],
+    "repositories": [
+      "Ghenghis/Barros-Pizza-Creator",
+      "Ghenghis/barros-workbench",
+      "Ghenghis/PC3_Barros_Runtime_Proof_Studio"
+    ],
+    "local_roots": [
+      "S:\\Unity_Games\\PC3",
+      "S:\\Unity_Games\\PC3 - Pizza Creator",
+      "S:\\Barro's-Pizza"
+    ]
+  },
+  "prohibited": {
+    "games": [
+      "Pizza Connection 2",
+      "Fast Food Tycoon 2",
+      "Pizza Tycoon 2"
+    ],
+    "rule": "Do not inspect, edit, generate for, reverse engineer, migrate, test, package, document, or continue tasks for PC2/Fast Food Tycoon 2 under this program. Do not reuse PC2 assets, formats, catalogs, counts, tools, plans, contracts, evidence, or assumptions as PC3 truth."
+  },
+  "agent_behavior": {
+    "on_pc2_request_or_context": "STOP that task, mark it out_of_scope, do not mutate PC2 files, and redirect work to the corresponding PC3 or PC3 Pizza Creator target.",
+    "on_ambiguous_game_target": "Default to PC3 only when the surrounding repository/runtime profile proves PC3; otherwise fail closed and report target ambiguity.",
+    "cross_project_rule": "Workbench, Runtime Proof Studio, Barro's Pizza Creator, pizza-agent, Windows-MCP tasks, GitHub/GitLab publication, Unity work, image generation and runtime proof are all PC3-only."
+  },
+  "truth_rule": "PC2 evidence can never satisfy a PC3 gate. Only evidence from the exact PC3 runtime profile named by the relevant contract is admissible."
+}
