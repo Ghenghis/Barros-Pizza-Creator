@@ -2,11 +2,11 @@
 
 **Owner:** Claude — PC3 Pizza Creator native executor/source-side research  
 **Runtime:** `creator-0.11.272`  
-**Independent stimulus producer/observer:** ChatGPT-owned Runtime Proof Studio  
+**Independent stimulus/verification/observation owner:** ChatGPT-owned Runtime Proof Studio  
 **Certified Studio research-control baseline:** `f822de627b3391c8639b74a8b4b72043e101b678`  
-**Status:** research architecture ready; stock/native JPEG algorithm remains **PARTIALLY CHARACTERIZED** until retained runtime evidence closes the JRE contract.
+**Status:** research architecture ready; stock/native JPEG algorithm remains **PARTIALLY CHARACTERIZED** until retained runtime/source evidence closes the JRE contract.
 
-The Studio baseline above is a known-good interoperability reference, not a permanent pin. Before a live campaign, verify current Studio `main` is clean/green and still exposes the same shared stimulus contract rather than resetting Studio to an old SHA.
+The Studio baseline above is a known-good interoperability reference, not a permanent pin. Before a live campaign, verify current Studio `main` is clean/green and still exposes the same shared contracts rather than resetting Studio to an old SHA.
 
 ## 1. Do not rediscover the architecture
 
@@ -32,17 +32,23 @@ Main Creator runtime truth remains separate:
 contracts/rc1.acceptance.json
 ```
 
-## 2. One controlled-experiment authority
+## 2. One controlled-experiment authority, two shared contracts
 
 Do **not** create a Creator-side E00–E10 generator, observer, campaign ledger, or replacement JPEG writer.
 
-Shared schema:
+Shared controlled input:
 
 ```text
 contracts/creator-controlled-stimulus.schema.json
 ```
 
-Creator and Studio copies must remain semantically identical.
+Shared Creator execution receipt:
+
+```text
+contracts/creator-controlled-execution-evidence.schema.json
+```
+
+Creator and Studio copies of both contracts must remain semantically identical.
 
 Studio canonical generator:
 
@@ -50,7 +56,7 @@ Studio canonical generator:
 Ghenghis/PC3_Barros_Runtime_Proof_Studio/scripts/generate_creator_controlled_stimuli.py
 ```
 
-Studio canonical observer:
+Studio canonical observer/verifier:
 
 ```text
 Ghenghis/PC3_Barros_Runtime_Proof_Studio/CAPTURE_CREATOR_CANONICAL_STIMULUS.bat
@@ -60,7 +66,7 @@ The Studio generator produces 60 controlled E00–E10 cases with constant model 
 
 ## 3. Use Studio's certified campaign control plane — do not manually assemble E00–E10
 
-Studio now owns the complete resumable campaign shell. Claude consumes it read-only while owning only the Creator native executor.
+Studio owns the resumable campaign shell. Claude consumes it read-only while owning only the Creator native executor and execution receipt.
 
 Primary Studio entry point:
 
@@ -68,7 +74,7 @@ Primary Studio entry point:
 Ghenghis/PC3_Barros_Runtime_Proof_Studio/CREATOR_JPEG_RESEARCH_CONTROL_PANEL.bat
 ```
 
-The control panel exposes:
+It exposes:
 
 ```text
 GENERATE_CREATOR_CANONICAL_STIMULI.bat
@@ -83,11 +89,11 @@ CAPTURE_CREATOR_JPEG_FORENSICS.bat
 
 ### Canonical corpus identity
 
-`GENERATE_CREATOR_CANONICAL_STIMULI.bat` uses Studio's one canonical generator, then seals the emitted corpus with:
+`GENERATE_CREATOR_CANONICAL_STIMULI.bat` uses Studio's one canonical generator, then seals:
 
 ```text
 per-case exact stimulus SHA-256
-shared schema SHA-256
+shared stimulus-schema SHA-256
 deterministic whole-corpus SHA-256
 ```
 
@@ -97,7 +103,7 @@ Default PC3 evidence location:
 S:\Unity_Games\PC3\_ecosystem-evidence\creator-jpeg-stimuli\canonical-e00-e10
 ```
 
-The seal proves stimulus bytes only. It is not native runtime proof.
+The seal proves input bytes only. It is not runtime proof.
 
 ### Resume / next case
 
@@ -107,16 +113,17 @@ Use:
 RUN_NEXT_CREATOR_JPEG_CASE.bat
 ```
 
-rather than manually choosing the next case. Studio:
+Studio:
 
-1. reads the current sealed campaign ledger;
-2. selects the next case needing attention;
-3. verifies that exact stimulus file still matches its sealed SHA-256;
+1. reads the exact sealed campaign ledger;
+2. selects the next case below `fully_bound`;
+3. verifies the exact stimulus SHA;
 4. retains BEFORE UserData;
-5. asks Claude's Creator executor to apply that exact stimulus and requested native operation;
-6. retains AFTER UserData/native JPEG deltas;
-7. performs Studio analysis plus independent Creator-parser cross-check;
-8. refreshes campaign status even when the case remains unresolved.
+5. asks Claude's Creator executor to apply the exact stimulus/native operations and retain the execution receipt;
+6. retains AFTER stock UserData/JPEG deltas;
+7. independently verifies Claude's receipt against the exact stimulus/model/order/actions/assembly;
+8. performs Studio analysis plus independent Creator-parser cross-check;
+9. refreshes campaign status even when the case remains unresolved.
 
 ### Campaign status
 
@@ -126,26 +133,32 @@ Use:
 CREATOR_JPEG_CAMPAIGN_STATUS.bat
 ```
 
-Case states:
+States:
 
 ```text
 not_run
 observed
 cross_validated
+fully_bound
 unresolved
 mismatch
 ```
 
-Only evidence matching the exact current:
+`cross_validated` means stock-output observation + independent JPEG parser agreement, but the exact Creator execution binding is absent/not PASS.
+
+`fully_bound` means:
 
 ```text
-experiment_id
-case_id
-creator-0.11.272 profile
-stimulus SHA-256
+exact sealed stimulus
++
+Studio-verified exact Creator execution receipt/model/actions/assembly
++
+stock output observation
++
+independent Studio/Creator JPEG parser agreement
 ```
 
-can satisfy the current case. Stale corpus revisions remain visible but never count as current completion.
+Only evidence matching the current exact experiment/case/profile/stimulus SHA can satisfy the current case. Stale corpus revisions remain visible but never count.
 
 ### JRE controlled-input readiness
 
@@ -155,9 +168,9 @@ Use:
 CREATOR_JPEG_JRE_READINESS.bat
 ```
 
-This shows which JRE questions now have all mapped E00–E10 controlled-output inputs available. It **never edits or promotes** the Claude-owned JRE acceptance contract. Source/runtime/conclusion evidence remains separately required.
+Mapped JRE inputs become ready only when every required canonical case is `fully_bound`. The board **never edits or promotes** the Claude-owned JRE acceptance contract; source/runtime/conclusion evidence remains separate.
 
-Studio MCP v1.2 also exposes read-only agent surfaces:
+Studio MCP v1.2 also exposes read-only status surfaces:
 
 ```text
 pc3_creator_jpeg_campaign_status
@@ -169,9 +182,9 @@ These tools select/report only. They do not launch Creator, mutate the campaign,
 
 ## 4. Claude's unique implementation task
 
-Implement the **exact-model stimulus executor** in Creator.
+Implement the **exact-model stimulus executor** and **execution receipt producer** in Creator.
 
-It must:
+Execution path:
 
 ```text
 shared controlled stimulus
@@ -184,10 +197,34 @@ shared controlled stimulus
  -> native GetPizzaShape(...).DoughPositions
  -> real PizzaModel / IngredientContainerModel
  -> native LoadPizzaFromModel
+ -> inspect actual loaded model
  -> native SaveCurrentPizzaToRecipes when requested
- -> native recipe-book reload exact ModelSignature when requested
+ -> native recipe-book reload exact model when requested
  -> native re-save only after exact reload verification when requested
+ -> emit shared Creator execution-evidence receipt
 ```
+
+For every attempted canonical case, emit one receipt conforming exactly to:
+
+```text
+contracts/creator-controlled-execution-evidence.schema.json
+```
+
+It must include:
+
+```text
+experiment_id / case_id
+exact stimulus SHA-256
+Creator repo SHA
+exact Assembly-CSharp SHA-256
+actual observed model name/shape/profit
+actual placement ARRAY ORDER
+actual IDs/sizes/enum values/positions/rotations
+requested / attempted / success state for Preview, Save, reload verify, re-save
+actual reloaded model when reload verification was requested
+```
+
+Do not merely copy the stimulus into `observed_model`; inspect the actual constructed/loaded native model.
 
 It must **not**:
 
@@ -250,7 +287,7 @@ storage/path APIs
 save/event publishing
 ```
 
-Use ILSpy to verify lexical/call relationships; use dnSpyEx for actual live call stacks/arguments. Use RenderDoc only when render target/draw/depth/camera state remains unresolved.
+Use ILSpy to verify lexical/call relationships; dnSpyEx for actual live call stacks/arguments. Use RenderDoc only when camera/render-target/draw/depth state remains unresolved.
 
 ## 6. One-variable input proof
 
@@ -269,37 +306,54 @@ E03 allow model.placements[*].position.z
 E04 allow model.placements[*].position.y
 ```
 
-`case_id` and `notes` are evidence labels, not substantive model changes.
+`case_id` and `notes` are evidence labels, not substantive model changes. If unexpected substantive fields change, do not adjudicate the pair as a one-variable experiment.
 
-If unexpected substantive fields change, do not adjudicate the pair as a one-variable experiment.
+Studio's canonical generator is regression-tested for constant model names within one-variable sweeps.
 
-Studio's canonical generator is also regression-tested for constant model names within one-variable sweeps.
+## 7. Three independent evidence links
 
-## 7. Native JPEG analysis layers
+### A. Controlled input — Studio
 
-### Primary independent observation — Studio
+Sealed stimulus/corpus identity proves exactly what was requested.
 
-Studio's canonical observer retains:
+### B. Actual Creator execution — Claude produces, Studio verifies
+
+Claude emits:
 
 ```text
-exact stimulus SHA
-experiment_id / case_id
+creator-controlled-execution-evidence.schema.json
+```
+
+Studio independently verifies it with:
+
+```text
+Ghenghis/PC3_Barros_Runtime_Proof_Studio/scripts/verify_creator_controlled_execution.py
+```
+
+A missing/wrong receipt keeps the case below `fully_bound` and canonical Studio capture uses exit code `5`.
+
+### C. Stock output — Studio independently observes
+
+Studio retains:
+
+```text
 exact Creator assembly identity
 before UserData tree
-stock native operation
 after UserData tree
-changed/created JPEGs
+changed/created stock JPEGs
 codec fingerprint
 pixel differential
 DCT differential
 single-piece centroid/orientation measurement where applicable
 ```
 
-The canonical wrapper retains the base observation first, then independently cross-validates each observed native JPEG using both Studio and Creator parsers.
+It then cross-validates each retained native JPEG using Studio and Creator parsers independently. Parser disagreement uses canonical exit code `4`; missing expected native output uses exit code `3`.
 
-### Creator independent cross-check
+A Creator Save receipt reporting success never substitutes for the stock UserData observation.
 
-Creator-side tools:
+## 8. Native JPEG analysis layers
+
+Creator independent tools:
 
 ```text
 scripts/analyze_jpeg_experiment.py
@@ -308,53 +362,39 @@ scripts/fit_jpeg_camera_mapping.py
 scripts/fit_jpeg_orientation_transfer.py
 ```
 
-Studio automatic/standalone cross-validation:
+Studio automatic/standalone parser cross-validation:
 
 ```text
 Ghenghis/PC3_Barros_Runtime_Proof_Studio/CROSS_VALIDATE_CREATOR_JPEG_FINGERPRINT.bat
 ```
 
-If independent parsers disagree on file hash, SOF/component sampling, DQT, DHT, restart interval, metadata fingerprints, or IJG quality-family candidates, keep the disputed forensic fact unresolved.
+If independent parsers disagree on file hash, SOF/component sampling, DQT, DHT, restart interval, metadata fingerprints, or IJG quality-family candidates, keep the disputed fact unresolved.
 
-Parser agreement proves only common JPEG structural observations. It does not prove the native Unity writer/camera/save call chain.
+Parser agreement is structural evidence only, not implementation identity.
 
-## 8. Mathematical tests
+## 9. Mathematical tests
 
 ### Camera/framing
 
-Canonical E02/E03 produce known X/Z stimuli.
+Canonical fully-bound E02/E03 provide known X/Z and proven executed-model transforms. Studio's primary pixel measurement supplies centroid/bounds/PCA. Compare affine vs projective homography; source/runtime still determines the actual Unity Camera path.
 
-Studio's primary pixel measurement uses noise-aware component isolation and measured centroid/bounds/PCA. Fit:
-
-```text
-affine mapping
-vs
-projective homography
-```
-
-Creator-side independent fitter:
+Creator independent fitter:
 
 ```text
 scripts/fit_jpeg_camera_mapping.py
 ```
 
-Held-out residuals provide inference about whether capture behaves approximately affine/orthographic-like or requires projective mapping. Source/runtime evidence still decides the actual Unity Camera path.
-
 ### Rotation
 
-Canonical E01 holds the model constant except Y yaw.
-
-Use Studio's automatic component/PCA measurement as the primary observation. Creator's:
+Fully-bound E01 holds the substantive model constant except yaw. Use Studio's component/PCA measurement plus Creator's independent:
 
 ```text
 scripts/fit_jpeg_orientation_transfer.py
 ```
 
-can independently fit native yaw -> image axial orientation.
-
 Use a visibly asymmetric topping; rotationally symmetric toppings cannot prove yaw transfer.
 
-## 9. JPEG encoder forensics
+## 10. JPEG encoder forensics
 
 Read:
 
@@ -373,9 +413,9 @@ file hash
  -> live runtime call identity
 ```
 
-Do not call the encoder `libjpeg`, `Unity EncodeToJPG`, or anything else from DQT similarity alone.
+Do not identify the encoder implementation from DQT similarity alone.
 
-## 10. Online/paper-backed enhanced placement research
+## 11. Online/paper-backed enhanced placement research
 
 Read:
 
@@ -383,7 +423,7 @@ Read:
 docs/RESEARCH_BACKED_PLACEMENT_AND_JPEG_GUIDE.md
 ```
 
-Research-backed optional enhanced route:
+Optional enhanced route after stock characterization:
 
 ```text
 real native dough domain
@@ -400,44 +440,33 @@ real native dough domain
 + native JPEG generator whenever possible
 ```
 
-Key literature families:
+Research families include Bridson, Yuksel, capacity-constrained/optimal-transport blue noise, anisotropic/shaped sampling, Vogel golden angle, Zhang calibration, SSIM, Kornblum quantization fingerprints, and Cogranne standard JPEG quality-factor determination.
 
-- Bridson Poisson-disk sampling;
-- Yuksel sample elimination;
-- Balzer/Schlömer/Deussen capacity-constrained Lloyd;
-- de Goes et al. optimal-transport blue noise;
-- Li/Wei/Sander/Fu anisotropic blue noise;
-- Wang/Hu/Urahama shaped anisotropic pieces;
-- Vogel golden-angle/phyllotaxis;
-- Zhang planar camera calibration;
-- Wang/Bovik/Sheikh/Simoncelli SSIM;
-- Kornblum JPEG quantization-table software fingerprints;
-- Cogranne exact standard JPEG quality-factor determination.
+Do not replace stock behavior until stock behavior is characterized and `NATIVE_MATCH` remains available.
 
-Do not replace stock behavior with this enhanced algorithm until stock behavior is characterized and `NATIVE_MATCH` remains available.
-
-## 11. Fastest research order
+## 12. Fastest research order
 
 ```text
-A. finish Creator exact-model stimulus executor
+A. finish Creator exact-model executor + execution receipt
 B. static save->render->JPEG source trace in parallel
 C. Studio generate + seal canonical E00-E10 corpus
-D. use RUN_NEXT_CREATOR_JPEG_CASE.bat repeatedly; do not hand-pick around unresolved cases silently
-E. E00 repeated identical native saves
-F. E01 rotation
-G. E02/E03 camera mapping
-H. E04/E05 depth/order
-I. E07 size footprint
-J. E08 dough shape/framing
-K. E09 A/B/C/D controlled differential
-L. E10 native save/reload/re-save determinism
-M. use campaign status + JRE input-readiness boards
-N. confirm static candidates with dnSpyEx/RenderDoc
-O. fill NATIVE_PIZZA_JPEG_ALGORITHM.md
-P. decide native reuse vs controlled capture vs optional enhanced placement
+D. use RUN_NEXT_CREATOR_JPEG_CASE.bat repeatedly and supply the receipt for every case
+E. reach fully_bound, not merely parser cross_validated
+F. E00 repeated identical native saves
+G. E01 rotation
+H. E02/E03 camera mapping
+I. E04/E05 depth/order
+J. E07 size footprint
+K. E08 dough shape/framing
+L. E09 A/B/C/D controlled differential
+M. E10 native save/reload/re-save determinism
+N. use campaign status + JRE input-readiness boards
+O. confirm static candidates with dnSpyEx/RenderDoc
+P. fill NATIVE_PIZZA_JPEG_ALGORITHM.md
+Q. decide native reuse vs controlled capture vs optional enhanced placement
 ```
 
-## 12. Completion rule
+## 13. Completion rule
 
 Do not call the native image/JPEG algorithm complete until every required gate in:
 
@@ -447,4 +476,4 @@ contracts/jpeg-reverse-engineering.acceptance.json
 
 is supported by retained evidence and `docs/NATIVE_PIZZA_JPEG_ALGORITHM.md` no longer has unresolved required `UNKNOWN` components.
 
-A Studio campaign state of `cross_validated` or even `60/60` means the controlled **observation layer** is complete. It does not replace required source/runtime proof or automatically set a JRE gate to PASS.
+Even a Studio `fully_bound 60/60` campaign means the controlled stimulus → actual Creator execution → stock output evidence layer is complete. It does **not** replace required source/runtime call-chain proof or automatically set a JRE gate to PASS.
