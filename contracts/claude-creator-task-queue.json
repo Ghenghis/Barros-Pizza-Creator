@@ -1,0 +1,39 @@
+{
+  "schema_version": "1.0",
+  "contract_id": "claude-pc3-pizza-creator-next-tasks",
+  "owner": "Claude",
+  "workstream": "PC3 Pizza Creator",
+  "scope_contract": "contracts/workstream-ownership.json",
+  "human_handoff": "CLAUDE_NEXT_TASKS_PC3_CREATOR.md",
+  "truth_contract": "contracts/rc1.acceptance.json",
+  "rules": {
+    "pc2_forbidden": true,
+    "runtime_pass_requires_retained_evidence": true,
+    "do_not_duplicate_chatgpt_pc3_main": true,
+    "do_not_expose_credentials": true,
+    "do_not_commit_secret_paths_or_values": true
+  },
+  "tasks": [
+    {"id":"CLD-000","priority":0,"title":"Finish Slice-1 housekeeping","state":"in_progress","deliverable":"green Python/.NET tests plus evidence/claude/slice1-housekeeping.json"},
+    {"id":"CLD-101","priority":1,"title":"Align pizza-agent final JSON with native Creator runtime contract","state":"not_run","depends_on":["CLD-000"]},
+    {"id":"CLD-102","priority":2,"title":"Connect pizza-agent through existing Creator sidecar/plugin","state":"not_run","depends_on":["CLD-101"]},
+    {"id":"CLD-201","priority":3,"title":"Finish real fifth-tab Chat/Lab/Crew/Voice UI","state":"not_run","depends_on":["CLD-102"],"targets":["UI-301","UI-302","UI-303"]},
+    {"id":"CLD-301","priority":4,"title":"Complete native Preview/Restore/Apply","state":"not_run","depends_on":["CLD-102"],"targets":["ACT-401","ACT-402","ACT-403"]},
+    {"id":"CLD-302","priority":5,"title":"Complete native Save and exact reload verification","state":"not_run","depends_on":["CLD-301"],"targets":["ACT-404","ACT-405"]},
+    {"id":"CLD-401","priority":6,"title":"Complete real Windows microphone/STT prompt path","state":"not_run","depends_on":["CLD-102"],"targets":["VOX-501","VOX-502"]},
+    {"id":"CLD-501","priority":7,"title":"Run exact Creator build and BepInEx loader proof","state":"not_run","targets":["BLD-101","BLD-102","BLD-103","BLD-104","RUN-201","RUN-202"]},
+    {"id":"CLD-601","priority":8,"title":"Capture/compare four live Creator F8 modes","state":"not_run","depends_on":["CLD-201","CLD-501"],"targets":["VIS-601","VIS-602","VIS-603","VIS-604"]},
+    {"id":"CLD-701","priority":9,"title":"Run Creator All-stage proof and expose retained proof/latest","state":"not_run","depends_on":["CLD-302","CLD-401","CLD-501","CLD-601"]},
+    {"id":"CLD-801","priority":10,"title":"Publish Creator work safely and hand evidence to ChatGPT","state":"not_run","depends_on":["CLD-701"]}
+  ],
+  "handoff_to_chatgpt": [
+    "Creator main SHA",
+    "pizza-agent SHA/identity",
+    "retained Creator proof results",
+    "proof/latest certification summary",
+    "four F8 screenshots and comparison reports",
+    "Preview/Restore/Apply/Save/Reload evidence",
+    "Chef Voice evidence",
+    "shared schema/API delta if any"
+  ]
+}
