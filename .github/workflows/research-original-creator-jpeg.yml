@@ -24,23 +24,38 @@ jobs:
           Invoke-WebRequest 'https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip' -OutFile "$env:RUNNER_TEMP\steamcmd.zip"
           Expand-Archive "$env:RUNNER_TEMP\steamcmd.zip" -DestinationPath "$env:RUNNER_TEMP\steamcmd" -Force
 
-      - name: Acquire official free Pizza Creator app 851330
+      - name: Try direct official Windows depot 851331 without user credentials
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $creator = "$env:RUNNER_TEMP\pc3-creator"
-          New-Item -ItemType Directory -Force -Path $creator | Out-Null
           $steam = "$env:RUNNER_TEMP\steamcmd\steamcmd.exe"
-          & $steam +@ShutdownOnFailedCommand 1 +@NoPromptForPassword 1 +force_install_dir $creator +login anonymous +app_license_request 851330 +app_update 851330 validate +quit
-          if ($LASTEXITCODE -ne 0) { throw "SteamCMD failed with exit code $LASTEXITCODE" }
-          $assembly = Get-ChildItem $creator -Recurse -Filter Assembly-CSharp.dll -File | Select-Object -First 1
-          if (-not $assembly) { throw 'Assembly-CSharp.dll was not downloaded.' }
+          # SteamDB records manifest 3002288355283771385 for the free Creator's
+          # Windows depot.  This intentionally uses anonymous access only; no
+          # user's Steam credentials or depot keys are requested or stored.
+          & $steam +@ShutdownOnFailedCommand 1 +@NoPromptForPassword 1 +login anonymous +download_depot 851330 851331 3002288355283771385 +quit
+          if ($LASTEXITCODE -ne 0) { throw "Anonymous direct depot download failed with exit code $LASTEXITCODE" }
+          $contentRoot = "$env:RUNNER_TEMP\steamcmd\steamapps\content\app_851330\depot_851331"
+          $assembly = Get-ChildItem $contentRoot -Recurse -Filter Assembly-CSharp.dll -File -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $assembly) { throw 'Assembly-CSharp.dll was not downloaded from the direct depot.' }
           "ASSEMBLY=$($assembly.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          $firstpass = Get-ChildItem $creator -Recurse -Filter Assembly-CSharp-firstpass.dll -File | Select-Object -First 1
+          $firstpass = Get-ChildItem $contentRoot -Recurse -Filter Assembly-CSharp-firstpass.dll -File -ErrorAction SilentlyContinue | Select-Object -First 1
           if ($firstpass) { "FIRSTPASS=$($firstpass.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8 }
           New-Item -ItemType Directory -Force -Path research-output | Out-Null
           Get-FileHash $assembly.FullName -Algorithm SHA256 | Format-List | Out-File research-output/assembly-sha256.txt
-          Get-ChildItem $creator -Recurse -File | Select-Object FullName,Length | Out-File research-output/original-file-inventory.txt
+          Get-ChildItem $contentRoot -Recurse -File | Select-Object FullName,Length | Out-File research-output/original-file-inventory.txt
+
+      - name: Verify exact Creator 0.11.272 assembly before research
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $expectedSize = 3189248
+          $expectedSha = 'ebf8698df7cb4af904c98c299994705ea529efbdf1e8ccb3e7ca8cb42a1cbc1c'
+          $item = Get-Item $env:ASSEMBLY
+          $sha = (Get-FileHash $env:ASSEMBLY -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($item.Length -ne $expectedSize -or $sha -ne $expectedSha) {
+            throw "Downloaded Creator assembly is not the reviewed creator-0.11.272 target: $($item.Length) / $sha"
+          }
+          Write-Host "Verified creator-0.11.272 Assembly-CSharp.dll: $sha"
 
       - name: Install ILSpy command-line decompiler
         shell: pwsh
@@ -68,12 +83,12 @@ jobs:
             'UserData','PizzaCreator','Screenshot','Share','Facebook',
             'WriteAllBytes','ReadAllBytes','FileStream','BinaryWriter','BinaryReader',
             'Jil','Newtonsoft','Ionic\.Zip','ZipFile','GZip','Deflate','Compress','Decompress',
-            'Aes','Rijndael','CryptoStream','Encrypt','Decrypt','Cipher','SHA','MD5',
+            'Aes','Rijndael','CryptoStream','Encrypt','Decrypt','Cipher','Xor','SHA','MD5',
             'Convert\.ToBase64String','Convert\.FromBase64String'
           )
           $files = Get-ChildItem $env:DECOMPILED -Recurse -Filter *.cs -File
           $hits = foreach ($pattern in $patterns) {
-            Select-String -Path $files.FullName -Pattern $pattern -Context 6,10 -ErrorAction SilentlyContinue
+            Select-String -Path $files.FullName -Pattern $pattern -Context 8,16 -ErrorAction SilentlyContinue
           }
           $hits | Sort-Object Path,LineNumber -Unique | ForEach-Object {
             "===== $($_.Path):$($_.LineNumber) ====="
@@ -83,11 +98,12 @@ jobs:
           } | Out-File research-output/jpeg-writer-targeted-context.txt -Width 4096 -Encoding utf8
 
           $likely = $files | Where-Object {
-            Select-String -Path $_.FullName -Pattern 'EncodeToJPG|\.jpg|SaveCurrentPizzaToRecipes|CurrentPizzaSaved|UserData' -Quiet -ErrorAction SilentlyContinue
+            Select-String -Path $_.FullName -Pattern 'EncodeToJPG|\.jpg|\.jpeg|SaveCurrentPizzaToRecipes|CurrentPizzaSaved|UserData|WriteAllBytes|ReadAllBytes' -Quiet -ErrorAction SilentlyContinue
           }
           $likely | Select-Object FullName,Length | Out-File research-output/likely-source-files.txt -Encoding utf8
 
-          # Retain only targeted likely source files in the short-lived artifact.
+          # Keep the short-lived artifact narrow: only source files with likely
+          # interoperability relevance, never the whole game/decompiled tree.
           $targetDir = 'research-output/likely-source'
           New-Item -ItemType Directory -Force -Path $targetDir | Out-Null
           foreach ($file in $likely) {
@@ -100,12 +116,13 @@ jobs:
         run: |
           $assemblyDir = Split-Path -Parent $env:ASSEMBLY
           @{
-            assembly = $env:ASSEMBLY
             assembly_sha256 = (Get-FileHash $env:ASSEMBLY -Algorithm SHA256).Hash.ToLowerInvariant()
+            creator_profile = 'creator-0.11.272'
             has_jil = Test-Path (Join-Path $assemblyDir 'Jil.dll')
             has_newtonsoft = Test-Path (Join-Path $assemblyDir 'Newtonsoft.Json.dll')
             has_ionic_zip = Test-Path (Join-Path $assemblyDir 'Ionic.Zip.dll')
             encryption_proven_by_dependency_presence = $false
+            exact_codec_recovered = $false
             note = 'Dependency presence is only a clue. The matched writer/reader method body decides serialization, compression, obfuscation, or encryption.'
           } | ConvertTo-Json -Depth 5 | Out-File research-output/dependency-clues.json -Encoding utf8
 
