@@ -7,6 +7,10 @@
 > **Isolated workspace:** `S:\Unity_Games\PC3 - Pizza Creator\_agent-workspaces\claude-pc3-creator`  
 > **Current execution queue:** `CLAUDE_NEXT_TASKS_PC3_CREATOR.md`  
 > **Skip-ahead implementation packet:** `docs/CLAUDE_SKIP_AHEAD_RUNTIME_IMPLEMENTATION_PACKET.md`  
+> **Method/file implementation atlas:** `docs/CLAUDE_METHOD_FILE_IMPLEMENTATION_ATLAS.md`  
+> **Native JPEG reverse-engineering roadmap:** `docs/NATIVE_PIZZA_JPEG_REVERSE_ENGINEERING_ROADMAP.md`  
+> **Current placement algorithm reference:** `docs/CURRENT_PIZZA_PLACEMENT_ALGORITHM_REFERENCE.md`  
+> **JPEG research truth contract:** `contracts/jpeg-reverse-engineering.acceptance.json`  
 > **Machine-readable queue:** `contracts/claude-creator-task-queue.json`  
 > **Complete access/location map:** `CLAUDE_ACCESS_MAP_PC3_CREATOR.md`  
 > **Machine-readable access map:** `contracts/claude-access-map.json`  
@@ -29,9 +33,45 @@ The verified shared Google Drive root contains separate Creator and main-PC3 fol
 
 For GitLab, use only `SYNC_GITLAB_SAFE.bat` / `scripts/Sync-GitLabSafe.ps1`. The remote name is normally `gitlab`, but the URL is intentionally not guessed or committed. Fetch first, verify ancestry, never force-push, and verify the remote SHA after a normal push.
 
-Before editing, read `00_READ_FIRST_PC3_ONLY.md`, `PC3_ONLY_SCOPE.md`, `WORKSTREAM_OWNERSHIP.md`, `contracts/pc3-only-scope.json`, `contracts/workstream-ownership.json`, `CLAUDE_ACCESS_MAP_PC3_CREATOR.md`, `contracts/claude-access-map.json`, and `docs/CLAUDE_SKIP_AHEAD_RUNTIME_IMPLEMENTATION_PACKET.md`. If the checkout origin, path, runtime profile, permissions, or game target conflicts with those files, stop rather than adapting the wrong project.
+Before editing, read `00_READ_FIRST_PC3_ONLY.md`, `PC3_ONLY_SCOPE.md`, `WORKSTREAM_OWNERSHIP.md`, `contracts/pc3-only-scope.json`, `contracts/workstream-ownership.json`, `CLAUDE_ACCESS_MAP_PC3_CREATOR.md`, `contracts/claude-access-map.json`, `docs/CLAUDE_SKIP_AHEAD_RUNTIME_IMPLEMENTATION_PACKET.md`, and `docs/CLAUDE_METHOD_FILE_IMPLEMENTATION_ATLAS.md`. If the checkout origin, path, runtime profile, permissions, or game target conflicts with those files, stop rather than adapting the wrong project.
 
-Finish the active `_pizza-agent` Slice-1 housekeeping first, then execute the numbered Creator tasks in the current queue. Use the skip-ahead implementation packet to avoid repeating settled architecture research. Do not ask for, inspect, enumerate, print, or commit credential values/credential filenames; use the existing secrets/runtime credential abstraction only.
+Finish the active `_pizza-agent` Slice-1 housekeeping first, then execute the numbered Creator tasks in the current queue. Use the skip-ahead implementation packet and method/file atlas to avoid repeating settled architecture research. Do not ask for, inspect, enumerate, print, or commit credential values/credential filenames; use the existing secrets/runtime credential abstraction only.
+
+## New parallel research lane — native pizza JPEG/image generation
+
+The user specifically requires the native pizza-image/JPEG generation algorithm to be reverse engineered rather than guessed.
+
+Canonical research files:
+
+- `docs/NATIVE_PIZZA_JPEG_REVERSE_ENGINEERING_ROADMAP.md`
+- `docs/CURRENT_PIZZA_PLACEMENT_ALGORITHM_REFERENCE.md`
+- `contracts/jpeg-reverse-engineering.acceptance.json`
+
+This lane is **parallel research**, not permission to abandon the core Creator runtime gates. Static work (`JRE-001`, `JRE-002`, and any source-resolvable portions of the render path) may run as soon as Slice-1 housekeeping is stable. Live JPEG experiments should reuse the exact Creator runtime/save/reload work already required by the main queue instead of creating a competing test harness.
+
+The controlled experiment program must include:
+
+- identical model saved repeatedly for determinism;
+- one-piece rotation sweep;
+- X-axis and Z-axis world-to-image mapping sweeps;
+- Y/layer overlap tests;
+- same ingredient set with rotations changed only;
+- same ingredient set with positions changed only;
+- reversed ingredient list order with transforms held constant;
+- piece-count sweep;
+- Large/Medium/Small comparison;
+- Round/Square/Star/Triangle comparison;
+- native Save -> native reload -> exact model verification -> JPEG re-save comparison.
+
+For every important A/B pair, retain exact model signature plus JPEG SHA-256 and quantitative image metrics. The roadmap calls for RMSE, SSIM, PHASH and difference bounds rather than visual judgment alone.
+
+The research target is to identify the actual native chain from save/model through camera/render target/draw order/crop/scale/colorspace/JPEG encoder. Classify every discovered component as `PROVEN_FROM_SOURCE`, `PROVEN_FROM_RUNTIME`, `INFERRED_AND_VALIDATED`, or `UNKNOWN`.
+
+Do not improve the stock image algorithm until it is characterized. After characterization, prefer in this order:
+
+1. exact reuse of the native image generator;
+2. native renderer with a controlled deterministic capture path;
+3. independent reimplementation only if native reuse/capture is impossible.
 
 # Confirmed method-level handoff for the parallel backend
 
