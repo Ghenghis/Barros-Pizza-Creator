@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "contract_id": "claude-pc3-pizza-creator-next-tasks",
   "owner": "Claude",
   "workstream": "PC3 Pizza Creator",
@@ -26,6 +26,38 @@
     {"id":"CLD-701","priority":9,"title":"Run Creator All-stage proof and expose retained proof/latest","state":"not_run","depends_on":["CLD-302","CLD-401","CLD-501","CLD-601"]},
     {"id":"CLD-801","priority":10,"title":"Publish Creator work safely and hand evidence to ChatGPT","state":"not_run","depends_on":["CLD-701"]}
   ],
+  "parallel_research": [
+    {
+      "id":"CLD-JPEG-STATIC",
+      "title":"Trace native pizza save-to-JPEG/image pipeline statically",
+      "state":"not_run",
+      "can_start_after":"CLD-000",
+      "does_not_block_core_queue":true,
+      "contract":"contracts/jpeg-reverse-engineering.acceptance.json",
+      "targets":["JRE-001","JRE-002"],
+      "roadmap":"docs/NATIVE_PIZZA_JPEG_REVERSE_ENGINEERING_ROADMAP.md"
+    },
+    {
+      "id":"CLD-JPEG-LIVE",
+      "title":"Run controlled native JPEG placement/orientation/render experiments",
+      "state":"not_run",
+      "depends_on":["CLD-302","CLD-501"],
+      "does_not_block_core_queue":true,
+      "contract":"contracts/jpeg-reverse-engineering.acceptance.json",
+      "targets":["JRE-003","JRE-004","JRE-005","JRE-006","JRE-007","JRE-008","JRE-009","JRE-010","JRE-011","JRE-012"],
+      "roadmap":"docs/NATIVE_PIZZA_JPEG_REVERSE_ENGINEERING_ROADMAP.md"
+    },
+    {
+      "id":"CLD-JPEG-FINAL",
+      "title":"Document native JPEG algorithm and reuse/improvement decision",
+      "state":"not_run",
+      "depends_on":["CLD-JPEG-LIVE"],
+      "does_not_block_core_queue":true,
+      "contract":"contracts/jpeg-reverse-engineering.acceptance.json",
+      "targets":["JRE-014","JRE-015"],
+      "deliverable":"docs/NATIVE_PIZZA_JPEG_ALGORITHM.md"
+    }
+  ],
   "handoff_to_chatgpt": [
     "Creator main SHA",
     "pizza-agent SHA/identity",
@@ -34,6 +66,7 @@
     "four F8 screenshots and comparison reports",
     "Preview/Restore/Apply/Save/Reload evidence",
     "Chef Voice evidence",
+    "native JPEG reverse-engineering status and final algorithm evidence when available",
     "shared schema/API delta if any"
   ]
 }
