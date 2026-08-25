@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import unittest
 from pathlib import Path
 
@@ -9,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "contracts" / "ecosystem.release.acceptance.json"
 ALLOWED_STATES = {"not_run", "pass", "fail", "blocked"}
 EXPECTED_GATES = {f"REL-{index:03d}" for index in range(1, 9)}
+PORTABLE_CI_PASS_GATES = {"REL-004", "REL-005"}
 EXPECTED_REFERENCED_CONTRACTS = {
     "creator_rc1": "contracts/rc1.acceptance.json",
     "ecosystem_base": "contracts/ecosystem.acceptance.json",
@@ -48,7 +50,7 @@ class EcosystemReleaseContractTests(unittest.TestCase):
                 )
                 self.assertTrue(path.is_file(), f"Referenced contract does not exist: {path}")
 
-    def test_release_gates_are_unique_required_and_unpromoted_without_evidence(self) -> None:
+    def test_release_gates_are_unique_required_and_truth_safe(self) -> None:
         gates = self.payload["gates"]
         self.assertEqual(8, len(gates))
         self.assertEqual(EXPECTED_GATES, {row["id"] for row in gates})
@@ -57,12 +59,25 @@ class EcosystemReleaseContractTests(unittest.TestCase):
             with self.subTest(gate=row["id"]):
                 self.assertTrue(row["release_required"])
                 self.assertIn(row["state"], ALLOWED_STATES)
-                self.assertEqual(
-                    "not_run",
-                    row["state"],
-                    "Canonical source contract must not pre-promote a release gate.",
-                )
-                self.assertTrue(str(row.get("evidence", "")).strip())
+                evidence = str(row.get("evidence", "")).strip()
+                self.assertTrue(evidence)
+
+                if row["state"] == "pass":
+                    self.assertIn(
+                        row["id"],
+                        PORTABLE_CI_PASS_GATES,
+                        "Live/runtime-dependent gates must never be pre-promoted by the canonical source contract.",
+                    )
+                    self.assertRegex(
+                        evidence,
+                        re.compile(r"\b[0-9a-f]{40}\b"),
+                        "A persisted portable PASS must name the exact reviewed commit SHA.",
+                    )
+                    self.assertIn(
+                        "PASS",
+                        evidence,
+                        "A persisted portable PASS must name retained successful workflow evidence.",
+                    )
 
     def test_truth_policy_requires_retained_and_live_visual_evidence(self) -> None:
         truth = self.payload["truth_policy"]
