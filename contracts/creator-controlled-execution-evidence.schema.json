@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "barros-pc3-creator-controlled-execution-evidence-v1",
+  "title": "PC3 Pizza Creator exact controlled-stimulus execution evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "runtime_profile",
+    "experiment_id",
+    "case_id",
+    "stimulus_sha256",
+    "creator_repo_sha",
+    "assembly_csharp_sha256",
+    "observed_model",
+    "native_actions"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "kind": {"const": "pc3-creator-controlled-stimulus-execution-evidence"},
+    "runtime_profile": {"const": "creator-0.11.272"},
+    "experiment_id": {"type": "string", "minLength": 1, "maxLength": 32},
+    "case_id": {"type": "string", "minLength": 1, "maxLength": 64},
+    "stimulus_sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
+    "creator_repo_sha": {"type": "string", "pattern": "^[0-9a-fA-F]{40}$"},
+    "assembly_csharp_sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
+    "observed_model": {"$ref": "#/$defs/model"},
+    "reloaded_model": {"oneOf": [{"$ref": "#/$defs/model"}, {"type": "null"}]},
+    "native_actions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["preview_exact_model", "native_recipe_save", "reload_verify", "native_resave_after_reload"],
+      "properties": {
+        "preview_exact_model": {"$ref": "#/$defs/action"},
+        "native_recipe_save": {"$ref": "#/$defs/action"},
+        "reload_verify": {"$ref": "#/$defs/action"},
+        "native_resave_after_reload": {"$ref": "#/$defs/action"}
+      }
+    },
+    "created_utc": {"type": ["string", "null"]},
+    "event_log": {"type": ["string", "null"]},
+    "notes": {"type": ["string", "null"]}
+  },
+  "$defs": {
+    "vector3": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "z"],
+      "properties": {
+        "x": {"type": "number"},
+        "y": {"type": "number"},
+        "z": {"type": "number"}
+      }
+    },
+    "placement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["index", "ingredient_id", "size", "position", "rotation"],
+      "properties": {
+        "index": {"type": "integer", "minimum": 0, "maximum": 179},
+        "ingredient_id": {"type": "string", "minLength": 1},
+        "size": {"enum": ["Large", "Medium", "Small"]},
+        "size_value": {"type": ["integer", "null"], "minimum": 0, "maximum": 2},
+        "position": {"$ref": "#/$defs/vector3"},
+        "rotation": {"$ref": "#/$defs/vector3"}
+      }
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "shape", "profit_factor", "placements"],
+      "properties": {
+        "name": {"type": "string"},
+        "shape": {"enum": ["Round", "Square", "Star", "Triangle"]},
+        "profit_factor": {"type": "number"},
+        "dough_positions_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-fA-F]{64}$"},
+        "placements": {
+          "type": "array",
+          "maxItems": 180,
+          "items": {"$ref": "#/$defs/placement"}
+        }
+      }
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requested", "attempted", "success"],
+      "properties": {
+        "requested": {"type": "boolean"},
+        "attempted": {"type": "boolean"},
+        "success": {"type": "boolean"},
+        "timestamp_utc": {"type": ["string", "null"]},
+        "detail": {"type": ["string", "null"]}
+      }
+    }
+  },
+  "x-truth-rules": [
+    "This evidence proves only what the Creator executor reports and what Studio independently verifies against the exact stimulus.",
+    "Studio must independently hash the stimulus and compare every observed model placement in array order.",
+    "The exact creator-0.11.272 Assembly-CSharp SHA-256 is required and independently checked against the Studio compatibility contract.",
+    "A native Save call reporting success does not prove the stock JPEG was produced; Studio UserData observation remains separate.",
+    "A reload verification request requires reloaded_model to exactly match the stimulus before the evidence can be bound PASS.",
+    "This contract never by itself promotes a Creator RC1 or JPEG reverse-engineering gate."
+  ]
+}
