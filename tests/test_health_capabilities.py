@@ -38,22 +38,25 @@ class CreatorHealthCapabilityTests(unittest.TestCase):
         self.assertTrue(health["ok"])
         self.assertTrue(health["capabilities"]["chat"])
         self.assertTrue(health["capabilities"]["compose"])
-        self.assertFalse(health["capabilities"]["stt"])
-        self.assertFalse(health["stt"]["available"])
-        self.assertFalse(health["stt"]["configured_endpoint"])
+        self.assertFalse(health["capabilities"]["stt_configured"])
+        self.assertFalse(health["stt"]["configured"])
+        self.assertFalse(health["stt"]["dedicated_endpoint_configured"])
+        self.assertEqual("not_probed", health["stt"]["reachability"])
         self.assertEqual("whisper-1", health["stt"]["model"])
 
-    def test_health_reports_explicit_stt_endpoint_without_exposing_url(self) -> None:
+    def test_health_reports_explicit_stt_config_without_claiming_reachability(self) -> None:
         health = self._health({
             "provider": "offline",
             "stt_endpoint": "https://private.example.test/v1/audio/transcriptions",
             "stt_model": "whisper-test",
         })
-        self.assertTrue(health["capabilities"]["stt"])
-        self.assertTrue(health["stt"]["available"])
-        self.assertTrue(health["stt"]["configured_endpoint"])
+        self.assertTrue(health["capabilities"]["stt_configured"])
+        self.assertTrue(health["stt"]["configured"])
+        self.assertTrue(health["stt"]["dedicated_endpoint_configured"])
+        self.assertEqual("not_probed", health["stt"]["reachability"])
         self.assertEqual("whisper-test", health["stt"]["model"])
         self.assertNotIn("endpoint", health["stt"])
+        self.assertNotIn("available", health["stt"])
 
 
 if __name__ == "__main__":
