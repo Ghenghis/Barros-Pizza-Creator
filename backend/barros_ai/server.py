@@ -18,6 +18,7 @@ from .providers import ProviderClient, ProviderError, ProviderSettings
 
 
 MAX_BODY = 16 * 1024 * 1024
+TRUTH_STATES = ("not_run", "pass", "fail", "blocked")
 
 
 class App:
@@ -35,6 +36,65 @@ class App:
         self.settings = ProviderSettings.load(self.settings_path)
         self.provider = ProviderClient(self.settings)
         self.orchestrator = PizzaOrchestrator(self.provider)
+
+    def contract_status(self) -> dict[str, Any]:
+        """Expose the static acceptance contract without fabricating runtime proof.
+
+        The Creator sidecar can prove what contract is installed and what gates it
+        requires. It cannot infer that Windows/game runtime gates passed merely
+        because the contract file exists, so certification remains explicitly
+        not evaluated here. Authoritative PASS promotion still belongs to the
+        proof harness with retained evidence.
+        """
+        path = self.root / "contracts" / "rc1.acceptance.json"
+        if not path.is_file():
+            raise ValueError(f"Acceptance contract not found: {path}")
+        contract = json.loads(path.read_text(encoding="utf-8-sig"))
+        if not isinstance(contract, dict):
+            raise ValueError("Acceptance contract root must be a JSON object.")
+
+        gates: list[dict[str, Any]] = []
+        layer_summary: list[dict[str, Any]] = []
+        for layer in contract.get("layers") or []:
+            if not isinstance(layer, dict):
+                continue
+            layer_gates = [row for row in (layer.get("gates") or []) if isinstance(row, dict)]
+            gates.extend(layer_gates)
+            layer_summary.append({
+                "id": layer.get("id", ""),
+                "name": layer.get("name", ""),
+                "runs_on": layer.get("runs_on", ""),
+                "gate_count": len(layer_gates),
+            })
+
+        counts = {state: 0 for state in TRUTH_STATES}
+        counts["unknown"] = 0
+        for gate in gates:
+            state = str(gate.get("state", "not_run")).lower()
+            counts[state if state in counts else "unknown"] += 1
+        required = [gate for gate in gates if bool(gate.get("release_required", True))]
+
+        return {
+            "ok": True,
+            "contract_id": contract.get("contract_id", ""),
+            "schema_version": contract.get("schema_version", ""),
+            "release": contract.get("release", ""),
+            "target": contract.get("target", {}),
+            "truth_policy": contract.get("truth_policy", {}),
+            "layers": layer_summary,
+            "gate_count": len(gates),
+            "release_required_gate_count": len(required),
+            "declared_states": counts,
+            "certification": {
+                "state": "not_evaluated",
+                "runtime_certified": False,
+                "source": "static_acceptance_contract",
+                "reason": (
+                    "Static contract metadata does not prove live Windows/game behavior. "
+                    "Runtime certification requires the proof harness and retained evidence."
+                ),
+            },
+        }
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -93,6 +153,7 @@ class Handler(BaseHTTPRequestHandler):
                         "history": True,
                         "reload": True,
                         "attachment_inspection": True,
+                        "contract": True,
                         "stt_configured": stt_configured,
                     },
                     "stt": {
@@ -104,6 +165,12 @@ class Handler(BaseHTTPRequestHandler):
                     "uptime_seconds": round(time.time() - self.app.started, 1),
                 },
             )
+            return
+        if path == "/contract":
+            try:
+                self._json(HTTPStatus.OK, self.app.contract_status())
+            except (ValueError, json.JSONDecodeError) as exc:
+                self._json(HTTPStatus.INTERNAL_SERVER_ERROR, {"ok": False, "error": str(exc)})
             return
         if path == "/history":
             self._json(HTTPStatus.OK, {"ok": True, "entries": self.app.history.read()})
