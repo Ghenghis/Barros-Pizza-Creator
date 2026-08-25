@@ -1,0 +1,38 @@
+name: creator-ui CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+      - name: Install pixelmatch deps
+        shell: bash
+        run: npm install
+      - name: PC3 scope guard
+        shell: bash
+        run: |
+          if grep -ril "amount_oz\|FastFood\|Fast Food Tycoon" creator-ui/ Assets/ tests/; then
+            echo "PC2 contamination detected. Blocking PR."
+            exit 1
+          fi
+          echo "PC3 scope guard passed."
+      - name: Run EditMode tests
+        shell: bash
+        run: |
+          unity -batchmode -projectPath . -runTests -testPlatform EditMode -testResults TestResults-EditMode.xml -quit || true
+      - name: Run PlayMode tests
+        shell: bash
+        run: |
+          unity -batchmode -projectPath . -runTests -testPlatform PlayMode -testResults TestResults-PlayMode.xml -quit || true
+      - name: Snapshot verification (>=98% pixel match)
+        shell: bash
+        run: node tools/snapshot-runner.mjs

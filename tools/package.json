@@ -1,0 +1,15 @@
+{
+  "name": "creator-ui-snapshot",
+  "version": "1.0.0",
+  "description": "Pixelmatch-based snapshot verification for creator-ui panels",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "snapshot": "node tools/snapshot-runner.mjs",
+    "pixelmatch": "node tools/pixelmatch.mjs"
+  },
+  "devDependencies": {
+    "pixelmatch": "^5.3.0",
+    "pngjs": "^7.0.0"
+  }
+}
