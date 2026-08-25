@@ -7,10 +7,28 @@
 > **Isolated workspace:** `S:\Unity_Games\PC3 - Pizza Creator\_agent-workspaces\claude-pc3-creator`  
 > **Current execution queue:** `CLAUDE_NEXT_TASKS_PC3_CREATOR.md`  
 > **Machine-readable queue:** `contracts/claude-creator-task-queue.json`  
-> **Ownership:** Claude owns PC3 Pizza Creator; ChatGPT owns the PC3 main Workbench/Studio ecosystem.  
+> **Complete access/location map:** `CLAUDE_ACCESS_MAP_PC3_CREATOR.md`  
+> **Machine-readable access map:** `contracts/claude-access-map.json`  
+> **Verified shared Google Drive root ID:** `1v_EZAxzNZQbi5DjpwWxBTiMyPHaIut34`  
+> **Ownership:** Claude owns PC3 Pizza Creator. ChatGPT owns Runtime Proof Studio, Barro's Workbench, and the main PC3 ecosystem. Studio/Workbench/main-PC3 locations are READ-ONLY integration references for Claude unless the user explicitly changes ownership.  
 > **Forbidden:** Pizza Connection 2 / Fast Food Tycoon 2 work unless the user explicitly changes scope.
 
-Before editing, read `00_READ_FIRST_PC3_ONLY.md`, `PC3_ONLY_SCOPE.md`, `WORKSTREAM_OWNERSHIP.md`, `contracts/pc3-only-scope.json`, and `contracts/workstream-ownership.json`. If the checkout origin, path, runtime profile or game target conflicts with those files, stop rather than adapting the wrong project.
+## Access rule — read this before doing any work
+
+Claude has a complete map of the known local, Google Drive, GitHub, GitLab, Creator-sidecar, and Windows-MCP locations in `CLAUDE_ACCESS_MAP_PC3_CREATOR.md` and `contracts/claude-access-map.json`.
+
+A documented location is **not** proof that Claude Desktop is authenticated to it. At the beginning of a session, verify access without exposing credentials. Use these access modes exactly:
+
+- **WRITE:** PC3 Pizza Creator local product root, `_pizza-agent`, isolated Claude Creator workspace, Creator GitHub repository, and Creator-specific Drive folders only when the task explicitly requires a Drive write.
+- **READ-ONLY / INTEGRATION:** Runtime Proof Studio, Barro's Workbench, main PC3 local roots, main PC3 Google Drive folders, extraction outputs, shared contracts, and ecosystem evidence.
+- **VERIFY FIRST:** Google Drive authentication in Claude Desktop, GitHub push authentication, configured GitLab remote/authentication, and Windows-MCP reachability.
+- **DENIED:** any subtree or project excluded by `PC3_ONLY_SCOPE.md` / `contracts/pc3-only-scope.json`.
+
+The verified shared Google Drive root contains separate Creator and main-PC3 folders. Use the exact folder IDs in the access map. Never infer that a similarly named Drive folder is the same target. The access map also contains a denied Drive subtree ID so an agent cannot accidentally traverse outside the locked PC3 program scope.
+
+For GitLab, use only `SYNC_GITLAB_SAFE.bat` / `scripts/Sync-GitLabSafe.ps1`. The remote name is normally `gitlab`, but the URL is intentionally not guessed or committed. Fetch first, verify ancestry, never force-push, and verify the remote SHA after a normal push.
+
+Before editing, read `00_READ_FIRST_PC3_ONLY.md`, `PC3_ONLY_SCOPE.md`, `WORKSTREAM_OWNERSHIP.md`, `contracts/pc3-only-scope.json`, `contracts/workstream-ownership.json`, `CLAUDE_ACCESS_MAP_PC3_CREATOR.md`, and `contracts/claude-access-map.json`. If the checkout origin, path, runtime profile, permissions, or game target conflicts with those files, stop rather than adapting the wrong project.
 
 Finish the active `_pizza-agent` Slice-1 housekeeping first, then execute the numbered Creator tasks in the current queue. Do not ask for, inspect, enumerate, print, or commit credential values/credential filenames; use the existing secrets/runtime credential abstraction only.
 
