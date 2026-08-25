@@ -13,6 +13,9 @@
 > **Current placement algorithm reference:** `docs/CURRENT_PIZZA_PLACEMENT_ALGORITHM_REFERENCE.md`  
 > **JPEG research truth contract:** `contracts/jpeg-reverse-engineering.acceptance.json`  
 > **Machine-readable JPEG experiments:** `contracts/jpeg-experiment-plan.json`  
+> **Shared controlled stimulus schema:** `contracts/creator-controlled-stimulus.schema.json`  
+> **Studio stimulus corpus generator (READ-ONLY integration):** `Ghenghis/PC3_Barros_Runtime_Proof_Studio/scripts/generate_creator_controlled_stimuli.py`  
+> **Studio controlled observer (READ-ONLY integration):** `Ghenghis/PC3_Barros_Runtime_Proof_Studio/CAPTURE_CREATOR_CONTROLLED_JPEG_EXPERIMENT.bat`  
 > **JPEG tooling setup:** `docs/JPEG_RE_TOOLING_SETUP.md` + `DOWNLOAD_JPEG_RESEARCH_TOOLS.bat`  
 > **Native JPEG pair analyzer:** `ANALYZE_NATIVE_JPEG_PAIR.bat` + `scripts/analyze_jpeg_experiment.py`  
 > **Machine-readable queue:** `contracts/claude-creator-task-queue.json`  
@@ -53,6 +56,7 @@ Canonical research files:
 - `docs/JPEG_RE_TOOLING_SETUP.md`
 - `contracts/jpeg-reverse-engineering.acceptance.json`
 - `contracts/jpeg-experiment-plan.json`
+- `contracts/creator-controlled-stimulus.schema.json`
 
 Executable lab entry points:
 
@@ -62,6 +66,28 @@ Executable lab entry points:
 - `tests/test_jpeg_experiment_analyzer.py` — standard-library regression coverage using embedded known JPEG samples.
 
 This lane is **parallel research**, not permission to abandon the core Creator runtime gates. Static work (`JRE-001`, `JRE-002`, and any source-resolvable portions of the render path) may run as soon as Slice-1 housekeeping is stable. Live JPEG experiments should reuse the exact Creator runtime/save/reload work already required by the main queue instead of creating a competing test harness.
+
+### Research-only controlled fixture executor
+
+Implement `CLD-JPEG-FIXTURE-EXECUTOR` in the Creator workstream. Its only purpose is to remove human placement error from the controlled experiment corpus.
+
+Contract:
+
+- accept only `creator-0.11.272` fixtures conforming to `contracts/creator-controlled-stimulus.schema.json`;
+- the shared schema in Creator and Runtime Proof Studio must remain semantically identical;
+- the Studio-owned generator produces explicit E00-E10 test fixtures; Claude may consume its output but must not edit Studio/Workbench implementation;
+- bind a `PizzaModel` directly from the fixture's exact shape/name/profit factor/ingredient IDs/sizes/positions/rotations;
+- obtain dough positions from `IDatabaseService.GetPizzaShape(shape).DoughPositions` and size-specific ingredients from `IDatabaseService`;
+- **do not call the Barro's/golden-angle placement generator for fixture execution** because the fixture already supplies every transform;
+- load the exact fixture through `IPizzaCreatorService.LoadPizzaFromModel(PizzaModel)`;
+- if `native_recipe_save` is requested, call `IPizzaCreatorService.SaveCurrentPizzaToRecipes()`; do not generate, encode, rewrite, patch, or post-process the JPEG in the executor;
+- if reload verification is requested, reload through the stock/native recipe-book path, require exact `ModelSignature` agreement, then invoke the same stock save path again when `native_resave_after_reload` is true;
+- retain experiment ID, case ID, exact input fixture hash, model signature, runtime profile, timestamps, and native action success/failure events;
+- never convert successful fixture loading into a JRE PASS by itself. Runtime Proof Studio independently retains UserData before/after state and analyzes the native output.
+
+This creates the intended two-party proof chain:
+
+`Studio explicit fixture -> Claude Creator exact model/native save -> stock Creator UserData/JPEG -> Studio independent before/after/hash/pixel/DQT/DHT/DCT/transform analysis`.
 
 The controlled experiment program must include:
 
