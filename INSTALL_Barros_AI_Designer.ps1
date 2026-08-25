@@ -10,13 +10,13 @@ param(
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 $packageRoot = $PSScriptRoot
-$version = "1.0.0-rc1"
+$version = "1.1.0-rc1"
 $bepVersion = "5.4.23.5"
 $bepUrl = "https://github.com/BepInEx/BepInEx/releases/download/v5.4.23.5/BepInEx_win_x64_5.4.23.5.zip"
 $bepSha = "82F9878551030F54657792C0740D9D51A09500EEAE1FBA21106B0C441E6732C4"
 $pythonUrl = "https://www.python.org/ftp/python/3.12.10/python-3.12.10-embed-amd64.zip"
 $pythonSha = "4ACBED6DD1C744B0376E3B1CF57CE906F9DC9E95E68824584C8099A63025A3C3"
-$assemblySha = "EBF8698DF7CB4AF904C98C299994705EA529EFBDF1E8CCB3E7CA8CB42A1CBC1C"
+$assemblySha = "EBF8698DF7CB4AF904C98C299994705EA529EFBDf1E8CCB3E7CA8CB42A1CBC1C"
 $firstpassSha = "F9CBF0951FC4D4B0788C47BBE41A3820FA333D293175BBB7CB398EB4728FD284"
 
 function Select-GameRoot([string]$initial) {
@@ -86,11 +86,13 @@ try {
     $installRoot = Join-Path $GameRoot "BarrosAI"
     $backendTarget = Join-Path $installRoot "backend"
     $assetsTarget = Join-Path $installRoot "assets"
+    $contractsTarget = Join-Path $installRoot "contracts"
     $runtimeTarget = Join-Path $installRoot "runtime"
     $pluginTarget = Join-Path $GameRoot "BepInEx\plugins\BarrosAI"
-    New-Item -ItemType Directory -Force -Path $backendTarget, $assetsTarget, $runtimeTarget, $pluginTarget | Out-Null
+    New-Item -ItemType Directory -Force -Path $backendTarget, $assetsTarget, $contractsTarget, $runtimeTarget, $pluginTarget | Out-Null
     Copy-Item -Path (Join-Path $packageRoot "backend\*") -Destination $backendTarget -Recurse -Force
     Copy-Item -Path (Join-Path $packageRoot "assets\*") -Destination $assetsTarget -Recurse -Force
+    Copy-Item -Path (Join-Path $packageRoot "contracts\*") -Destination $contractsTarget -Recurse -Force
     if (-not (Test-Path (Join-Path $backendTarget "settings.json"))) {
         Copy-Item -LiteralPath (Join-Path $packageRoot "backend\settings.example.json") -Destination (Join-Path $backendTarget "settings.json")
     }
