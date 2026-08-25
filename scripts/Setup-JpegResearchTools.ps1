@@ -61,25 +61,41 @@ function Get-VerifiedDownload {
     return $destination
 }
 
+function Find-Marker {
+    param(
+        [string]$Root,
+        [string]$MarkerName
+    )
+    if (-not (Test-Path -LiteralPath $Root -PathType Container)) { return "" }
+    $direct = Join-Path $Root $MarkerName
+    if (Test-Path -LiteralPath $direct -PathType Leaf) { return $direct }
+    $match = Get-ChildItem -LiteralPath $Root -File -Recurse -Filter $MarkerName -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($match) { return $match.FullName }
+    return ""
+}
+
 function Expand-VerifiedZip {
     param(
         [string]$Archive,
         [string]$Destination,
-        [string]$Marker
+        [string]$MarkerName
     )
-    if (Test-Path -LiteralPath $Marker -PathType Leaf) {
+    $existingMarker = Find-Marker $Destination $MarkerName
+    if ($existingMarker) {
         Write-Host "[PASS] Already staged: $Destination"
-        return
+        return $existingMarker
     }
     if (Test-Path -LiteralPath $Destination) {
         Remove-Item -LiteralPath $Destination -Recurse -Force
     }
     New-Item -ItemType Directory -Force -Path $Destination | Out-Null
     Expand-Archive -LiteralPath $Archive -DestinationPath $Destination -Force
-    if (-not (Test-Path -LiteralPath $Marker -PathType Leaf)) {
-        throw "Archive extracted but expected marker is missing: $Marker"
+    $marker = Find-Marker $Destination $MarkerName
+    if (-not $marker) {
+        throw "Archive extracted but expected marker '$MarkerName' was not found anywhere under: $Destination"
     }
     Write-Host "[PASS] Staged: $Destination"
+    return $marker
 }
 
 $manifest = @(
@@ -111,10 +127,9 @@ $manifest = @(
 
 $toolRecords = @()
 foreach ($item in $manifest) {
-    $archive = Get-VerifiedDownload $item.Name $item.Url $item.Sha256 $item.FileName
+    $archive = Get-VerifiedDownload -Name $item.Name -Url $item.Url -Sha256 $item.Sha256 -FileName $item.FileName
     $destination = Join-Path $apps $item.AppDir
-    $marker = Join-Path $destination $item.Marker
-    Expand-VerifiedZip $archive $destination $marker
+    $marker = Expand-VerifiedZip -Archive $archive -Destination $destination -MarkerName $item.Marker
     $toolRecords += [ordered]@{
         name = $item.Name
         source = $item.Url
@@ -126,11 +141,11 @@ foreach ($item in $manifest) {
     }
 }
 
-$jpegInstaller = Get-VerifiedDownload \
-    "libjpeg-turbo 3.2.0 Visual C++ x64" \
-    "https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/3.2.0/libjpeg-turbo-3.2.0-vc-x64.exe" \
-    "662761d8ba8dae04aec74023ebaeceb856c2b56b9b59cfd180759d26300dda42" \
-    "libjpeg-turbo-3.2.0-vc-x64.exe"
+$jpegInstaller = Get-VerifiedDownload `
+    -Name "libjpeg-turbo 3.2.0 Visual C++ x64" `
+    -Url "https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/3.2.0/libjpeg-turbo-3.2.0-vc-x64.exe" `
+    -Sha256 "662761d8ba8dae04aec74023ebaeceb856c2b56b9b59cfd180759d26300dda42" `
+    -FileName "libjpeg-turbo-3.2.0-vc-x64.exe"
 $toolRecords += [ordered]@{
     name = "libjpeg-turbo 3.2.0 Visual C++ x64 installer"
     source = "https://github.com/libjpeg-turbo/libjpeg-turbo/releases/tag/3.2.0"
@@ -151,9 +166,9 @@ function Resolve-Python {
 $pythonInfo = [ordered]@{}
 $python = Resolve-Python
 if (-not $python) {
-    $pythonInfo.state = "blocked"
-    $pythonInfo.detail = "Python not found on PATH; raw JPEG structure analyzer can run later after Python is available."
-    Write-Warning $pythonInfo.detail
+    $pythonInfo["state"] = "blocked"
+    $pythonInfo["detail"] = "Python not found on PATH; run the analysis environment step later after Python is available."
+    Write-Warning $pythonInfo["detail"]
 } else {
     $venv = Join-Path $ToolRoot "python-env"
     if (-not (Test-Path -LiteralPath (Join-Path $venv "Scripts\python.exe") -PathType Leaf)) {
@@ -173,10 +188,10 @@ if (-not $python) {
     $freeze = @(& $venvPython -m pip freeze 2>&1)
     $freezePath = Join-Path $evidence "python-pip-freeze.txt"
     $freeze | Set-Content -LiteralPath $freezePath -Encoding UTF8
-    $pythonInfo.state = "ready"
-    $pythonInfo.python = $venvPython
-    $pythonInfo.version = $pythonVersion
-    $pythonInfo.pip_freeze = $freezePath
+    $pythonInfo["state"] = "ready"
+    $pythonInfo["python"] = $venvPython
+    $pythonInfo["version"] = $pythonVersion
+    $pythonInfo["pip_freeze"] = $freezePath
 }
 
 if ($PromptOptional) {
@@ -206,14 +221,14 @@ if (($InstallRenderDoc -or $InstallImageMagick) -and -not $winget) {
 if ($InstallRenderDoc -and $winget) {
     Write-Host "[SETUP] Installing pinned RenderDoc 1.45.0 via winget."
     & winget install --id BaldurKarlsson.RenderDoc --exact --version 1.45.0 --accept-package-agreements --accept-source-agreements
-    $optional.renderdoc_exit = $LASTEXITCODE
-    $optional.renderdoc_package = "BaldurKarlsson.RenderDoc 1.45.0"
+    $optional["renderdoc_exit"] = $LASTEXITCODE
+    $optional["renderdoc_package"] = "BaldurKarlsson.RenderDoc 1.45.0"
 }
 if ($InstallImageMagick -and $winget) {
     Write-Host "[SETUP] Installing current official ImageMagick Q16-HDRI via winget."
     & winget install ImageMagick.Q16-HDRI --accept-package-agreements --accept-source-agreements
-    $optional.imagemagick_exit = $LASTEXITCODE
-    $optional.imagemagick_package = "ImageMagick.Q16-HDRI"
+    $optional["imagemagick_exit"] = $LASTEXITCODE
+    $optional["imagemagick_package"] = "ImageMagick.Q16-HDRI"
 }
 
 $record = [ordered]@{
