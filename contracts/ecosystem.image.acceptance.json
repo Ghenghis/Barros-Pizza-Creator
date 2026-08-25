@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "contract_id": "barros-pc3-image-handoff-v1",
+  "title": "Pizza Connection 3 / Barro's Pizza image creation and handoff acceptance",
+  "truth_policy": {
+    "states": ["not_run", "pass", "fail", "blocked"],
+    "rule": "Generated image presence or visual appeal alone never proves game compatibility. PASS requires the named validation and retained evidence.",
+    "snapshot_rule": "Runtime visual claims require screenshots from the actual running Workbench, Studio, or game."
+  },
+  "gates": [
+    {"id": "IMG-001", "requirement": "Workbench records source and candidate paths, SHA-256, dimensions, format, alpha requirement and intended PC3 target in one handoff manifest", "state": "not_run", "release_required": true},
+    {"id": "IMG-002", "requirement": "PNG targets requiring alpha reject candidates that lose transparency", "state": "not_run", "release_required": true},
+    {"id": "IMG-003", "requirement": "JPEG targets are flattened intentionally and preserve required dimensions without pretending to contain alpha", "state": "not_run", "release_required": true},
+    {"id": "IMG-004", "requirement": "Studio reads the Workbench handoff manifest and validates actual candidate bytes against the expected contract", "state": "not_run", "release_required": true},
+    {"id": "IMG-005", "requirement": "Agents can inspect the same image contract and cannot promote invalid or missing candidates to approved", "state": "not_run", "release_required": true},
+    {"id": "IMG-006", "requirement": "A generated candidate can be traced source -> generation -> validation -> staging -> runtime screenshot -> restore/commit", "state": "not_run", "release_required": true},
+    {"id": "IMG-007", "requirement": "Workbench integrated GUI exposes Creator status and image handoff state", "state": "not_run", "release_required": true},
+    {"id": "IMG-008", "requirement": "Studio integrated GUI exposes Creator contract/evidence and image handoff validation state", "state": "not_run", "release_required": true}
+  ]
+}
