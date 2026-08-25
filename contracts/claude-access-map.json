@@ -1,0 +1,87 @@
+{
+  "schema_version": "1.0",
+  "contract_id": "claude-pc3-creator-access-map",
+  "scope_contract": "contracts/pc3-only-scope.json",
+  "ownership_contract": "contracts/workstream-ownership.json",
+  "owner": "Claude",
+  "workstream": "PC3 Pizza Creator",
+  "primary_runtime_profile": "creator-0.11.272",
+  "access_truth_rule": "A documented location is not proof of live authentication or reachability. Verify access at session start and fail closed when identity or permissions are ambiguous.",
+  "local_windows": {
+    "write": [
+      "S:\\Unity_Games\\PC3 - Pizza Creator",
+      "S:\\Unity_Games\\PC3 - Pizza Creator\\_pizza-agent",
+      "S:\\Unity_Games\\PC3 - Pizza Creator\\_agent-workspaces\\claude-pc3-creator",
+      "S:\\Unity_Games\\PC3 - Pizza Creator\\Barros_Music"
+    ],
+    "read_only_integration": [
+      "S:\\Unity_Games\\PC3",
+      "S:\\Unity_Games\\PC3\\_agent-workspaces\\chatgpt-pc3-main",
+      "S:\\Unity_Games\\PC3\\_agent-workspaces\\chatgpt-pc3-workbench"
+    ]
+  },
+  "github": {
+    "write": ["Ghenghis/Barros-Pizza-Creator"],
+    "read_only_integration": [
+      "Ghenghis/PC3_Barros_Runtime_Proof_Studio",
+      "Ghenghis/barros-workbench"
+    ]
+  },
+  "gitlab": {
+    "mode": "verify_first_safe_sync_only",
+    "remote_name": "gitlab",
+    "launcher": "SYNC_GITLAB_SAFE.bat",
+    "script": "scripts/Sync-GitLabSafe.ps1",
+    "remote_url": null,
+    "rule": "Never guess the GitLab URL and never force-push. Verify configured remote/authentication and ancestry, then verify the remote SHA after a normal push."
+  },
+  "google_drive": {
+    "verified_shared_root": {
+      "folder_id": "1v_EZAxzNZQbi5DjpwWxBTiMyPHaIut34",
+      "access_observed_by_chatgpt_connector": true,
+      "claude_desktop_access": "verify_first"
+    },
+    "creator_write_when_explicitly_requested": [
+      {"title": "Pizza Connection 3 - Pizza Creator", "folder_id": "1zAHcpULXovkopFMIXz0W_DXTdgMoQYKt"},
+      {"title": "Pizza Connection 3 - Pizza Creator_Data", "folder_id": "1byIjaEJSmSnpoEr6cVfLz8E-Qol1N57z"},
+      {"title": "PizzaCreator", "folder_id": "1b0Befs16f1gbV7CbEvQUwoU_bJYPCcZY"},
+      {"title": "Barros_Pizza_Creator_RC1_Workbench_4.1_Studio_1.1_2026-08-24", "folder_id": "1sOexinkTs-5Sb7S39cEbp_N11iguV6uW"},
+      {"title": "PC3_Barros_Agent_Continuation_Handoff_v4.1", "folder_id": "1Lqp5LQPOn8_YKq1qJ8mCu8rMCI7VpEID"}
+    ],
+    "read_only_integration": [
+      {"title": "Pizza Connection 3", "folder_id": "1YWxVWFVBpTQeG_HyfT21eZwIB3jfn79-"},
+      {"title": "Pizza Connection 3_Data", "folder_id": "1G8gWfjKMJlPpZDUOX4HqEZtuu3Hnlen7"},
+      {"title": "PC3_Extraction_Output_v0.5", "folder_id": "1NQiz2cbq_nQuystcywFcSLWlJlQm85wT"},
+      {"title": "Tools", "folder_id": "1cJtVQm015MCofjJzbKOonNl-JezM4UyE"},
+      {"title": "Chatgpt_Asset_Collection", "folder_id": "14SjRZN4gxekHzP_jUwOYw-sgKl_yG3wg"}
+    ],
+    "denied_subtrees": [
+      {"folder_id": "1TuvoM094PFXX3kbFQF27VvWs8TMzIRuj", "reason": "outside the locked PC3 program scope"}
+    ]
+  },
+  "creator_sidecar": {
+    "base_url": "http://127.0.0.1:48173",
+    "endpoints": ["/health", "/history", "/proof/latest", "/inspect-attachment", "/compose", "/chat", "/lab", "/crew", "/transcribe", "/reload", "/shutdown", "/contract"]
+  },
+  "windows_mcp": {
+    "mode": "verify_first",
+    "historical_config": "S:\\MCP\\windows-mcp\\config.json",
+    "common_loopback_endpoint": "http://127.0.0.1:8080/sse",
+    "allowed_use": "Creator-only live Windows/game control and evidence capture",
+    "forbidden_use": "Do not use Claude's Creator workstream to implement or mutate ChatGPT-owned Studio/Workbench work."
+  },
+  "secrets": {
+    "rule": "Never inspect, enumerate, print, commit, or document credential directories, credential filenames, or secret values.",
+    "approved_methods": ["pizza_agent.secrets runtime abstraction", "environment variables", "OS credential helpers", "explicit runtime path supplied outside version control"]
+  },
+  "handoff_back_to_chatgpt": [
+    "Creator main SHA",
+    "pizza-agent SHA/worktree identity",
+    "Creator proof result location and /proof/latest summary",
+    "shared schema/API deltas",
+    "live Creator mode screenshot/comparison evidence",
+    "Preview/Restore/Apply/Save/Reload evidence",
+    "Voice evidence",
+    "Creator-originated handoff/runtime compatibility changes"
+  ]
+}
