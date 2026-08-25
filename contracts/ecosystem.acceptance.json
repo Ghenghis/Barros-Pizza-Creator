@@ -1,18 +1,23 @@
 {
-  "schema_version": "1.0",
-  "contract_id": "barros-pc3-ecosystem-v1",
-  "title": "Barro's PC3 Creator + Workbench + Runtime Proof Studio completion contract",
+  "schema_version": "2.0",
+  "contract_id": "barros-pc3-ecosystem-v2",
+  "title": "Pizza Connection 3 / Barro's Pizza Creator + Workbench + Runtime Proof Studio completion contract",
   "truth_policy": {
     "states": ["not_run", "pass", "fail", "blocked"],
-    "rule": "A gate is PASS only when the named command, runtime observation, repository state, or screenshot exists and the evidence is retained. Source presence, mockups, plans, assumptions, or documentation alone never prove runtime behavior.",
+    "rule": "A gate is PASS only when the named command, runtime observation, repository state, or screenshot exists and the evidence is retained. Source presence, mockups, plans, assumptions, generated promotional images, or documentation alone never prove runtime behavior.",
     "promotion": "The ecosystem may be called 100% complete only when every release_required gate is PASS. BLOCKED and NOT_RUN are not completion.",
     "snapshot_rule": "Visual gates require retained screenshots from the actual running application or game. Reference mockups may be compared with them but may not substitute for them.",
-    "publication_rule": "A repository publication gate passes only after the remote reports the expected commit SHA on the intended branch."
+    "publication_rule": "A repository publication gate passes only after the remote reports the expected commit SHA on the intended branch.",
+    "technical_identity_rule": "User-facing branding may say Pizza Connection 3 / Barro's Pizza, but compatibility identifiers including Pizza Connection 3.exe, Pizza Connection 3_Data, Assembly-CSharp.dll, Unity scene/object IDs, PathIDs and verified hashes must not be renamed for branding."
   },
   "projects": {
     "pizza_creator": "Ghenghis/Barros-Pizza-Creator",
     "workbench": "Ghenghis/barros-workbench",
     "studio": "Ghenghis/PC3_Barros_Runtime_Proof_Studio"
+  },
+  "shared_contracts": {
+    "image_handoff": "contracts/pc3-image-handoff.schema.json",
+    "display_name": "Pizza Connection 3 / Barro's Pizza"
   },
   "layers": [
     {
@@ -30,7 +35,7 @@
         {"id": "WB-101", "requirement": "Workbench has a first-class Pizza Creator service client for health, compose/chat, lab, crew, history, reload and STT-capable status without duplicating recipe authority", "release_required": true, "evidence": "source diff + automated tests"},
         {"id": "WB-102", "requirement": "Workbench agent exposes Pizza Creator actions as real registered tools and reports provider/backend failures without fabricating success", "release_required": true, "evidence": "tool registry test + failure-path test"},
         {"id": "WB-103", "requirement": "Workbench GUI visibly exposes Pizza Creator connection state and controls while preserving existing Source / Tools+Chat / Output workflow", "release_required": true, "evidence": "running Workbench screenshot + GUI smoke result"},
-        {"id": "WB-104", "requirement": "Workbench can open or target the configured Pizza Creator game/runtime/evidence folders using editable configuration", "release_required": true, "evidence": "config test + running GUI screenshot"},
+        {"id": "WB-104", "requirement": "Workbench can open or target the configured Pizza Creator game/runtime/evidence folders using editable first-class configuration", "release_required": true, "evidence": "config test + running GUI screenshot"},
         {"id": "WB-105", "requirement": "All pre-existing Workbench tests plus new Pizza Creator integration tests pass", "release_required": true, "evidence": "test log retained from clean checkout"}
       ]
     },
@@ -38,10 +43,10 @@
       "id": "E2",
       "name": "Runtime Proof Studio Pizza Creator integration",
       "gates": [
-        {"id": "ST-201", "requirement": "Studio recognizes the Pizza Creator RC1 contract and can display its gate states without converting NOT_RUN/BLOCKED into PASS", "release_required": true, "evidence": "source diff + parser/ledger tests"},
-        {"id": "ST-202", "requirement": "Studio provides a visible Pizza Creator workspace for install/diagnose/proof/evidence actions", "release_required": true, "evidence": "running Studio screenshot + smoke result"},
-        {"id": "ST-203", "requirement": "Studio can ingest retained RC1 evidence bundles and surface logs, screenshots, result JSON and unresolved blockers", "release_required": true, "evidence": "fixture/evidence ingestion test + screenshot"},
-        {"id": "ST-204", "requirement": "Studio can launch the supported local RC1 proof/diagnostic scripts against an explicitly selected Windows target without modifying Assembly-CSharp.dll", "release_required": true, "evidence": "command construction test + live Windows run evidence"},
+        {"id": "ST-201", "requirement": "Studio recognizes the Pizza Creator/ecosystem contract and displays exact gate states without converting NOT_RUN/BLOCKED into PASS", "release_required": true, "evidence": "source diff + parser/ledger tests"},
+        {"id": "ST-202", "requirement": "Studio provides a visible Pizza Creator workspace for status, contract, evidence, image handoff and proof actions", "release_required": true, "evidence": "running Studio screenshot + smoke result"},
+        {"id": "ST-203", "requirement": "Studio ingests retained Creator evidence and surfaces logs, real screenshots, result JSON and unresolved blockers", "release_required": true, "evidence": "fixture/evidence ingestion test + screenshot"},
+        {"id": "ST-204", "requirement": "Studio can launch the supported local Creator proof scripts against an explicitly selected Windows target without modifying Assembly-CSharp.dll", "release_required": true, "evidence": "command construction test + live Windows run evidence"},
         {"id": "ST-205", "requirement": "All pre-existing Studio tests plus new Pizza Creator integration tests pass", "release_required": true, "evidence": "test log retained from clean checkout"}
       ]
     },
@@ -49,9 +54,10 @@
       "id": "E3",
       "name": "Cross-project contract alignment",
       "gates": [
-        {"id": "SYNC-301", "requirement": "All three repositories agree on target game version/assembly hashes, 87-item catalog facts, runtime bridge method, evidence shortcuts and provider boundary", "release_required": true, "evidence": "automated cross-repo fact comparison report"},
+        {"id": "SYNC-301", "requirement": "All three repositories agree on target technical game version/assembly hashes, 87-item Creator catalog facts, runtime bridge method, evidence shortcuts, provider boundary and shared display-name rule", "release_required": true, "evidence": "automated cross-repo fact comparison report"},
         {"id": "SYNC-302", "requirement": "No project documentation or code claims a mocked, placeholder or unexecuted runtime result as proven", "release_required": true, "evidence": "truth-language audit report"},
-        {"id": "SYNC-303", "requirement": "Workbench and Studio link to the same Pizza Creator evidence directory/contract semantics rather than maintaining divergent truth ledgers", "release_required": true, "evidence": "configuration/source inspection + integration test"}
+        {"id": "SYNC-303", "requirement": "Workbench and Studio link to the same Creator evidence directory/contract semantics rather than maintaining divergent truth ledgers", "release_required": true, "evidence": "configuration/source inspection + integration test"},
+        {"id": "SYNC-304", "requirement": "All three repositories carry a semantically identical pc3-image-handoff schema", "release_required": true, "evidence": "schema SHA-256 comparison report"}
       ]
     },
     {
@@ -59,8 +65,8 @@
       "name": "Visual snapshots and usability",
       "gates": [
         {"id": "VIS-401", "requirement": "Four live in-game Pizza Creator screenshots exist for Chat, AI Lab, Design Crew and Chef Voice and have comparison reports against locked references", "release_required": true, "evidence": "F8 captures + Compare-ReferenceImages reports/diffs"},
-        {"id": "VIS-402", "requirement": "Workbench integrated GUI snapshot shows usable Pizza Creator status/control integration with no clipping at the tested resolution", "release_required": true, "evidence": "Workbench runtime screenshot"},
-        {"id": "VIS-403", "requirement": "Runtime Proof Studio integrated GUI snapshot shows Pizza Creator contract/evidence workflow with no clipping at the tested resolution", "release_required": true, "evidence": "Studio runtime screenshot"}
+        {"id": "VIS-402", "requirement": "Workbench integrated GUI snapshot shows usable Creator status/control and PNG/JPEG contract integration with no clipping at the tested resolution", "release_required": true, "evidence": "Workbench runtime screenshot"},
+        {"id": "VIS-403", "requirement": "Runtime Proof Studio integrated GUI snapshot shows Creator contract/evidence/image-handoff workflow with no clipping at the tested resolution", "release_required": true, "evidence": "Studio runtime screenshot"}
       ]
     },
     {
@@ -77,9 +83,31 @@
       "name": "Remote publication and parity",
       "gates": [
         {"id": "PUB-601", "requirement": "Reviewed Pizza Creator commit is present on GitHub main and its CI is green", "release_required": true, "evidence": "GitHub commit SHA + Actions run"},
-        {"id": "PUB-602", "requirement": "Reviewed Workbench integration commit is present on GitHub main", "release_required": true, "evidence": "GitHub remote commit SHA"},
-        {"id": "PUB-603", "requirement": "Reviewed Studio integration commit is present on GitHub main", "release_required": true, "evidence": "GitHub remote commit SHA"},
+        {"id": "PUB-602", "requirement": "Reviewed Workbench integration commit is present on GitHub main and its integration CI is green", "release_required": true, "evidence": "GitHub remote commit SHA + Actions run"},
+        {"id": "PUB-603", "requirement": "Reviewed Studio integration commit is present on GitHub main and its integration CI is green", "release_required": true, "evidence": "GitHub remote commit SHA + Actions run"},
         {"id": "PUB-604", "requirement": "All intended GitLab mirrors/projects contain the same reviewed snapshots without force-erasing unrelated history", "release_required": true, "evidence": "GitLab branch commit SHAs compared with reviewed source SHAs"}
+      ]
+    },
+    {
+      "id": "E7",
+      "name": "Exact PNG/JPEG creation and handoff",
+      "gates": [
+        {"id": "IMG-701", "requirement": "Workbench inspects the original PC3 image before finalization and records dimensions, format, alpha behavior and SHA-256", "release_required": true, "evidence": "automated image-contract test + retained handoff row"},
+        {"id": "IMG-702", "requirement": "Workbench finalizes generated candidates to the exact original dimensions and uses compatible PNG/JPEG alpha behavior", "release_required": true, "evidence": "PNG-alpha and JPEG-flattening regression tests + real candidate evidence"},
+        {"id": "IMG-703", "requirement": "Workbench writes an append-only handoff ledger conforming to pc3-image-handoff schema", "release_required": true, "evidence": "manifest test + schema validation"},
+        {"id": "IMG-704", "requirement": "Studio independently revalidates source/output existence, hashes, dimensions, format and required alpha before the candidate can be treated as contract-valid", "release_required": true, "evidence": "Studio handoff validation tests + real handoff result"},
+        {"id": "IMG-705", "requirement": "At least one real Workbench-generated image is handed to Studio, contract-valid, mapped to a real PC3 target and captured in the running game with restore evidence", "release_required": true, "evidence": "handoff ledger row + Studio target mapping + before/after/restore screenshots"}
+      ]
+    },
+    {
+      "id": "E8",
+      "name": "Agent orchestration, simplicity and recovery",
+      "gates": [
+        {"id": "AGENT-801", "requirement": "The unified Studio MCP exposes existing PC3 extraction/evidence/runtime tools plus Creator status/design, contract/evidence, image-handoff validation and Workbench launch in one tool surface", "release_required": true, "evidence": "tools/list capture + MCP smoke calls"},
+        {"id": "AGENT-802", "requirement": "Workbench chat exposes Creator and exact-image operations beside its existing local and connected MCP tools", "release_required": true, "evidence": "tool-registry test + agent smoke transcript"},
+        {"id": "UX-803", "requirement": "One-click default launchers open the integrated Workbench and integrated Studio without requiring command-line knowledge", "release_required": true, "evidence": "launcher source + real Windows launch screenshots"},
+        {"id": "REC-804", "requirement": "All three projects document durable recovery state for power loss/crash, including Git checkpoint, truth contract, image handoff ledger, evidence and restore workflow", "release_required": true, "evidence": "repository documentation inspection"},
+        {"id": "BRAND-805", "requirement": "User-facing ecosystem naming is Pizza Connection 3 / Barro's Pizza while technical PC3 compatibility identifiers remain unchanged", "release_required": true, "evidence": "branding/technical-identity audit report"}
       ]
     }
   ]
