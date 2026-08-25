@@ -2,49 +2,53 @@
 
 **Owner:** Claude — PC3 Pizza Creator  
 **Runtime profile:** `creator-0.11.272`  
-**Shared stimulus producer/observer:** ChatGPT-owned Runtime Proof Studio  
-**Purpose:** make E00–E10 scientifically controllable by letting the existing Creator plugin load exact native model transforms from the shared Creator↔Studio stimulus contract, without replacing or bypassing the game's renderer/save path.
+**Independent stimulus/observation owner:** ChatGPT-owned Runtime Proof Studio  
+**Purpose:** execute exact Studio-generated E00–E10 models through the real Creator native load/save/reload route and emit an exact execution receipt that Studio can independently bind to stock output.
 
-This is a research-only extension of the existing Creator native bridge. It must not become a second production recipe authority, a second stimulus schema, or a second JPEG generator.
+This is a research-only extension of the existing Creator native bridge. It must not become a second production recipe authority, stimulus schema, corpus generator, observer, campaign ledger, renderer, or JPEG writer.
 
-## 1. One canonical stimulus contract
+## 1. Two shared interoperability contracts
 
-The only controlled-stimulus schema is:
+Controlled input:
 
 ```text
 contracts/creator-controlled-stimulus.schema.json
 ```
 
-The file exists in both Creator and Runtime Proof Studio and must remain semantically identical.
+Creator execution receipt:
 
-Canonical E00–E10 stimuli are produced by the **Studio-owned** generator:
+```text
+contracts/creator-controlled-execution-evidence.schema.json
+```
+
+Both files exist in Creator and Runtime Proof Studio and must remain semantically identical across the interoperability boundary.
+
+Canonical E00–E10 stimuli are produced only by Studio:
 
 ```text
 Ghenghis/PC3_Barros_Runtime_Proof_Studio/scripts/generate_creator_controlled_stimuli.py
 ```
 
-Claude may consume its output read-only. Claude must not create or maintain a competing corpus generator in the Creator repository.
+Studio seals the exact stimulus/corpus hashes and independently observes stock output. Claude consumes Studio stimuli read-only and implements only the Creator exact-model executor.
 
-The Creator research lab button **Generate Canonical Studio Stimuli** invokes that Studio generator without modifying Studio.
+## 2. Why the exact-model executor is required
 
-## 2. Why an exact-model executor is still required
-
-Normal Creator recipe generation intentionally chooses positions/rotations. That is useful for design but unsuitable for experiments where only one independent variable may change.
+Normal Creator/Barro's design logic intentionally chooses placement. Controlled reverse-engineering needs exact transforms where one variable can change independently.
 
 Examples:
 
 ```text
-same X/Z/size/model name, rotation 0° vs 90°
-same rotation/Z/Y/model name, X=-4.0 vs X=-3.0
-same transforms/model name, placement array A/B vs B/A
-same X/Z/rotation/model name, Y=1.00 vs 1.01
+same model, rotation 0° vs 90°
+same rotation/Z/Y, X=-4.0 vs X=-3.0
+same transforms, placement array A/B vs B/A
+same X/Z/rotation, Y=1.00 vs 1.01
 ```
 
-The Studio stimulus already supplies every transform. The Creator executor must preserve those exact values and must **not** invoke the Barro's golden-angle/distribution placement generator.
+The shared stimulus already contains every explicit transform. Never invoke the Barro's golden-angle/distribution placement generator for these cases.
 
-## 3. Shared fixture shape
+## 3. Canonical stimulus shape
 
-A canonical stimulus looks conceptually like:
+Conceptually:
 
 ```json
 {
@@ -75,78 +79,50 @@ A canonical stimulus looks conceptually like:
 }
 ```
 
-Important differences from the retired local format:
+Rules:
 
-- use `case_id`, not `variant`;
-- model fields live under `model`;
-- placement **array order is the serialized/native order**;
-- there is **no `sequence` field**;
-- E00 may intentionally contain an empty placements array;
-- `operation` explicitly controls Preview/Save/reload/re-save behavior.
+- use `case_id`, not a second `variant` dialect;
+- placement **array order is the native/serialized order**;
+- there is no competing `sequence` field;
+- E00 may contain zero placements;
+- `operation` is authoritative for Preview/Save/reload/re-save behavior.
 
-## 4. Strict runtime validation
+## 4. Strict stimulus validation
 
-Reject the stimulus before modifying the live pizza if any required condition fails.
-
-### Identity
+Reject before modifying the live pizza if any required condition fails.
 
 Require:
 
 ```text
 schema_version == 1.0
 runtime_profile == creator-0.11.272
+shape in Round/Square/Star/Triangle
+placement count <= 180
+all vectors finite numeric values
+size in Large/Medium/Small
+all ingredient IDs resolve exactly in the installed database
 ```
 
-### Shape
-
-Require one of:
-
-```text
-Round
-Square
-Star
-Triangle
-```
-
-Resolve the real dough positions through:
+Resolve dough positions through:
 
 ```text
 IDatabaseService.GetPizzaShape(shape).DoughPositions
 ```
 
-### Ingredients and sizes
+Do not repair aliases in the research executor. Preserve `model.placements` array order exactly; never sort by ID, size, coordinates, or hash.
 
-Every placement must resolve through the exact installed Creator database using the requested size.
-
-Allowed size names:
-
-```text
-Large
-Medium
-Small
-```
-
-Do not repair aliases inside the research executor. An invalid stimulus must fail closed so the experiment remains exact.
-
-### Numeric values
-
-Reject NaN, Infinity, null, and non-numeric vectors.
-
-The shared JSON schema intentionally does not over-constrain research coordinates because controlled experiments may need to probe a boundary. The Creator executor should nevertheless apply a **research safety envelope** before native load and record any rejected out-of-envelope stimulus. Initial conservative values may use observed native ranges, but changing that envelope is a research-safety change, not evidence about the stock algorithm.
-
-### Placement order
-
-Preserve `model.placements` array order exactly when constructing `PizzaModel.ingredients`.
-
-Never sort placements by ID, size, coordinates, or hash. E05/E09 explicitly study order effects.
-
-### Placement count
-
-Reject more than 180 placements because the shared schema caps the corpus at 180. E00 with zero placements is valid.
+A bounded research safety envelope may reject obviously unsafe coordinates before native load. That envelope is a safety control, not evidence about stock placement behavior.
 
 ## 5. Native model construction
 
-Use the same real model classes and services already used by `GameBridge`.
+Reuse the real existing model/service seam:
+
+```text
+PizzaModel
+IngredientContainerModel
+IDatabaseService
+IPizzaCreatorService.LoadPizzaFromModel
+```
 
 Conceptually:
 
@@ -168,177 +144,237 @@ for placement in stimulus.model.placements IN ARRAY ORDER:
     model.ingredients.Add(container)
 
 model.CalculateCosts()
-```
-
-Then use the existing public native seam:
-
-```text
 pizzaCreator.LoadPizzaFromModel(model)
 ```
 
-No custom rendering occurs in this executor.
+No custom renderer or fake pizza scene is allowed.
 
-## 6. Operation contract
+## 6. Native operation contract
 
-Interpret `operation` literally.
+Interpret every stimulus operation literally.
 
 ### `preview_exact_model`
 
 If true:
 
-1. capture a pre-experiment restore point;
-2. load the exact constructed model through `LoadPizzaFromModel`;
-3. retain a model signature after the native load settles.
+1. capture the pre-experiment restore point;
+2. load the exact model through `LoadPizzaFromModel`;
+3. after native load settles, inspect/capture the actual live model state used by the execution receipt.
 
 ### `native_recipe_save`
 
-If true, invoke only the stock/native path already exposed by:
+If true, invoke only:
 
 ```text
 IPizzaCreatorService.SaveCurrentPizzaToRecipes()
 ```
 
-The executor must not call `EncodeToJPG`, `ScreenCapture`, `ReadPixels`, or any substitute image writer to satisfy this operation. The native game must produce whatever recipe image/JPEG it normally produces.
+Do not call `EncodeToJPG`, `ScreenCapture`, `ReadPixels`, a custom camera capture, or any substitute image writer to satisfy this operation.
 
 ### `reload_verify`
 
 If true:
 
-1. reload through the stock/native recipe-book path;
-2. compare the actual reloaded `PizzaModel` to the retained model signature;
-3. require exact ID/name, profit factor, dough positions, placement array order, ingredient IDs/sizes, positions, and rotations.
+1. reload through the stock/native recipe-book route;
+2. capture the actual reloaded model;
+3. require exact stimulus agreement for name/ID, profit factor, shape/dough identity, placement array order, ingredient IDs/sizes, positions, and rotations.
 
 ### `native_resave_after_reload`
 
-If true, require a successful native reload verification first, then invoke the same stock save path again without modifying the model.
+If true, require successful exact reload verification first, then invoke the same native Save route without modifying the model.
 
-E10 depends on this exact sequence.
+E10 depends on this sequence.
 
-## 7. Required input identity and model signature
+## 7. Required execution-evidence receipt
 
-For every case retain at least:
+For **every attempted canonical case**, emit one JSON receipt conforming exactly to:
 
 ```text
-experiment_id
-case_id
-shared stimulus SHA-256
-Creator repo SHA
-runtime profile
-model name
-shape / native dough-position identity
-profit factor
-placements in exact array order:
-  index
-  ingredient ID
-  numeric enum size
-  exact position x/y/z
-  exact rotation x/y/z
-native calculated cost/price where observable
-operation flags
-timestamps
+contracts/creator-controlled-execution-evidence.schema.json
 ```
 
-Write/reference it under the run evidence for that experiment/case.
+Required identity includes:
 
-The native JPEG/image must be bound to this exact stimulus/model identity by the Studio observer before it can support JRE analysis.
+```text
+schema_version = 1.0
+kind = pc3-creator-controlled-stimulus-execution-evidence
+runtime_profile = creator-0.11.272
+experiment_id
+case_id
+exact stimulus SHA-256
+Creator Git repo SHA
+exact Assembly-CSharp SHA-256
+```
 
-## 8. One-variable experiment proof
+`observed_model` must reflect the actual model after native load, not merely echo the input JSON. Retain:
 
-Before treating an A/B pair as a controlled one-variable experiment, compare the two shared stimuli with:
+```text
+name
+shape
+profit_factor
+optional native dough-position hash
+placements IN ACTUAL ARRAY ORDER:
+  index
+  ingredient_id
+  size
+  size_value where available (Large=0, Medium=1, Small=2)
+  exact position x/y/z
+  exact rotation x/y/z
+```
+
+`native_actions` must contain all four actions with:
+
+```text
+requested
+attempted
+success
+timestamp_utc
+detail
+```
+
+If reload verification was requested, `reloaded_model` is required and must describe the actual model obtained through the stock reload path.
+
+Do not set requested actions to success from source presence or expectation. Record observed results only.
+
+## 8. Studio independently verifies the receipt
+
+Studio verifies the receipt with:
+
+```text
+Ghenghis/PC3_Barros_Runtime_Proof_Studio/scripts/verify_creator_controlled_execution.py
+```
+
+Studio independently compares:
+
+```text
+stimulus SHA
+experiment/case
+exact Creator Assembly-CSharp identity
+model name/shape/profit
+placement count + ARRAY ORDER
+placement index/ID/size/size_value
+position and rotation values
+requested/attempted/success native-action receipts
+reloaded model when requested
+```
+
+The receipt path must be supplied to/selected by Studio's canonical observer.
+
+A missing or mismatching receipt returns the canonical campaign below `fully_bound` and uses exit code `5` in the Studio wrapper.
+
+The receipt does not prove the stock JPEG exists. Studio independently observes UserData before/after and binds the actual changed/created stock JPEG.
+
+## 9. Three-link proof chain
+
+The intended separation is:
+
+```text
+Studio sealed stimulus
+    -> Claude Creator exact-model executor
+    -> Creator execution-evidence receipt
+    -> Studio independent stimulus/model/action/assembly verification
+    -> native Creator Save/reload/re-save
+    -> untouched stock Creator UserData/JPEG
+    -> Studio independent before/after/output analysis
+    -> independent Studio/Creator JPEG parser agreement
+```
+
+Claude owns the native executor/receipt producer. Studio owns stimulus generation/sealing, independent receipt verification, stock-output observation, parser cross-validation, campaign ledger, and JRE input-readiness board.
+
+Neither side may manufacture the other's evidence.
+
+## 10. Campaign states relevant to Claude
+
+Studio's campaign can report:
+
+```text
+not_run
+observed
+cross_validated
+fully_bound
+unresolved
+mismatch
+```
+
+`cross_validated` is **not** enough for controlled JRE input readiness: stock output/parser evidence exists but the exact Creator execution binding is absent/not PASS.
+
+`fully_bound` means:
+
+```text
+exact sealed stimulus
++
+Studio-verified exact Creator execution receipt/model/actions/assembly
++
+stock output observation
++
+independent JPEG parser agreement
+```
+
+`fully_bound` is the strongest controlled-evidence state, but it still does not prove the native save/render/JPEG implementation call chain.
+
+## 11. One-variable experiment proof
+
+Before interpreting an A/B pair, compare the shared stimuli with:
 
 ```text
 scripts/compare_controlled_stimuli.py
 ```
 
-The comparator:
+`case_id` and `notes` are evidence labels. Substantive model/operation changes must match the intended variable family only.
 
-- validates the shared contract shape;
-- treats `case_id` and `notes` as evidence labels;
-- reports substantive model/operation changes separately;
-- normalizes placement indexes to `model.placements[*]` families;
-- can fail closed with `--allow` patterns.
-
-Example for an E01 pair:
+Example E01 allowance:
 
 ```text
 --allow "model.placements[*].rotation.y"
 ```
 
-A rotation experiment is invalid if the comparator also sees X/Z/size/name/shape/profit/operation changes.
+Studio's generator is regression-tested to keep model names constant inside one-variable sweeps unless name itself is the variable.
 
-### Important model-name rule
+## 12. Research-only operator surface
 
-Within a controlled sweep the **model name must remain constant** unless model name itself is the variable under study.
+Prefer a guarded research path that does not clutter normal Creator use.
 
-Studio's canonical generator is regression-tested for constant model names within E00–E09 because changing the name could affect recipe lookup, native output filename, metadata, or save behavior and become a hidden confound.
-
-## 9. Research-only operator surface
-
-Prefer a guarded research path that does not clutter the normal Creator UI.
-
-Recommended config:
+Recommended default:
 
 ```text
 [Research]
 EnableNativeJpegHarness=false
 ```
 
-Default is false.
-
-Possible operator path:
+Possible controls:
 
 ```text
 F6 = select/load canonical controlled stimulus
-F7 = write current exact model signature
+F7 = write/retain current execution receipt/model evidence
 F8 = existing AI-mode screenshot evidence (unchanged)
-F9 = existing saved-reload verification (unchanged)
+F9 = existing native saved-reload verification (unchanged)
 ```
 
 Do not reassign F8/F9.
 
-Alternatively a bounded loopback research endpoint may be used if it accepts only the shared stimulus contract and cannot read arbitrary paths or execute arbitrary files.
+A bounded loopback research endpoint is acceptable if it accepts only the shared stimulus contract and cannot execute arbitrary files/paths.
 
-## 10. Two-party proof chain
+## 13. Canonical experiments
 
-The intended separation is:
+Studio generates 60 E00–E10 cases.
 
-```text
-Studio canonical generator
-    -> explicit controlled stimulus
-    -> Claude Creator exact-model executor
-    -> native LoadPizzaFromModel
-    -> stock native Save / reload / re-save
-    -> stock Creator UserData/JPEG
-    -> Studio controlled observer
-    -> before/after/hash/pixel/DQT/DHT/DCT/transform analysis
-```
-
-Claude is the **stimulus executor/native producer**.
-Studio is the **independent observer/analyzer**.
-
-Neither side may manufacture the other's evidence.
-
-## 11. Canonical experiments
-
-Studio generates 60 cases covering E00–E10.
-
-Key invariants:
-
-- **E00:** identical dough-only model repeated; only evidence `case_id` differs.
+- **E00:** identical dough-only repeats.
 - **E01:** Y rotation only.
 - **E02:** X only.
 - **E03:** Z only.
 - **E04:** Y only.
-- **E05:** two distinguishable ingredients; order and/or specified Y relationship.
-- **E06:** piece-count study using a fixed prefix of explicit deterministic transforms; this is a controlled stimulus, not a stock-placement claim.
+- **E05:** distinguishable ingredient overlap/order/Y relationships.
+- **E06:** piece count using a fixed explicit transform prefix; not a stock-placement claim.
 - **E07:** size only.
-- **E08:** shape only; placement transform held constant and native dough positions resolved by Creator.
+- **E08:** shape only; explicit placement transform fixed while Creator resolves native dough positions.
 - **E09:** A baseline, B rotation-only, C position-only, D array-order-only; model name fixed.
 - **E10:** native save -> stock reload -> exact model verification -> native re-save.
 
-## 12. Evidence event names
+Use Studio's `RUN_NEXT_CREATOR_JPEG_CASE.bat`/campaign ledger; do not hand-maintain a competing corpus or silently skip unresolved current cases.
 
-Add research-specific events to the existing `EvidenceRecorder`; do not create a competing evidence root.
+## 14. Evidence events
+
+Use the existing Creator `EvidenceRecorder`; do not create a competing evidence root.
 
 Recommended events:
 
@@ -347,6 +383,7 @@ research.stimulus.validated
 research.stimulus.rejected
 research.stimulus.loaded
 research.model.signature_written
+research.execution.receipt_written
 research.native_save.requested
 research.native_save.returned
 research.native_reload.verified
@@ -355,45 +392,47 @@ research.native_resave.requested
 research.stimulus.failed
 ```
 
-If native image discovery/binding is performed by Studio rather than Creator, do **not** duplicate Studio's observer event as a Creator claim.
+Do not emit Studio-owned native-image discovery/parser/campaign claims as if Creator proved them.
 
-## 13. Fail-closed behavior
+## 15. Fail-closed behavior
 
 On validation/native-load failure:
 
-- retain experiment ID, case ID, stimulus hash, error, and profile;
+- retain experiment ID, case ID, stimulus hash, error, profile and Creator identity;
 - do not partially apply remaining placements;
-- restore the pre-experiment model if a live modification began;
+- restore the pre-experiment model if live modification began;
 - do not request native save from an invalid model;
-- do not promote a JRE gate.
+- emit a truthful failed execution receipt/event where the shared schema permits the observed state;
+- do not promote any JRE gate.
 
-If a native save call returns but Studio cannot find/bind the expected stock output, record the observation as unresolved/failed rather than generating a replacement JPEG.
+If native Save returns but Studio cannot find/bind stock output, leave the case unresolved rather than generating a replacement JPEG.
 
-## 14. Harness readiness test
+## 16. Harness readiness
 
-The executor is ready when the same canonical stimulus can be applied twice and retained evidence proves:
+The executor is ready when the same canonical stimulus can be applied twice and Creator can emit receipts that Studio independently verifies for:
 
 ```text
 same stimulus SHA
-same model signature
+same exact Creator assembly identity
+same observed model
 same placement array order
 same IDs/sizes/positions/rotations
-same native profile
+correct native-action receipts
 successful native load
 ```
 
-For an E10-capable harness also require native reload exact-model verification.
+For E10-capable readiness also require exact native reload-model verification.
 
-JPEG byte identity is **not** a prerequisite for harness readiness; JPEG determinism is itself JRE research.
+JPEG byte identity is not required for executor readiness; JPEG determinism is a separate JRE question.
 
-## 15. Claude implementation touchpoints
+## 17. Claude implementation touchpoints
 
 Keep the change focused around existing Creator code:
 
-- `plugin-src/Models.cs` — shared stimulus DTOs if useful; mirror the shared contract exactly rather than inventing another DTO dialect.
-- `plugin-src/GameBridge.cs` — exact `PizzaModel` construction, load, save, restore/reload signature logic.
-- `plugin-src/BarrosAiPlugin.cs` and/or `PanelRenderer.cs` — guarded research control only.
-- `plugin-src/EvidenceRecorder.cs` — existing event system.
-- tests — shared-stimulus validation, exact transform/order preservation, empty E00 support, operation gating.
+- `plugin-src/Models.cs` — shared stimulus/execution-evidence DTOs only if useful; mirror the contracts exactly.
+- `plugin-src/GameBridge.cs` — exact model construction/load/save/reload and actual model inspection.
+- `plugin-src/BarrosAiPlugin.cs` and/or `PanelRenderer.cs` — guarded research controls only.
+- `plugin-src/EvidenceRecorder.cs` — execution receipt/event retention in the existing evidence system.
+- tests — shared stimulus validation, exact transform/order preservation, E00 empty model, operation gating, receipt schema/identity, reload receipt.
 
-Do not modify Runtime Proof Studio or Barro's Workbench from the Creator workstream. If the shared stimulus schema needs a change, document a cross-workstream schema delta and coordinate it rather than silently diverging the Creator copy.
+Do not modify Runtime Proof Studio or Barro's Workbench from the Creator workstream. If either shared schema needs a change, document/coordinate the interoperability delta instead of silently diverging Creator's copy.
