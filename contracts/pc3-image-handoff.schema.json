@@ -17,6 +17,8 @@
           "target": {
             "type": "object",
             "properties": {
+              "build_profile": {"enum": ["creator-0.11.272", "studio-1.11.403", "unknown"]},
+              "game_version": {"type": "string"},
               "asset_id": {"type": "string"},
               "relative_path": {"type": "string"},
               "path_id": {"type": ["integer", "null"]},
