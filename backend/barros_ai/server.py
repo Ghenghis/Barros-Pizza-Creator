@@ -75,6 +75,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802
         path = urlparse(self.path).path
         if path == "/health":
+            stt_available = bool(self.app.provider.online or self.app.settings.stt_endpoint)
             self._json(
                 HTTPStatus.OK,
                 {
@@ -84,6 +85,21 @@ class Handler(BaseHTTPRequestHandler):
                     "provider": self.app.settings.provider,
                     "online": self.app.provider.online,
                     "image_parser": "png+jpeg+webp-v1",
+                    "capabilities": {
+                        "compose": True,
+                        "chat": True,
+                        "lab": True,
+                        "crew": True,
+                        "history": True,
+                        "reload": True,
+                        "attachment_inspection": True,
+                        "stt": stt_available,
+                    },
+                    "stt": {
+                        "available": stt_available,
+                        "configured_endpoint": bool(self.app.settings.stt_endpoint),
+                        "model": self.app.settings.stt_model,
+                    },
                     "uptime_seconds": round(time.time() - self.app.started, 1),
                 },
             )
