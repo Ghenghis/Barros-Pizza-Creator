@@ -46,10 +46,25 @@ class Pc3ImageHandoffSchemaTests(unittest.TestCase):
             self.assertIn(field, image["required"])
         self.assertEqual(image["properties"]["sha256"]["pattern"], "^[a-fA-F0-9]{64}$")
 
-    def test_target_metadata_has_pc3_mapping_fields(self) -> None:
+    def test_target_metadata_has_pc3_mapping_and_build_routing_fields(self) -> None:
         item = self.schema["properties"]["items"]["items"]
         target = item["properties"]["target"]["properties"]
-        self.assertEqual(set(target), {"asset_id", "relative_path", "path_id", "family", "usage"})
+        self.assertEqual(
+            set(target),
+            {
+                "build_profile",
+                "game_version",
+                "asset_id",
+                "relative_path",
+                "path_id",
+                "family",
+                "usage",
+            },
+        )
+        self.assertEqual(
+            target["build_profile"]["enum"],
+            ["creator-0.11.272", "studio-1.11.403", "unknown"],
+        )
 
 
 if __name__ == "__main__":
