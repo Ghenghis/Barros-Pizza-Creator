@@ -1,0 +1,12 @@
+{
+  "provider": "offline",
+  "endpoint": "http://127.0.0.1:1234/v1",
+  "model": "local-model",
+  "api_key": "",
+  "api_key_env": "OPENAI_API_KEY",
+  "env_file": "G:\\private\\.env.openai",
+  "timeout_seconds": 90,
+  "retries": 2,
+  "stt_endpoint": "",
+  "stt_model": "whisper-1"
+}
