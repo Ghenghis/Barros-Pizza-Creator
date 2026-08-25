@@ -11,8 +11,8 @@ import zipfile
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_ZIP = ROOT / "releases" / "Barros_Pizza_Creator_AI_Designer_v1.0.0-rc1.zip"
-ARCHIVE_ROOT = "Barros_Pizza_Creator_AI_Designer_v1.0.0-rc1"
+DEFAULT_ZIP = ROOT / "releases" / "Barros_Pizza_Creator_AI_Designer_v1.1.0-rc1.zip"
+ARCHIVE_ROOT = "Barros_Pizza_Creator_AI_Designer_v1.1.0-rc1"
 FIXED_ZIP_TIME = (2026, 8, 24, 0, 0, 0)
 EXCLUDED_ROOTS = {".git", "evidence", "releases"}
 EXCLUDED_NAMES = {"MANIFEST.sha256", "RELEASE_CHECKSUMS.sha256"}
