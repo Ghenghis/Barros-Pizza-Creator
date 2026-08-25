@@ -14,6 +14,7 @@ from urllib.parse import urlparse
 from .attachments import AttachmentError, normalize_attachment, normalize_attachments
 from .history import HistoryStore
 from .orchestrator import PizzaOrchestrator
+from .proof_status import ProofStatusError, latest_proof_status
 from .providers import ProviderClient, ProviderError, ProviderSettings
 
 
@@ -119,6 +120,10 @@ class App:
             },
         }
 
+    def latest_proof_status(self) -> dict[str, Any]:
+        contract = self.contract_status()
+        return latest_proof_status(self.root, str(contract.get("contract_id", "")))
+
 
 class Handler(BaseHTTPRequestHandler):
     server_version = "BarrosPizzaAI/1.1"
@@ -177,6 +182,7 @@ class Handler(BaseHTTPRequestHandler):
                         "reload": True,
                         "attachment_inspection": True,
                         "contract": True,
+                        "proof_results": True,
                         "stt_configured": stt_configured,
                     },
                     "stt": {
@@ -193,6 +199,12 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 self._json(HTTPStatus.OK, self.app.contract_status())
             except (ValueError, json.JSONDecodeError) as exc:
+                self._json(HTTPStatus.INTERNAL_SERVER_ERROR, {"ok": False, "error": str(exc)})
+            return
+        if path == "/proof/latest":
+            try:
+                self._json(HTTPStatus.OK, self.app.latest_proof_status())
+            except (ValueError, ProofStatusError, json.JSONDecodeError) as exc:
                 self._json(HTTPStatus.INTERNAL_SERVER_ERROR, {"ok": False, "error": str(exc)})
             return
         if path == "/history":
