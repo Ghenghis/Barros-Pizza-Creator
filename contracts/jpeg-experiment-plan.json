@@ -1,0 +1,133 @@
+{
+  "schema_version": "1.0",
+  "kind": "pc3-creator-native-jpeg-experiment-plan",
+  "owner": "Claude",
+  "runtime_profile": "creator-0.11.272",
+  "truth_contract": "contracts/jpeg-reverse-engineering.acceptance.json",
+  "roadmap": "docs/NATIVE_PIZZA_JPEG_REVERSE_ENGINEERING_ROADMAP.md",
+  "analysis_tool": "scripts/analyze_jpeg_experiment.py",
+  "rules": {
+    "one_independent_variable_per_pair": true,
+    "native_save_required": true,
+    "bind_model_signature_to_every_image": true,
+    "repeat_baselines": 3,
+    "no_visual_only_pass": true,
+    "do_not_modify_runtime_profile": true,
+    "research_does_not_promote_main_rc1_gate_by_itself": true
+  },
+  "experiments": [
+    {
+      "id": "E00",
+      "title": "Minimal dough/background determinism baseline",
+      "target_gates": ["JRE-006"],
+      "runs": 3,
+      "controlled": ["shape", "model", "camera/runtime state as far as observable"],
+      "vary": [],
+      "required_outputs": ["model signature", "3 native JPEGs", "pairwise analysis reports"]
+    },
+    {
+      "id": "E01",
+      "title": "Single-piece rotation sweep",
+      "target_gates": ["JRE-008"],
+      "runs": 9,
+      "controlled": ["ingredient id", "size", "position", "shape", "piece count"],
+      "vary": [{"field": "rotation_y_degrees", "values": [0, 30, 45, 60, 90, 120, 135, 180, 270]}],
+      "required_outputs": ["model signature per run", "native JPEG per run", "orientation metrics", "pair analysis reports"]
+    },
+    {
+      "id": "E02",
+      "title": "World X to JPEG u mapping",
+      "target_gates": ["JRE-007"],
+      "controlled": ["ingredient id", "size", "Z", "Y", "rotation", "shape"],
+      "vary": [{"field": "position_x", "values": [-5.0, -4.5, -4.0, -3.5, -3.0, -2.5, -2.0, -1.5, -1.0]}],
+      "required_outputs": ["model signature per run", "native JPEG per run", "feature centroid u/v", "affine and homography fit inputs"]
+    },
+    {
+      "id": "E03",
+      "title": "World Z to JPEG v mapping",
+      "target_gates": ["JRE-007"],
+      "controlled": ["ingredient id", "size", "X", "Y", "rotation", "shape"],
+      "vary": [{"field": "position_z", "values": [-2.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 2.0]}],
+      "required_outputs": ["model signature per run", "native JPEG per run", "feature centroid u/v", "affine and homography fit inputs"]
+    },
+    {
+      "id": "E04",
+      "title": "Y depth/layer sweep",
+      "target_gates": ["JRE-009"],
+      "controlled": ["ingredient id", "size", "X", "Z", "rotation", "shape"],
+      "vary": [{"field": "position_y", "values": [0.99, 1.0, 1.01, 1.02, 1.05, 1.10]}],
+      "required_outputs": ["model signature per run", "native JPEG per run", "pixel differences", "occlusion observations"]
+    },
+    {
+      "id": "E05",
+      "title": "Two-piece overlap/order factorial test",
+      "target_gates": ["JRE-009"],
+      "controlled": ["two ingredient ids", "X", "Z", "sizes", "rotations", "shape"],
+      "variants": [
+        "A then B, same Y",
+        "B then A, same Y",
+        "A then B, A lower Y",
+        "A then B, A higher Y",
+        "B then A, B lower Y",
+        "B then A, B higher Y"
+      ],
+      "required_outputs": ["model signature per variant", "native JPEG per variant", "overlap pixel classification", "RenderDoc/draw-order trace if needed"]
+    },
+    {
+      "id": "E06",
+      "title": "Piece-count/density sweep",
+      "target_gates": ["JRE-006", "JRE-009"],
+      "controlled": ["ingredient id", "size", "shape", "seed", "distribution family"],
+      "vary": [{"field": "piece_count", "values": [1, 2, 4, 8, 16, 32]}],
+      "required_outputs": ["model signature per run", "native JPEG per run", "coverage", "overlap count", "image metrics"]
+    },
+    {
+      "id": "E07",
+      "title": "Ingredient size visual footprint",
+      "target_gates": ["JRE-010"],
+      "controlled": ["ingredient id", "position", "rotation", "shape"],
+      "vary": [{"field": "size", "values": ["Large", "Medium", "Small"]}],
+      "required_outputs": ["model signature per run", "native JPEG per run", "visible bounding box", "estimated footprint"]
+    },
+    {
+      "id": "E08",
+      "title": "Dough-shape framing/render comparison",
+      "target_gates": ["JRE-011"],
+      "controlled": ["ingredient set", "piece count", "relative transforms where valid", "runtime"],
+      "vary": [{"field": "shape", "values": ["Round", "Square", "Star", "Triangle"]}],
+      "required_outputs": ["native dough positions", "model signature per run", "native JPEG per run", "framing/domain metrics"]
+    },
+    {
+      "id": "E09",
+      "title": "Same ingredients with orientation/position/order changed independently",
+      "target_gates": ["JRE-008", "JRE-009"],
+      "variants": {
+        "A": "baseline exact ids/counts/sizes/positions/rotations/order",
+        "B": "same as A but rotations only changed",
+        "C": "same as A but positions only changed; rotations restored to A",
+        "D": "same exact positions/rotations as A but ingredient list order reversed"
+      },
+      "required_outputs": ["model signature A/B/C/D", "native JPEG A/B/C/D", "A-vs-B analysis", "A-vs-C analysis", "A-vs-D analysis"]
+    },
+    {
+      "id": "E10",
+      "title": "Native save/reload JPEG determinism",
+      "target_gates": ["JRE-012"],
+      "procedure": [
+        "save model A natively",
+        "retain JPEG A and exact model signature",
+        "reload through native recipe book",
+        "require exact model verification/F9-equivalent",
+        "save image again without changing model",
+        "retain JPEG B and compare A/B"
+      ],
+      "required_outputs": ["pre-save model signature", "post-reload model signature", "reload verification", "JPEG A", "JPEG B", "analysis report"]
+    }
+  ],
+  "analysis_requirements": {
+    "all_pairs": ["SHA-256", "file size", "JPEG SOF", "DQT", "sampling factors", "APP/COM fingerprints"],
+    "decoded_when_dependencies_available": ["MAE", "MSE", "RMSE", "PSNR", "SSIM", "difference bounding box", "diff image"],
+    "camera_mapping": ["feature centroid", "affine fit", "homography fit", "held-out residuals"],
+    "orientation_mapping": ["difference/feature covariance", "principal orientation", "native yaw to image-angle fit"]
+  }
+}
