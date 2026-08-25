@@ -23,6 +23,7 @@ REQUIRED_CAPABILITIES = {
     "reload",
     "attachment_inspection",
     "contract",
+    "proof_results",
 }
 
 
