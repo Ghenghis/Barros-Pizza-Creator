@@ -1,11 +1,12 @@
 {
-  "schema_version": "1.2",
+  "schema_version": "1.3",
   "contract_id": "claude-pc3-pizza-creator-next-tasks",
   "owner": "Claude",
   "workstream": "PC3 Pizza Creator",
   "scope_contract": "contracts/workstream-ownership.json",
   "human_handoff": "CLAUDE_NEXT_TASKS_PC3_CREATOR.md",
   "truth_contract": "contracts/rc1.acceptance.json",
+  "jpeg_research_start_here": "CLAUDE_JPEG_RESEARCH_START_HERE.md",
   "rules": {
     "pc2_forbidden": true,
     "runtime_pass_requires_retained_evidence": true,
@@ -34,6 +35,7 @@
       "can_start_after":"CLD-000",
       "does_not_block_core_queue":true,
       "contract":"contracts/jpeg-reverse-engineering.acceptance.json",
+      "start_here":"CLAUDE_JPEG_RESEARCH_START_HERE.md",
       "targets":["JRE-001","JRE-002"],
       "roadmap":"docs/NATIVE_PIZZA_JPEG_REVERSE_ENGINEERING_ROADMAP.md"
     },
@@ -43,16 +45,19 @@
       "state":"not_run",
       "depends_on":["CLD-102"],
       "does_not_block_core_queue":true,
+      "start_here":"CLAUDE_JPEG_RESEARCH_START_HERE.md",
+      "implementation_spec":"docs/NATIVE_JPEG_EXPERIMENT_HARNESS_SPEC.md",
       "shared_contract":"contracts/creator-controlled-stimulus.schema.json",
       "studio_generator":"scripts/generate_creator_controlled_stimuli.py in Ghenghis/PC3_Barros_Runtime_Proof_Studio",
       "requirements":[
-        "Accept only creator-0.11.272 fixture documents that validate against the shared schema.",
-        "Build/bind PizzaModel directly from the explicit fixture; do not run the Barro's placement generator or invent transforms.",
+        "Accept only creator-0.11.272 stimulus documents that validate against the shared schema.",
+        "Build/bind PizzaModel directly from the explicit stimulus; do not run the Barro's placement generator or invent transforms.",
+        "Preserve model.placements array order exactly; there is no competing sequence field.",
         "Resolve each exact ingredient ID and size through IDatabaseService and native dough positions through GetPizzaShape(shape).DoughPositions.",
-        "Use IPizzaCreatorService.LoadPizzaFromModel for the exact fixture model.",
+        "Use IPizzaCreatorService.LoadPizzaFromModel for the exact stimulus model.",
         "When requested, invoke SaveCurrentPizzaToRecipes through the existing native service; do not encode or rewrite the JPEG in the research executor.",
         "When requested, reload through the native recipe-book route, require exact ModelSignature agreement, then invoke the same native save path again.",
-        "Emit retained model signature, experiment_id, case_id, runtime profile, operation timestamps and native success/failure events; never promote JPEG research gates by itself.",
+        "Emit retained stimulus SHA, model signature, experiment_id, case_id, runtime profile, operation timestamps and native success/failure events; never promote JPEG research gates by itself.",
         "Keep Studio/Workbench implementation read-only and outside this change."
       ]
     },
@@ -65,7 +70,8 @@
       "contract":"contracts/jpeg-reverse-engineering.acceptance.json",
       "targets":["JRE-003","JRE-004","JRE-005","JRE-006","JRE-007","JRE-008","JRE-009","JRE-010","JRE-011","JRE-012"],
       "roadmap":"docs/NATIVE_PIZZA_JPEG_REVERSE_ENGINEERING_ROADMAP.md",
-      "studio_observer":"CAPTURE_CREATOR_CONTROLLED_JPEG_EXPERIMENT.bat in Ghenghis/PC3_Barros_Runtime_Proof_Studio"
+      "studio_observer":"CAPTURE_CREATOR_CANONICAL_STIMULUS.bat in Ghenghis/PC3_Barros_Runtime_Proof_Studio",
+      "studio_creator_parser_cross_check":"CROSS_VALIDATE_CREATOR_JPEG_FINGERPRINT.bat in Ghenghis/PC3_Barros_Runtime_Proof_Studio"
     },
     {
       "id":"CLD-JPEG-FINAL",
