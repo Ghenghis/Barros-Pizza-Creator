@@ -15,7 +15,7 @@ namespace creator_ui.Recipe
             return JsonUtility.FromJson<CatalogData>(json);
         }
 
-        public static IngredientData? GetIngredient(CatalogData catalog, string id)
+        public static IngredientData GetIngredient(CatalogData catalog, string id)
         {
             if (catalog?.ingredients == null) return null;
             foreach (var ing in catalog.ingredients)
@@ -27,7 +27,7 @@ namespace creator_ui.Recipe
 
         public static bool ContainsId(CatalogData catalog, string id)
         {
-            return GetIngredient(catalog, id).HasValue;
+            return GetIngredient(catalog, id) != null;
         }
     }
 }

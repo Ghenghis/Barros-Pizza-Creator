@@ -14,11 +14,10 @@ namespace creator_ui.Recipe
             foreach (var ing in recipe.ingredients)
             {
                 var cat = IngredientCatalog.GetIngredient(catalog, ing.id);
-                if (!cat.HasValue) continue;
-                var ingredient = cat.Value;
+                if (cat == null) continue;
                 float amount = ing.amount_g;
-                float taste = ingredient.taste_rating;
-                float basePrice = ingredient.base_price;
+                float taste = cat.taste_rating;
+                float basePrice = cat.base_price;
                 weightedTaste += taste * amount;
                 totalAmount += amount;
                 // PC3 formula: Price = Amount / 100 * BasePrice (IngredientModel.cs:402)
