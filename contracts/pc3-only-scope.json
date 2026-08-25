@@ -1,8 +1,9 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "contract_id": "barros-pc3-only-scope",
   "title": "Pizza Connection 3 / Barro's Pizza exclusive project scope",
   "status": "locked",
+  "scope_label_required": true,
   "allowed": {
     "games": [
       "Pizza Connection 3",
@@ -18,10 +19,14 @@
       "Ghenghis/barros-workbench",
       "Ghenghis/PC3_Barros_Runtime_Proof_Studio"
     ],
-    "local_roots": [
+    "product_roots": [
       "S:\\Unity_Games\\PC3",
-      "S:\\Unity_Games\\PC3 - Pizza Creator",
-      "S:\\Barro's-Pizza"
+      "S:\\Unity_Games\\PC3 - Pizza Creator"
+    ],
+    "isolated_agent_workspaces": [
+      "S:\\Unity_Games\\PC3\\_agent-workspaces\\chatgpt-pc3-main",
+      "S:\\Unity_Games\\PC3\\_agent-workspaces\\chatgpt-pc3-workbench",
+      "S:\\Unity_Games\\PC3 - Pizza Creator\\_agent-workspaces\\claude-pc3-creator"
     ]
   },
   "prohibited": {
@@ -30,11 +35,24 @@
       "Fast Food Tycoon 2",
       "Pizza Tycoon 2"
     ],
-    "rule": "Do not inspect, edit, generate for, reverse engineer, migrate, test, package, document, or continue tasks for PC2/Fast Food Tycoon 2 under this program. Do not reuse PC2 assets, formats, catalogs, counts, tools, plans, contracts, evidence, or assumptions as PC3 truth."
+    "rule": "Do not inspect, edit, generate for, reverse engineer, migrate, test, package, document as active work, or continue tasks for PC2/Fast Food Tycoon 2 under this program. Do not reuse PC2 assets, formats, catalogs, counts, tools, plans, contracts, evidence, or assumptions as PC3 truth."
+  },
+  "workspace_policy": {
+    "mode": "isolated_clean_clone_or_worktree_only",
+    "no_wholesale_copy_from_old_workspace": true,
+    "origin_must_match_assigned_repository": true,
+    "pc2_named_or_pc2_targeted_workspace": "reject",
+    "ambiguous_unlabeled_workspace": "reject_until_classified",
+    "required_root_marker": "00_READ_FIRST_PC3_ONLY.md"
+  },
+  "documentation_policy": {
+    "active_pc3_docs": "must state Scope: PC3 ONLY or live beneath a repository with the root PC3-only marker",
+    "retained_pc2_archive_docs": "must state Scope: PC2 ONLY and must not live in an active PC3 repository",
+    "unlabeled_legacy_docs": "non_authoritative_until_classified"
   },
   "agent_behavior": {
     "on_pc2_request_or_context": "STOP that task, mark it out_of_scope, do not mutate PC2 files, and redirect work to the corresponding PC3 or PC3 Pizza Creator target.",
-    "on_ambiguous_game_target": "Default to PC3 only when the surrounding repository/runtime profile proves PC3; otherwise fail closed and report target ambiguity.",
+    "on_ambiguous_game_target": "Fail closed and report target ambiguity until the repository/runtime profile proves PC3.",
     "cross_project_rule": "Workbench, Runtime Proof Studio, Barro's Pizza Creator, pizza-agent, Windows-MCP tasks, GitHub/GitLab publication, Unity work, image generation and runtime proof are all PC3-only."
   },
   "truth_rule": "PC2 evidence can never satisfy a PC3 gate. Only evidence from the exact PC3 runtime profile named by the relevant contract is admissible."
