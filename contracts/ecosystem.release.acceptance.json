@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0",
+  "contract_id": "barros-pc3-ecosystem-release-v2",
+  "title": "Pizza Connection 3 / Barro's Pizza unified release acceptance",
+  "truth_policy": {
+    "states": ["not_run", "pass", "fail", "blocked"],
+    "rule": "This overlay aggregates existing truth contracts. A referenced contract or release gate is complete only from retained evidence; source presence, readiness diagnostics, mockups and plans are not runtime proof.",
+    "promotion": "The ecosystem may be called 100% complete only when every release_required gate below is PASS and each referenced contract is itself complete.",
+    "snapshot_rule": "Visual claims require retained screenshots from the actual running Workbench, Studio or game. CI offscreen renders are useful preflight evidence but do not replace live-game proof."
+  },
+  "release_versions": {
+    "creator": "1.1.0-rc1",
+    "workbench": "2.3.0-rc1",
+    "studio": "1.2.0-rc1"
+  },
+  "runtime_profiles": {
+    "creator": "creator-0.11.272",
+    "studio": "studio-1.11.403",
+    "rule": "These are separate exact runtime profiles. Assembly hashes, PathIDs and scene/runtime facts are never treated as interchangeable."
+  },
+  "referenced_contracts": {
+    "creator_rc1": "contracts/rc1.acceptance.json",
+    "ecosystem_base": "contracts/ecosystem.acceptance.json",
+    "image_handoff": "contracts/ecosystem.image.acceptance.json"
+  },
+  "gates": [
+    {"id": "REL-001", "requirement": "Creator RC1 release-required contract is complete", "state": "not_run", "release_required": true, "evidence": "contracts/rc1.acceptance.json + retained proof/latest All-stage evidence"},
+    {"id": "REL-002", "requirement": "Base Creator/Workbench/Studio ecosystem acceptance contract is complete", "state": "not_run", "release_required": true, "evidence": "contracts/ecosystem.acceptance.json"},
+    {"id": "REL-003", "requirement": "JPEG/PNG/image-handoff acceptance contract is complete", "state": "not_run", "release_required": true, "evidence": "contracts/ecosystem.image.acceptance.json + Workbench handoff + Studio byte validation + runtime screenshots"},
+    {"id": "REL-004", "requirement": "Workbench 2.3.0-rc1 default launcher, tests, visual preflight, operator recovery and deterministic package workflows are green on reviewed source", "state": "not_run", "release_required": true, "evidence": "GitHub Actions run IDs and reviewed main SHA"},
+    {"id": "REL-005", "requirement": "Studio 1.2.0-rc1 default launcher, complete test suite, integrated GUI compile, MCP v1.2 and package workflows are green on reviewed source", "state": "not_run", "release_required": true, "evidence": "GitHub Actions run IDs and reviewed main SHA"},
+    {"id": "REL-006", "requirement": "Workbench and Studio audits agree on Creator 87-item catalog, creator-0.11.272/studio-1.11.403 routing, shared contract, evidence root and handoff ledger", "state": "not_run", "release_required": true, "evidence": "retained pc3_barros_ecosystem_audit output from both applications"},
+    {"id": "REL-007", "requirement": "Live operator snapshots exist for Workbench 2.3, Studio 1.2 and all four in-game Pizza Creator modes without clipping or placeholder substitution", "state": "not_run", "release_required": true, "evidence": "retained live screenshots and comparison reports"},
+    {"id": "REL-008", "requirement": "GitHub main contains reviewed snapshots for all three repos and intended GitLab mirrors are confirmed at equivalent reviewed snapshots", "state": "not_run", "release_required": true, "evidence": "remote SHAs; GitLab must be independently verified"}
+  ]
+}
