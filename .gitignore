@@ -22,6 +22,11 @@ BarrosAI/
 Barros-AI-diagnostics-*.txt
 evidence/runs/
 releases/*.partial
+releases/windows/*.exe
+releases/windows/*.zip
+releases/windows/*.json
+releases/windows/*.txt
+work/windows-installer-proof/
 
 # Unity 2021 authoring lab: keep source/configuration, never cache/editor state.
 authoring/BarrosCreatorUiLab2021/[Ll]ibrary/

@@ -56,16 +56,22 @@ Runtime Proof Studio's primary `studio-1.11.403 / Unity 2017.4.40f1` build is a 
 
 See `contracts/pc3-build-compatibility.json`.
 
-## Install
+## Windows install
+
+The v1.6 Windows release is available in two forms:
+
+- **Setup EXE** — double-click `Barros_Pizza_Creator_v1.6.0_Setup.exe` for a normal Windows install with Start-menu shortcuts, optional desktop shortcut, repair support and an Add/Remove Programs uninstaller.
+- **Portable ZIP** — extract `Barros_Pizza_Creator_v1.6.0_Portable.zip`, then double-click `Barros_Pizza_Creator_Manager.exe` or `INSTALL_OFFLINE.cmd`. Nothing runs correctly from inside the ZIP.
+
+Both packages are complete offline add-on toolkits. They include the verified BepInEx 5.4.23.5 x64 loader and a private Python 3.12.10 runtime, but **do not include the commercial Pizza Creator game**. The setup detects the existing Steam/default install or lets the user browse to it, verifies the exact Creator 0.11.272 assembly hashes, and refuses unsupported builds.
 
 1. Close Pizza Creator.
-2. Extract the release ZIP outside the game folder.
-3. Double-click **`INSTALL_Barros_AI_Designer.bat`**.
-4. The installer defaults to `S:\Unity_Games\PC3 - Pizza Creator`; browse only to the matching Creator 0.11.272 install.
-5. Launch Pizza Connection 3 - Pizza Creator normally and enter Bakehouse.
-6. Select the new chef-chat tab. **F10** reopens it when needed.
+2. Run the Setup EXE, or extract and open the portable manager.
+3. Select the folder containing `Pizza Connection 3 - Pizza Creator.exe`.
+4. Choose **Verify Game**, then **Install / Repair** when using the portable manager.
+5. Launch Pizza Creator, enter Bakehouse and select the new chef-chat tab. **F10** reopens it.
 
-The installer SHA-256 verifies pinned BepInEx 5.4.23.5 x64 and the embedded Python runtime. It refuses mismatching game assembly hashes instead of installing against an unverified ABI.
+Repair preserves provider settings and owner-added media. Uninstall removes the Barro's add-on while preserving the original game and shared BepInEx files. Community binaries are currently unsigned, so Windows SmartScreen can show **Unknown publisher**; verify the published SHA-256 file before running them. See `docs/WINDOWS_V1_6_RELEASE.md`.
 
 Evidence shortcuts:
 
@@ -245,6 +251,13 @@ python tools/build_release.py
 
 or verify an existing archive with `--verify-only`.
 
+The Windows Setup EXE and complete portable ZIP are built and lifecycle-tested with:
+
+```text
+.\tools\build_windows_release.ps1
+.\tools\test_windows_installer.ps1 -GameRoot "C:\path\to\Pizza Connection 3 - Pizza Creator"
+```
+
 ## Crash / monsoon recovery
 
 Durable state:
@@ -264,7 +277,7 @@ After interruption, read the recovery checkpoint, run static/tests/doctor first,
 
 ## Current proof boundary
 
-The v1.6 exact-assembly artifact passed **115/115 tests**. The final Windows run loaded the generated Unity-lab skin pack inside the exact Unity 2017.3.1p4 game, retained all five tabs, fitted the panel from x=1346 to x=1920 with a six-pixel gap beside the original rail, and rendered the compact Media layout without cutoff. The plug-in SHA-256 is `520c67b88c3cd06a1bc0089efa828c04e16b5a4323edb9ef6c8e33a8a3e15895`. See `docs/V1_6_RUNTIME_PROOF_2026-08-27.md` and the two v1.6 proof images under `docs/images/`.
+The v1.6 exact-assembly artifact passed its original **115/115 tests**; the full source with the five Windows packaging gates now passes **120/120**. The final Windows run loaded the generated Unity-lab skin pack inside the exact Unity 2017.3.1p4 game, retained all five tabs, fitted the panel from x=1346 to x=1920 with a six-pixel gap beside the original rail, and rendered the compact Media layout without cutoff. The plug-in SHA-256 is `520c67b88c3cd06a1bc0089efa828c04e16b5a4323edb9ef6c8e33a8a3e15895`. See `docs/V1_6_RUNTIME_PROOF_2026-08-27.md`, `docs/WINDOWS_V1_6_RELEASE.md` and the two v1.6 proof images under `docs/images/`.
 
 Four owner lyric videos passed complete FFmpeg decode and the live high-profile MP4 passed prepare, portrait fit, play, pause, resume, seek and Lyrics On/Off. Direct MiniMax Chat/Crew and an Azure synthetic TTS→STT roundtrip passed. Windows found the Turtle Beach P11 microphone and opened capture, but a real spoken phrase was not recognized during the retained test; physical speech is therefore not called a pass. Audio-only `.lrc` highlighting is implemented, but no OCR-generated LRC is packaged because the draft contained transcription errors. Native Save/reload remains deliberately unrun, the Inspiration Library is empty, and unrelated PC2/PC3 repositories were not changed.
 

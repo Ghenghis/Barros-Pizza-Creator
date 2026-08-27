@@ -19,6 +19,22 @@ $pythonSha = "4ACBED6DD1C744B0376E3B1CF57CE906F9DC9E95E68824584C8099A63025A3C3"
 $assemblySha = "EBF8698DF7CB4AF904C98C299994705EA529EFBDf1E8CCB3E7CA8CB42A1CBC1C"
 $firstpassSha = "F9CBF0951FC4D4B0788C47BBE41A3820FA333D293175BBB7CB398EB4728FD284"
 
+function Get-Sha256([string]$Path) {
+    $stream = [IO.File]::OpenRead($Path)
+    try {
+        $hash = [Security.Cryptography.SHA256]::Create()
+        try {
+            return ([BitConverter]::ToString($hash.ComputeHash($stream))).Replace("-", "")
+        }
+        finally {
+            $hash.Dispose()
+        }
+    }
+    finally {
+        $stream.Dispose()
+    }
+}
+
 function Select-GameRoot([string]$initial) {
     Add-Type -AssemblyName System.Windows.Forms
     $dialog = New-Object System.Windows.Forms.FolderBrowserDialog
@@ -33,13 +49,13 @@ function Get-VerifiedArchive([string]$provided, [string]$url, [string]$sha, [str
     $path = $provided
     if ([string]::IsNullOrWhiteSpace($path)) {
         $path = Join-Path ([IO.Path]::GetTempPath()) ([IO.Path]::GetFileName($url))
-        if (-not (Test-Path $path) -or (Get-FileHash -Algorithm SHA256 -LiteralPath $path).Hash -ne $sha) {
+        if (-not (Test-Path $path) -or (Get-Sha256 $path) -ne $sha) {
             Write-Host "Downloading $label from its official release..."
             Invoke-WebRequest -UseBasicParsing -Uri $url -OutFile $path
         }
     }
     if (-not (Test-Path $path)) { throw "$label archive not found: $path" }
-    $actual = (Get-FileHash -Algorithm SHA256 -LiteralPath $path).Hash
+    $actual = Get-Sha256 $path
     if ($actual -ne $sha) { throw "$label SHA-256 mismatch. Expected $sha but received $actual." }
     return (Resolve-Path $path).Path
 }
@@ -66,8 +82,8 @@ try {
         }
     if ($running) { throw "Close the target Pizza Connection 3 - Pizza Creator copy before installing: $targetExePath" }
 
-    $actualAssemblySha = (Get-FileHash -Algorithm SHA256 -LiteralPath $assembly).Hash
-    $actualFirstpassSha = (Get-FileHash -Algorithm SHA256 -LiteralPath $firstpass).Hash
+    $actualAssemblySha = Get-Sha256 $assembly
+    $actualFirstpassSha = Get-Sha256 $firstpass
     Write-Host "Target: $GameRoot"
     Write-Host "Game Assembly-CSharp SHA256: $actualAssemblySha"
     Write-Host "Game Assembly-CSharp-firstpass SHA256: $actualFirstpassSha"
@@ -125,7 +141,7 @@ try {
     $prebuiltValid = $false
     if ((Test-Path $artifact) -and (Test-Path $provenancePath)) {
         $provenance = Get-Content -LiteralPath $provenancePath -Raw | ConvertFrom-Json
-        $prebuiltValid = ((Get-FileHash -Algorithm SHA256 -LiteralPath $artifact).Hash -eq ([string]$provenance.artifact_sha256).ToUpperInvariant()) -and
+        $prebuiltValid = ((Get-Sha256 $artifact) -eq ([string]$provenance.artifact_sha256).ToUpperInvariant()) -and
             ($actualAssemblySha -eq ([string]$provenance.target.assembly_csharp_sha256).ToUpperInvariant()) -and
             ($actualFirstpassSha -eq ([string]$provenance.target.assembly_csharp_firstpass_sha256).ToUpperInvariant())
     }
@@ -148,7 +164,7 @@ try {
         game_root = $GameRoot
         game_assembly_sha256 = $actualAssemblySha
         game_firstpass_sha256 = $actualFirstpassSha
-        plugin_sha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $pluginTarget "Barros.PizzaCreator.AI.dll")).Hash
+        plugin_sha256 = Get-Sha256 (Join-Path $pluginTarget "Barros.PizzaCreator.AI.dll")
         plugin_build_mode = $buildMode
         loader = "BepInEx $bepVersion x64"
         backend = "Python 3.12.10 embedded; stdlib only"

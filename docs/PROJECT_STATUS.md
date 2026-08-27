@@ -1,10 +1,11 @@
 # Barro's v1.6 factual status snapshot
 
-Snapshot date: 2026-08-27 UTC. Authority: the exact Steam loader/UI/media run, Unity 2021 authoring/export log, 115-test suite, `artifacts/build-provenance.json`, `docs/V1_6_RUNTIME_PROOF_2026-08-27.md`, and `contracts/rc1.acceptance.json`.
+Snapshot date: 2026-08-27 UTC. Authority: the exact Steam loader/UI/media run, Unity 2021 authoring/export log, 120-test complete suite, isolated Windows installer lifecycle proof, `artifacts/build-provenance.json`, `docs/V1_6_RUNTIME_PROOF_2026-08-27.md`, and `contracts/rc1.acceptance.json`.
 
 | Area | State | Evidence boundary |
 |---|---|---|
-| Source/package completeness | Pass | 115/115 automated tests pass; exact catalog and v1.6 media/voice/authoring contracts are present. |
+| Source/package completeness | Pass | 120/120 automated tests pass; exact catalog and v1.6 media/voice/authoring/Windows packaging contracts are present. |
+| Windows Setup and portable release | Pass | Real Setup EXE and offline portable ZIP built. Isolated clean install, exact plug-in hash, private Python, settings-preserving repair and safe uninstall all pass. Commercial game files are absent. |
 | Exact supplied-assembly build | Pass | Windows compiler built the 157,184-byte plug-in against Creator 0.11.272; artifact/provenance SHA-256 is `520c67b...15895`. |
 | BepInEx initialization/plugin Awake | Pass | Exact game loaded BepInEx 5.4.23.5 and Barro's Designer 1.6.0, started the backend and injected the live bridge. |
 | Native fifth tab and panel geometry | Pass | `left=1346`, `right=1920`, `tab_right=1340`, `gap=6`; all native/add-on tabs remain visible at 1080p. |
