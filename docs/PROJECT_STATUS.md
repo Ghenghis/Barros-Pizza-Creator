@@ -1,10 +1,10 @@
 # RC1 factual status snapshot
 
-Snapshot date: 2026-08-27 UTC. Authority: retained live evidence from the isolated Windows game copy, the current 65-test suite, `artifacts/build-provenance.json`, and `contracts/rc1.acceptance.json`.
+Snapshot date: 2026-08-27 UTC. Authority: retained live evidence from the isolated Windows game copy and the final real Steam tab-clearance run, the current 66-test suite, `artifacts/build-provenance.json`, and `contracts/rc1.acceptance.json`.
 
 | Area | State | Evidence boundary |
 |---|---|---|
-| Source/package completeness | Pass | 65 automated tests pass; the catalog still contains 87 unique game ingredients in six categories. |
+| Source/package completeness | Pass | 66 automated tests pass; the catalog still contains 87 unique game ingredients in six categories. |
 | Exact supplied-assembly build | Pass | Windows `csc.exe` compiled the plugin against the exact Creator 0.11.272 assemblies; artifact and provenance hashes agree. |
 | BepInEx initialization/plugin Awake | Pass | BepInEx 5.4.23.5 loaded `Barro's AI Pizza Designer 1.1.0` in the isolated game copy. |
 | Fifth tab and Barro's header geometry | Pass | The cloned native tab rendered at 70×70 and the fitted 547-pixel header was retained in screenshots and runtime events. |
@@ -16,7 +16,7 @@ Snapshot date: 2026-08-27 UTC. Authority: retained live evidence from the isolat
 | Save/reload | Not run | Testing native Save would write shared user-profile game data outside the isolated copy, so it was deliberately left untouched. |
 | Attachment parser | Automated pass | PNG/JPEG parsing, MIME-spoof rejection, metadata-only return, and chat attachment contract are tested. The native Windows file chooser was not separately exercised in the retained live run. |
 | Microphone / speech-to-text | Blocked | Windows reports zero input devices and the configured text gateway has no dedicated STT endpoint. The UI now says `No mic` and offers `Retry microphone`; `/transcribe` fails closed. |
-| Executed failures | None in final automated suite | 65 of 65 tests passed. The two environmental boundaries above remain explicitly Not run/Blocked rather than being promoted to Pass. |
+| Executed failures | None in final automated suite | 66 of 66 tests passed. The two environmental boundaries above remain explicitly Not run/Blocked rather than being promoted to Pass. |
 
 No API key value is stored in this repository or the retained evidence. The live sidecar used an external token-file reference.
 

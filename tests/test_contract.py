@@ -74,6 +74,12 @@ class ProofContractTests(unittest.TestCase):
         self.assertNotIn("index * 2.399963229728653", bridge)
         self.assertIn("new Vector3(-3f + localX", bridge)
 
+    def test_designer_panel_stays_clear_of_native_tab_rail(self):
+        renderer = (ROOT / "plugin-src" / "PanelRenderer.cs").read_text(encoding="utf-8")
+        self.assertIn("FitBesideTabRail(screenRect)", renderer)
+        self.assertIn("tabScreenRect.xMax + gap", renderer)
+        self.assertIn('"ui.panel_fitted"', renderer)
+
     def test_educational_and_audio_pipeline_assets_are_real_and_present(self):
         for relative in (
             "docs/ENGINEERING_PLAYBOOK.md",

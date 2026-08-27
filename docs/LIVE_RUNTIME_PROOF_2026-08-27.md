@@ -2,17 +2,18 @@
 
 ## Scope and safety boundary
 
-The repaired build was installed and exercised only in this isolated working copy:
+The functional workflow was first exercised in this isolated working copy:
 
 `work/game-copy/Pizza Connection 3 - Pizza Creator`
 
-The Steam installation and unrelated game projects were not modified. Native Save/reload was not exercised because the game may store it in shared Windows user-profile data outside the isolated folder.
+The final native-tab clearance repair was then installed into the real Steam Pizza Creator folder and verified in the running 1920×1080 game. No unrelated game projects were modified. Native Save/reload was not exercised because the game may store it in shared Windows user-profile data outside the isolated folder.
 
 ## Observed result matrix
 
 | Feature | Result | Retained proof |
 |---|---|---|
 | Loader and native fifth tab | Pass | BepInEx loaded; final tab event reports `x=70.0; y=-285.0; width=70.0; height=70.0; sibling=5`. |
+| Native tab-rail clearance | Pass | Real Steam runtime reports `panel left=1346.0`, `tab right=1340.0`, `gap=6.0`, and `panel width=574.0`; the retained screenshot shows all five side tabs fully visible. |
 | Fitted Barro's header | Pass | Final header event reports `banner_width=547.0; safe_width=547.0; close_reserve=78`. |
 | Rounded parchment UI | Pass | Separate Chat, Lab, Crew, and Voice screenshots retained at 1920×1080. |
 | MiniMax-compatible Chat | Pass | `Sonoran Sunset`, one valid recipe, no warning; visible in retained History. |
@@ -32,16 +33,16 @@ The Steam installation and unrelated game projects were not modified. Native Sav
 
 Command: `py -3 -m unittest discover -s tests -v`
 
-Result: **65 tests run, 65 passed, 0 failed** on Windows 11.
+Result: **66 tests run, 66 passed, 0 failed** on Windows 11.
 
 This covers the backend, Chat/Voice HTTP contract, provider token-file resolution, catalog validity, attachment handling, proof contracts, exact placement-spread source guard, health capability truthfulness, and release/provenance agreement.
 
 ## Certified artifact
 
 - Artifact: `artifacts/Barros.PizzaCreator.AI.dll`
-- Size: 69,632 bytes
-- SHA-256: `7489026cbac205b5ec501806d0820992c516deb08a9070db8d5d97bec9b8bf6a`
-- Source tree SHA-256: `cc8b671d5a127eb0187c9bcb52a013a07a8085ee317843c03827240762c743d4`
+- Size: 70,656 bytes
+- SHA-256: `773af8dd9d0e4cd30537a113bfb07ab2b9448c2f618e179a8fb5014dac29887a`
+- Source tree SHA-256: `430fca97dcd691c5abfd063a4f42297c742180ecf375ed1abf78735bfba0a0fd`
 - Compiler: Microsoft Visual C# Compiler 4.8.9032.0
 - Target: Pizza Creator 0.11.272 / Unity 2017.3.1p4 x64 / BepInEx 5.4.23.5
 
@@ -57,6 +58,7 @@ Unity 2021.3.45f2 is used for the separate Unity MCP workbench, not to replace t
 | `docs/evidence/live-crew-rounded-2026-08-27.png` | `5ecc9427a7334dd8019e79b2a8de0707d1757ebdb527f2fe1f53e503a2c3cd0f` |
 | `docs/evidence/live-voice-blocked-2026-08-27.png` | `8dd685a6976daf8001cebacba2ae378c2d888e4ca9eb5f6a32e6cc594a46990e` |
 | `docs/evidence/live-native-apply-sonoran-sunset-2026-08-27.png` | `845e96e6276043443032e494d7c6445749ce8f1d45b2ba040fd4c8840f108b83` |
+| `docs/evidence/live-real-steam-tabs-clear-2026-08-27.jpg` | `fd237e7940d31248fd6968d674a842ea6df2825a767c1b87cbbbfbc9b4e1a103` |
 
 ## What is still needed for a full green Voice/Save claim
 

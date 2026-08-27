@@ -58,6 +58,7 @@ namespace Barros.PizzaCreator.AI
         private float recordingStarted;
         private string transcript = "";
         private string pendingVoiceError = "";
+        private bool layoutEvidenceRecorded;
 
         private GUIStyle panelStyle;
         private GUIStyle cardStyle;
@@ -155,6 +156,7 @@ namespace Barros.PizzaCreator.AI
             Rect screenRect = GetScreenRect(panelRect);
             if (screenRect.width < 200f || screenRect.height < 300f)
                 screenRect = new Rect(Screen.width * 0.69f, 60f, Screen.width * 0.31f, Screen.height - 60f);
+            screenRect = FitBesideTabRail(screenRect);
             Matrix4x4 previous = GUI.matrix;
             Color previousColor = GUI.color;
             bool previousEnabled = GUI.enabled;
@@ -172,6 +174,33 @@ namespace Barros.PizzaCreator.AI
                 GUI.color = previousColor;
                 GUI.enabled = previousEnabled;
             }
+        }
+
+        private Rect FitBesideTabRail(Rect screenRect)
+        {
+            RectTransform activeTabRect = tab != null ? tab.transform as RectTransform : null;
+            if (activeTabRect == null) return screenRect;
+            Rect tabScreenRect = GetScreenRect(activeTabRect);
+            if (tabScreenRect.width <= 1f || tabScreenRect.height <= 1f) return screenRect;
+
+            float gap = Mathf.Max(6f, Screen.width * 0.003f);
+            float desiredLeft = tabScreenRect.xMax + gap;
+            float originalRight = screenRect.xMax;
+            if (desiredLeft > screenRect.x && originalRight - desiredLeft >= 360f)
+                screenRect.xMin = desiredLeft;
+
+            if (!layoutEvidenceRecorded && evidence != null)
+            {
+                layoutEvidenceRecorded = true;
+                evidence.Record(
+                    "ui.panel_fitted",
+                    "left=" + screenRect.xMin.ToString("0.0") +
+                    "; right=" + screenRect.xMax.ToString("0.0") +
+                    "; width=" + screenRect.width.ToString("0.0") +
+                    "; tab_right=" + tabScreenRect.xMax.ToString("0.0") +
+                    "; gap=" + (screenRect.xMin - tabScreenRect.xMax).ToString("0.0"));
+            }
+            return screenRect;
         }
 
         private void DrawPanel()
