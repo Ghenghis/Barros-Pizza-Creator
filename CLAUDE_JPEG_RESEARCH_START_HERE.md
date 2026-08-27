@@ -1,10 +1,12 @@
 # SCOPE: PC3 PIZZA CREATOR ONLY — Claude Native JPEG Research Start Here
 
+> **Superseded for JPG-path and recipe-codec discovery (2026-08-27).** Exact decompiled source now proves the exporter, dimensions, quality, file rotation, and the absence of an embedded editable recipe. Start with `docs/NATIVE_PIZZA_JPEG_ALGORITHM.md` and `contracts/pc3-creator-native-jpeg.contract.json`. Retain this campaign only for live visual placement, occlusion, camera-output, and repeatability measurements.
+
 **Owner:** Claude — PC3 Pizza Creator native executor/source-side research  
 **Runtime:** `creator-0.11.272`  
 **Independent stimulus/verification/observation owner:** ChatGPT-owned Runtime Proof Studio  
 **Certified Studio research-control baseline:** `f822de627b3391c8639b74a8b4b72043e101b678`  
-**Status:** research architecture ready; stock/native JPEG algorithm remains **PARTIALLY CHARACTERIZED** until retained runtime/source evidence closes the JRE contract.
+**Status:** static JPG path characterized; optional live visual-output measurements remain.
 
 The Studio baseline above is a known-good interoperability reference, not a permanent pin. Before a live campaign, verify current Studio `main` is clean/green and still exposes the same shared contracts rather than resetting Studio to an old SHA.
 

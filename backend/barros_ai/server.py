@@ -169,7 +169,7 @@ class Handler(BaseHTTPRequestHandler):
                 {
                     "ok": True,
                     "name": "Barro's AI Pizza Designer",
-                    "version": "1.1.0-rc1",
+                    "version": "1.2.0-rc2",
                     "provider": self.app.settings.provider,
                     "online": self.app.provider.online,
                     "image_parser": "png+jpeg+webp-v1",

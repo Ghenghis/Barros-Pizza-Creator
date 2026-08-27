@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Diagnostics;
 using System.IO;
 using BepInEx;
@@ -7,7 +8,7 @@ using UnityEngine;
 
 namespace Barros.PizzaCreator.AI
 {
-    [BepInPlugin("com.barros.pizzacreator.ai", "Barro's AI Pizza Designer", "1.0.0-rc1")]
+    [BepInPlugin("com.barros.pizzacreator.ai", "Barro's AI Pizza Designer", "1.2.0-rc2")]
     [BepInProcess("Pizza Connection 3 - Pizza Creator.exe")]
     public sealed class BarrosAiPlugin : BaseUnityPlugin
     {
@@ -21,6 +22,7 @@ namespace Barros.PizzaCreator.AI
         private EvidenceRecorder evidence;
         private Process backendProcess;
         private bool injected;
+        private bool reloadVerificationRunning;
         private float nextInstallAttempt;
 
         private void Awake()
@@ -33,7 +35,7 @@ namespace Barros.PizzaCreator.AI
             game = new GameBridge(evidence);
             backend = new BackendClient(backendUrl.Value, dispatcher);
             if (autoStartBackend.Value) StartBackend();
-            Logger.LogInfo("Barro's AI Pizza Designer 1.0.0-rc1 loaded. Waiting for Pizza Creator services.");
+            Logger.LogInfo("Barro's AI Pizza Designer 1.2.0-rc2 loaded. Waiting for Pizza Creator services.");
         }
 
         private void Update()
@@ -64,12 +66,68 @@ namespace Barros.PizzaCreator.AI
             if (Input.GetKeyDown(KeyCode.F10) && installer != null) installer.Activate();
             if (Input.GetKeyDown(KeyCode.F9) && game != null)
             {
-                string detail;
-                bool verified = game.VerifyLastSavedReload(out detail);
-                evidence.Record(verified ? "action.reload.verified" : "action.reload.failed", detail);
-                if (verified) evidence.Capture("reload");
+                StartCoroutine(ReloadAndVerify());
+            }
+        }
+
+        private IEnumerator ReloadAndVerify()
+        {
+            if (reloadVerificationRunning) yield break;
+            reloadVerificationRunning = true;
+            string detail;
+            bool reloadRequested = false;
+            try
+            {
+                reloadRequested = game.ReloadLastSaved(out detail);
+            }
+            catch (Exception exception)
+            {
+                detail = "Native reload request failed: " + exception.Message;
+            }
+            if (!reloadRequested)
+            {
+                evidence.Record("action.reload.failed", detail);
+                Logger.LogWarning("Reload verification: " + detail);
+                reloadVerificationRunning = false;
+                yield break;
+            }
+
+            // LoadPizzaFromModel completes through the native PizzaResetted event on
+            // later frames. Poll the exact model signature for up to five seconds.
+            float deadline = Time.realtimeSinceStartup + 5f;
+            bool verified = false;
+            int observedFrames = 0;
+            do
+            {
+                yield return null;
+                observedFrames++;
+                if (observedFrames >= 3)
+                {
+                    try
+                    {
+                        verified = game.VerifyLastSavedReload(out detail);
+                    }
+                    catch (Exception exception)
+                    {
+                        detail = "Native reload verification failed: " + exception.Message;
+                        break;
+                    }
+                }
+            }
+            while (!verified && Time.realtimeSinceStartup < deadline);
+
+            evidence.Record(verified ? "action.reload.verified" : "action.reload.failed", detail);
+            if (verified)
+            {
+                yield return new WaitForEndOfFrame();
+                evidence.Capture("reload");
                 Logger.LogInfo("Reload verification: " + detail);
             }
+            else
+            {
+                Logger.LogError("Reload verification: " + detail);
+            }
+            reloadVerificationRunning = false;
         }
 
         private void StartBackend()

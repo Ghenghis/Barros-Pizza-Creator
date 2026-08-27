@@ -1,5 +1,7 @@
 # Barro's PC3 ecosystem completion roadmap
 
+> Historical v1.1 roadmap. The exact Creator source reconciliation and native JPG/recipe split are superseded by `docs/REVERSE_ENGINEERING_EVIDENCE.md` and `docs/NATIVE_PIZZA_JPEG_ALGORITHM.md`; live gates remain authoritative.
+
 Date: 2026-08-24 America/Phoenix / 2026-08-25 UTC.
 
 This roadmap governs three repositories:

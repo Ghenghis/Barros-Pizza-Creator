@@ -1,6 +1,6 @@
-# Pizza Connection 3 / Barro's Pizza — Barro's Pizza Creator 1.1 RC
+# Pizza Connection 3 / Barro's Pizza — Barro's Pizza Creator 1.2 RC2
 
-Version **1.1.0-rc1** is the in-game AI design layer for the exact standalone Windows x64 **Pizza Connection 3 - Pizza Creator 0.11.272** binary profile.
+Version **1.2.0-rc2** is the in-game AI design layer for the exact standalone Windows x64 **Pizza Connection 3 - Pizza Creator 0.11.272** binary profile.
 
 The ecosystem-facing brand is **Pizza Connection 3 / Barro's Pizza**. The technical Creator target remains the original standalone executable/data/assembly identity because changing those names would invalidate reverse-engineering and proof contracts.
 
@@ -46,17 +46,19 @@ See `contracts/pc3-build-compatibility.json`.
 
 The installer SHA-256 verifies pinned BepInEx 5.4.23.5 x64 and the embedded Python runtime. It refuses mismatching game assembly hashes instead of installing against an unverified ABI.
 
+The checked-in DLL is the prior v1.1 exact-assembly build and intentionally does not claim the v1.2 source. `tools/artifact_provenance.py` detects that relationship. A v1.2 source-candidate package omits the stale DLL, and its installer performs a real local compile against the exact installed Creator assemblies. A certified v1.2 prebuilt and runtime promotion remain blocked until that Windows build regenerates matching provenance and the live gates pass.
+
 Evidence shortcuts:
 
 - **F8** — capture active Chat/Lab/Crew/Voice view;
-- **F9** — verify loaded pizza against the last recipe-book save;
+- **F9** — read the last AI-panel recipe JSON from disk, deserialize it through PC3's serializer, resolve every ingredient through the native database, load it through the native model path, and verify the complete model signature;
 - **F10** — reopen the AI tab.
 
 Run `CONFIGURE_AI_PROVIDER.bat` for model/voice provider setup. Offline recipe design works without a provider.
 
 ## Visual attachments and JPEG parsing
 
-Creator 1.1 validates image bytes before provider orchestration. It does not trust a `.jpg`, `.png` or `.webp` extension by itself.
+Creator 1.2 validates image bytes before provider orchestration. It does not trust a `.jpg`, `.png` or `.webp` extension by itself.
 
 ```mermaid
 flowchart LR
@@ -103,9 +105,11 @@ The four personas review a validated draft. One model/persona failure cannot can
 
 Start Listening, speak for up to 30 seconds, stop and transcribe. STT requires a configured compatible endpoint; keyboard/attachments/offline design remain available without STT.
 
-## Applying, previewing and saving
+## Applying, previewing, saving and exporting
 
-Preview/Apply invoke the real `IPizzaCreatorService.LoadPizzaFromModel` path. Ingredients are instantiated through the game's renderer. Save to recipe book invokes the existing Creator recipe-book method.
+Preview/Apply invoke the real `IPizzaCreatorService.LoadPizzaFromModel` path. Ingredients are instantiated through the game's renderer. Save to recipe book invokes the existing Creator method, then verifies that the native JSON exists and is non-empty. F9 reads that file through `ISerializerService`, rebinds every `IngredientID`/size through `IDatabaseService`, and only then reloads it. **Export stock JPG** reuses the scene-local `ScreenshotButton`/`ScreenCapture` pair, preserves the stock screenshot-only UI transition, and verifies the resulting JPEG byte stream.
+
+The stock JPG is a 1280×720 quality-90 screenshot stored under `StreamingAssets/Screenshots`; it does not embed the editable recipe. Editable structure remains in the native recipe JSON under `Application.persistentDataPath/UserData/Recipes`. See `docs/NATIVE_PIZZA_JPEG_ALGORITHM.md` and `contracts/pc3-creator-native-jpeg.contract.json`.
 
 The backend does not write proprietary saves directly.
 
@@ -157,7 +161,7 @@ Creator is one part of the larger Pizza Connection 3 / Barro's Pizza workflow:
 
 ```mermaid
 flowchart LR
-    W[Workbench v2.3\nimage creation + agents + ecosystem audit] --> C[Creator 1.1\nrecipe/game semantics]
+    W[Workbench v2.3\nimage creation + agents + ecosystem audit] --> C[Creator 1.2\nrecipe/game semantics]
     W --> H[build-tagged exact PNG/JPEG/WebP handoff]
     H --> S[Studio v1.2\nreverse engineering + validation + proof]
     C --> CP[Creator 0.11.272 retained proof]
@@ -172,7 +176,7 @@ The shared release line is tracked by:
 
 - `contracts/ecosystem.acceptance.json` — base three-project gates;
 - `contracts/ecosystem.image.acceptance.json` — PNG/JPEG/image-handoff gates;
-- `contracts/ecosystem.release.acceptance.json` — Creator 1.1 / Workbench 2.3 / Studio 1.2 release overlay.
+- `contracts/ecosystem.release.acceptance.json` — Creator 1.2 / Workbench 2.3 / Studio 1.2 release overlay.
 
 Both Workbench v2.3 and Studio v1.2 expose the same conceptual **ecosystem audit**. It reports readiness/attention and never substitutes for retained Creator All-stage runtime certification.
 

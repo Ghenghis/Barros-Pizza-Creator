@@ -1,5 +1,7 @@
 # RC1 execution and proof contract
 
+`RUN_RC1_PROOF.bat` and `contracts/rc1.acceptance.json` retain their historical filenames for existing Workbench/Studio integrations. Their active release value is now `1.2.0-rc2`; the filename is not a claim that the v1.2 source has passed Windows runtime certification.
+
 This project is a real BepInEx/Unity integration. The four supplied images are visual reference baselines only. They never count as runtime evidence.
 
 ## Operating rule
@@ -73,7 +75,7 @@ The required final bundle is:
 - visual comparison report for all four reference modes;
 - a saved/reloaded recipe comparison.
 
-Inside the live AI tab, **F8** captures the current Chat/Lab/Crew/Voice mode using the exact filenames expected by the comparison harness. After saving a recipe, load it through the stock recipe book and press **F9**; the plugin compares the live model with the saved snapshot down to dough positions, ingredient IDs/sizes/transforms, name, and profit factor.
+Inside the live AI tab, **F8** captures the current Chat/Lab/Crew/Voice mode using the exact filenames expected by the comparison harness. After saving a recipe, press **F9**; the plugin reads the persisted JSON through PC3's `ISerializerService`, resolves ingredient references from the native database, requests `LoadPizzaFromModel`, waits for the event-driven load, and compares the live model with the disk-deserialized model down to dough positions, ingredient IDs/sizes/transforms, name, and profit factor. **Export stock JPG** separately proves the stock screenshot-only UI and `ScreenCapture` pipeline.
 
 Run the objective panel comparison after all four F8 captures:
 

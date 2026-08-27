@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "contract_id": "barros-pc3-rc1",
   "product": "Barro's AI Pizza Designer for Pizza Connection 3 - Pizza Creator",
-  "release": "1.1.0-rc1",
+  "release": "1.2.0-rc2",
   "target": {
     "game_path_default": "S:\\Unity_Games\\PC3 - Pizza Creator",
     "game_version": "0.11.272",
@@ -72,8 +72,9 @@
         {"id": "ACT-401", "requirement": "Preview places a validated recipe through IPizzaCreatorService.LoadPizzaFromModel", "release_required": true, "automation": "runtime event", "evidence": "runtime-events.jsonl and preview.png"},
         {"id": "ACT-402", "requirement": "Restore returns to the captured pre-preview PizzaModel", "release_required": true, "automation": "runtime event", "evidence": "runtime-events.jsonl and restore.png"},
         {"id": "ACT-403", "requirement": "Apply commits the selected validated recipe", "release_required": true, "automation": "runtime event", "evidence": "runtime-events.jsonl and apply.png"},
-        {"id": "ACT-404", "requirement": "Save invokes the native recipe-book operation", "release_required": true, "automation": "runtime event", "evidence": "runtime-events.jsonl"},
-        {"id": "ACT-405", "requirement": "A saved AI recipe reloads with name, shape, placements, and profit factor intact", "release_required": true, "automation": "guided runtime comparison", "evidence": "saved-reload.json and reload.png"}
+        {"id": "ACT-404", "requirement": "Save invokes the native recipe-book operation and verifies the persisted recipe JSON", "release_required": true, "automation": "runtime event plus filesystem verification", "evidence": "runtime-events.jsonl and recipe JSON hash"},
+        {"id": "ACT-405", "requirement": "A saved AI recipe deserializes from disk through PC3's native serializer and reloads with name, shape, placements, and profit factor intact", "release_required": true, "automation": "F9 automated disk round trip", "evidence": "runtime-events.jsonl and reload.png"},
+        {"id": "ACT-406", "requirement": "Stock ScreenshotButton UI state and ScreenCapture pipeline export a complete 1280x720 quality-90 JPEG and restore the prior screenshot UI state", "release_required": true, "automation": "AI panel Export stock JPG action", "evidence": "runtime-events.jsonl and exported JPEG hash"}
       ]
     },
     {

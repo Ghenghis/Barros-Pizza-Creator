@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using Service.Database;
 using Service.PizzaCreator;
+using Service.Serializer;
 using UnityEngine;
+using UserInterface;
 using Zenject;
 
 namespace Barros.PizzaCreator.AI
@@ -12,13 +15,18 @@ namespace Barros.PizzaCreator.AI
     {
         private IPizzaCreatorService pizzaCreator;
         private IDatabaseService database;
+        private ISerializerService serializer;
         private PizzaModel restorePoint;
         private PizzaModel savedPoint;
         private AiRecipe lastRecipe;
         private PizzaModel lastCandidate;
+        private string savedRecipePath;
+        private string lastExportPath;
         private readonly EvidenceRecorder evidence;
 
-        public bool Ready { get { return pizzaCreator != null && database != null; } }
+        public bool Ready { get { return pizzaCreator != null && database != null && serializer != null; } }
+        public string SavedRecipePath { get { return savedRecipePath; } }
+        public string LastExportPath { get { return lastExportPath; } }
 
         public GameBridge(EvidenceRecorder recorder)
         {
@@ -26,10 +34,11 @@ namespace Barros.PizzaCreator.AI
         }
 
         [Inject]
-        private void Initialize(IPizzaCreatorService pizzaCreatorService, IDatabaseService databaseService)
+        private void Initialize(IPizzaCreatorService pizzaCreatorService, IDatabaseService databaseService, ISerializerService serializerService)
         {
             pizzaCreator = pizzaCreatorService;
             database = databaseService;
+            serializer = serializerService;
         }
 
         public List<AiCatalogIngredient> BuildCatalog()
@@ -137,16 +146,105 @@ namespace Barros.PizzaCreator.AI
             PizzaModel current = pizzaCreator.GetCurrentPizza();
             if (current == null) throw new InvalidOperationException("No current pizza is available to save.");
             pizzaCreator.SaveCurrentPizzaToRecipes();
-            savedPoint = new PizzaModel();
-            savedPoint.Bind();
-            savedPoint.CopyValues(current);
             List<PizzaModel> recipes = pizzaCreator.GetAllRecipes();
-            bool present = false;
+            PizzaModel persisted = null;
             if (recipes != null)
                 for (int i = 0; i < recipes.Count; i++)
-                    if (recipes[i] != null && string.Equals(recipes[i].ID, current.ID, StringComparison.Ordinal)) present = true;
-            if (!present) throw new InvalidOperationException("Native save returned, but the recipe was not found in GetAllRecipes().");
-            evidence.Record("action.save.success", DescribeCandidate(savedPoint));
+                    if (recipes[i] != null && string.Equals(recipes[i].ID, current.ID, StringComparison.Ordinal)) persisted = recipes[i];
+            if (persisted == null) throw new InvalidOperationException("Native save returned, but the recipe was not found in GetAllRecipes().");
+
+            savedRecipePath = Path.Combine(Paths.recipes, current.ID + ".json");
+            if (!File.Exists(savedRecipePath))
+                throw new InvalidOperationException("Native recipe list updated, but the expected persisted JSON is missing: " + savedRecipePath);
+            FileInfo persistedFile = new FileInfo(savedRecipePath);
+            if (persistedFile.Length <= 2)
+                throw new InvalidOperationException("Native recipe JSON is empty: " + savedRecipePath);
+
+            // Copy the model returned by the native recipe service, not the transient
+            // current model. SaveToRecipes refreshes dough coordinates from the live
+            // PizzaDoughPart objects before writing the JSON.
+            savedPoint = new PizzaModel();
+            savedPoint.Bind();
+            savedPoint.CopyValues(persisted);
+            evidence.Record("action.save.success", DescribeCandidate(savedPoint) + "; json_bytes=" + persistedFile.Length + "; json_path=" + savedRecipePath);
+        }
+
+        public bool ReloadLastSaved(out string detail)
+        {
+            if (!Ready) { detail = "Pizza Creator services are not ready."; return false; }
+            if (string.IsNullOrEmpty(savedRecipePath) || !File.Exists(savedRecipePath))
+            {
+                detail = "Save a recipe with the AI panel before pressing F9.";
+                return false;
+            }
+
+            string json = File.ReadAllText(savedRecipePath);
+            PizzaModel fromDisk = serializer.DeserializeToObject<PizzaModel>(json);
+            if (fromDisk == null) throw new InvalidOperationException("The native serializer returned no PizzaModel for " + savedRecipePath);
+            for (int i = 0; i < fromDisk.ingredients.Count; i++)
+            {
+                PizzaModel.IngredientContainerModel placed = fromDisk.ingredients[i];
+                if (placed == null) throw new InvalidOperationException("The persisted recipe contains a null ingredient placement.");
+                placed.Bind();
+            }
+            fromDisk.Bind();
+            for (int i = 0; i < fromDisk.ingredients.Count; i++)
+            {
+                PizzaModel.IngredientContainerModel placed = fromDisk.ingredients[i];
+                placed.Ingredient = database.GetIngredientByID(placed.IngredientID, placed.Size);
+                if (placed.Ingredient == null)
+                    throw new InvalidOperationException("The persisted recipe references an unknown ingredient: " + placed.IngredientID + " / " + placed.Size);
+            }
+
+            savedPoint = fromDisk;
+            pizzaCreator.LoadPizzaFromModel(fromDisk);
+            detail = "PC3 serializer disk reload requested for '" + fromDisk.ID + "'.";
+            evidence.Record("action.reload.requested", DescribeCandidate(fromDisk) + "; json_path=" + savedRecipePath);
+            return true;
+        }
+
+        public string ExportCurrentJpeg()
+        {
+            if (!Ready) throw new InvalidOperationException("Pizza Creator services are not ready.");
+            PizzaModel current = pizzaCreator.GetCurrentPizza();
+            if (current == null) throw new InvalidOperationException("No current pizza is available to export.");
+            ScreenshotButton[] allButtons = UnityEngine.Resources.FindObjectsOfTypeAll<ScreenshotButton>();
+            ScreenshotButton stockButton = null;
+            int sceneButtons = 0;
+            for (int i = 0; i < allButtons.Length; i++)
+            {
+                ScreenshotButton candidate = allButtons[i];
+                if (candidate == null || !candidate.gameObject.scene.IsValid()) continue;
+                sceneButtons++;
+                stockButton = candidate;
+            }
+            if (sceneButtons != 1 || stockButton == null)
+                throw new InvalidOperationException("Expected one scene-local stock ScreenshotButton, but found " + sceneButtons + ". Export stopped to avoid choosing the wrong camera or UI.");
+            if (stockButton.screenCapture == null || stockButton.specialScreenshotUI == null)
+                throw new InvalidOperationException("The stock ScreenshotButton is missing its capture camera or screenshot-only UI reference.");
+
+            string fileName = MakeSafeName(current.ID);
+            bool previousScreenshotUiState = stockButton.specialScreenshotUI.activeSelf;
+            CaptureUtility.Data data;
+            try
+            {
+                stockButton.specialScreenshotUI.SetActive(true);
+                data = stockButton.screenCapture.Capture(fileName);
+            }
+            finally
+            {
+                stockButton.specialScreenshotUI.SetActive(previousScreenshotUiState);
+            }
+            if (data == null || string.IsNullOrEmpty(data.combinedPath) || !File.Exists(data.combinedPath))
+                throw new InvalidOperationException("The stock JPG capture returned without a persisted output file.");
+            if (data.bytes == null || data.bytes.Length < 4 || data.bytes[0] != 0xFF || data.bytes[1] != 0xD8 ||
+                data.bytes[data.bytes.Length - 2] != 0xFF || data.bytes[data.bytes.Length - 1] != 0xD9)
+                throw new InvalidOperationException("The stock capture output is not a complete JPEG byte stream.");
+
+            lastExportPath = data.combinedPath;
+            string dimensions = data.texture == null ? "unknown" : data.texture.width + "x" + data.texture.height;
+            evidence.Record("action.export_jpg.success", "path=" + lastExportPath + "; bytes=" + data.bytes.Length + "; dimensions=" + dimensions + "; quality=" + stockButton.screenCapture.defaultJPGQuality + "; screenshot_ui_restored=" + (stockButton.specialScreenshotUI.activeSelf == previousScreenshotUiState));
+            return lastExportPath;
         }
 
         public bool VerifyLastSavedReload(out string detail)
@@ -254,6 +352,12 @@ namespace Barros.PizzaCreator.AI
         private static string MakeSafeName(string value)
         {
             string name = string.IsNullOrEmpty(value) ? "Barro's AI Pizza" : value.Trim();
+            char[] invalid = Path.GetInvalidFileNameChars();
+            StringBuilder safe = new StringBuilder(name.Length);
+            for (int i = 0; i < name.Length; i++)
+                if (Array.IndexOf(invalid, name[i]) < 0) safe.Append(name[i]);
+            name = safe.ToString().Trim().TrimEnd('.');
+            if (string.IsNullOrEmpty(name)) name = "Barro's AI Pizza";
             if (name.Length > 54) name = name.Substring(0, 54);
             return name;
         }

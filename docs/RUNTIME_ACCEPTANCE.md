@@ -22,10 +22,11 @@ Run this checklist against `S:\Unity_Games\PC3 - Pizza Creator` after installati
 10. Ask the Crew and confirm four independent log rows plus consensus.
 11. With an STT provider configured, record a short voice request and confirm transcription becomes the prompt.
 12. Attach a small reference image and confirm a vision-capable provider uses it.
-13. Apply a recipe, save it to the recipe book, reload it through the stock recipe list, and confirm name, shape, placements and profit factor survive.
+13. Apply a recipe and save it to the recipe book. Confirm the panel reports the exact persisted native JSON path.
 14. In each of Chat, AI Lab, Design Crew and Chef Voice, press **F8** once the mode is populated. This writes the four canonical live screenshots.
-15. After reloading the saved recipe, press **F9**. Confirm the log reports `action.reload.verified`.
-16. Run `scripts\Compare-ReferenceImages.ps1` and inspect the four JSON reports and difference images.
+15. Press **F9**. Confirm it records `action.reload.requested` with the persisted JSON path, performs PC3 serializer deserialization + native database rebind + native reload, and then records `action.reload.verified`.
+16. Press **Export stock JPG**. Confirm a complete 1280×720 quality-90 JPG appears under `StreamingAssets/Screenshots`, the screenshot-only UI returns to its prior state, and the log records `action.export_jpg.success`.
+17. Run `scripts\Compare-ReferenceImages.ps1` and inspect the four JSON reports and difference images.
 
 ## Evidence to retain
 
@@ -33,5 +34,6 @@ Run this checklist against `S:\Unity_Games\PC3 - Pizza Creator` after installati
 - the timestamped diagnostics report
 - one screenshot per mode
 - one saved/reloaded AI recipe
+- the persisted recipe JSON and exported stock JPG with hashes
 
 If any native step fails, keep the game closed while changing files and send the diagnostic report with the BepInEx log. Do not replace `Assembly-CSharp.dll`.
