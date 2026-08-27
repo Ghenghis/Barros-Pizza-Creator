@@ -1,5 +1,6 @@
 import hashlib
 import json
+import re
 import unittest
 from pathlib import Path
 
@@ -55,6 +56,29 @@ class ProofContractTests(unittest.TestCase):
         ).lower()
         for term in ("fifth tab", "header", "preview", "restore", "apply", "save", "reload", "microphone", "speech provider", "chat", "lab", "crew", "voice"):
             self.assertIn(term, requirements)
+
+    def test_bepinex_plugin_version_is_numeric_and_installer_is_target_scoped(self):
+        plugin = (ROOT / "plugin-src" / "BarrosAiPlugin.cs").read_text(encoding="utf-8")
+        match = re.search(r'BepInPlugin\([^\n]+,\s*"([^"]+)"\)\]', plugin)
+        self.assertIsNotNone(match)
+        self.assertRegex(match.group(1), r"^\d+\.\d+\.\d+$")
+
+        installer = (ROOT / "INSTALL_Barros_AI_Designer.ps1").read_text(encoding="utf-8")
+        self.assertIn("$targetExePath", installer)
+        self.assertIn("$_.ExecutablePath", installer)
+        self.assertNotIn("Get-Process -Name $processName", installer)
+
+    def test_recipe_placement_spreads_across_ingredient_families(self):
+        bridge = (ROOT / "plugin-src" / "GameBridge.cs").read_text(encoding="utf-8")
+        self.assertIn("global * 2.399963229728653", bridge)
+        self.assertNotIn("index * 2.399963229728653", bridge)
+        self.assertIn("new Vector3(-3f + localX", bridge)
+
+    def test_designer_panel_stays_clear_of_native_tab_rail(self):
+        renderer = (ROOT / "plugin-src" / "PanelRenderer.cs").read_text(encoding="utf-8")
+        self.assertIn("FitBesideTabRail(screenRect)", renderer)
+        self.assertIn("tabScreenRect.xMax + gap", renderer)
+        self.assertIn('"ui.panel_fitted"', renderer)
 
     def test_educational_and_audio_pipeline_assets_are_real_and_present(self):
         for relative in (

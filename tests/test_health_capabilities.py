@@ -58,6 +58,16 @@ class CreatorHealthCapabilityTests(unittest.TestCase):
         self.assertNotIn("endpoint", health["stt"])
         self.assertNotIn("available", health["stt"])
 
+    def test_online_text_provider_does_not_imply_stt(self) -> None:
+        health = self._health({
+            "provider": "openai-compatible",
+            "endpoint": "http://127.0.0.1:9/v1",
+            "model": "text-only-test",
+        })
+        self.assertTrue(health["online"])
+        self.assertFalse(health["capabilities"]["stt_configured"])
+        self.assertFalse(health["stt"]["configured"])
+
 
 if __name__ == "__main__":
     unittest.main()

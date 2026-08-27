@@ -1,19 +1,25 @@
 # RC1 factual status snapshot
 
-Snapshot date: 2026-08-25 UTC. Authority: `contracts/rc1.acceptance.json` plus the latest retained Static and Build runs.
+Snapshot date: 2026-08-27 UTC. Authority: retained live evidence from the isolated Windows game copy and the final real Steam tab-clearance run, the current 66-test suite, `artifacts/build-provenance.json`, and `contracts/rc1.acceptance.json`.
 
 | Area | State | Evidence boundary |
 |---|---|---|
-| Source/package completeness | Pass | Required files present, 20 tests pass, 87 unique ingredients in six categories, four mockup hashes locked |
-| Exact supplied-assembly build | Pass | Zero-error Roslyn build, output/provenance hashes agree |
-| Windows compiler parity | Blocked | Requires `csc.exe` and installed game DLLs on the target Windows host |
-| BepInEx initialization/plugin Awake | Not run | Requires the target process and `BepInEx\LogOutput.log` |
-| Fifth tab and Barro's header geometry | Not run | Requires live runtime events and screenshots |
-| Preview/Restore/Apply/Save/reload | Not run | Requires real 3D state changes and the saved-model comparison |
-| Microphone and configured STT | Not run | Requires a real Windows device and provider response |
-| Four live mockup comparisons | Not run | Requires F8 captures from the running game |
-| Executed failures | None | No executed contract gate failed |
+| Source/package completeness | Pass | 66 automated tests pass; the catalog still contains 87 unique game ingredients in six categories. |
+| Exact supplied-assembly build | Pass | Windows `csc.exe` compiled the plugin against the exact Creator 0.11.272 assemblies; artifact and provenance hashes agree. |
+| BepInEx initialization/plugin Awake | Pass | BepInEx 5.4.23.5 loaded `Barro's AI Pizza Designer 1.1.0` in the isolated game copy. |
+| Fifth tab and Barro's header geometry | Pass | The cloned native tab rendered at 70×70 and the fitted 547-pixel header was retained in screenshots and runtime events. |
+| Rounded UI and four mode views | Pass | Chat, AI Lab, Design Crew, and the truthful Chef Voice blocked state have separate retained 1920×1080 captures. |
+| Chat | Pass | A live MiniMax-compatible request returned a valid `Sonoran Sunset` recipe and persisted to History. |
+| AI Lab | Pass | A later live request returned three valid recipes with no fallback warning. |
+| Design Crew | Pass with fallback | Four personas returned a 52% consensus. The online draft was invalid JSON, so the built-in game-valid designer supplied the recipe while the four-person review still completed. |
+| Preview / Start Over / Apply | Pass | Runtime events prove a 12-placement preview, restoration of the captured pre-preview model, and a 9-placement apply. The native game screen retained the applied `Sonoran Sunset`. |
+| Save/reload | Not run | Testing native Save would write shared user-profile game data outside the isolated copy, so it was deliberately left untouched. |
+| Attachment parser | Automated pass | PNG/JPEG parsing, MIME-spoof rejection, metadata-only return, and chat attachment contract are tested. The native Windows file chooser was not separately exercised in the retained live run. |
+| Microphone / speech-to-text | Blocked | Windows reports zero input devices and the configured text gateway has no dedicated STT endpoint. The UI now says `No mic` and offers `Retry microphone`; `/transcribe` fails closed. |
+| Executed failures | None in final automated suite | 66 of 66 tests passed. The two environmental boundaries above remain explicitly Not run/Blocked rather than being promoted to Pass. |
 
-Combined ledger: **7 pass, 1 blocked, 16 not run, 0 fail** out of 24 release-required gates.
+No API key value is stored in this repository or the retained evidence. The live sidecar used an external token-file reference.
 
-“No failed gates” does not mean “no remaining blockers.” The remaining blocker is access to the target Windows runtime. Once the package is run there, every pending state can become an observed pass or an actionable failure with retained proof.
+See `docs/LIVE_RUNTIME_PROOF_2026-08-27.md` for the exact event records, screenshot hashes, artifact hash, and pass/block matrix.
+
+The formal RC1 acceptance ledger predates this live repair and must be regenerated before its aggregate gate counts are treated as current.

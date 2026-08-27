@@ -20,6 +20,7 @@ class ProviderSettings:
     model: str = "local-model"
     api_key: str = ""
     api_key_env: str = "OPENAI_API_KEY"
+    api_key_file: str = ""
     env_file: str = "G:\\private\\.env.openai"
     timeout_seconds: int = 90
     retries: int = 2
@@ -42,6 +43,15 @@ class ProviderSettings:
             return self.api_key.strip()
         if self.api_key_env and os.getenv(self.api_key_env):
             return str(os.getenv(self.api_key_env)).strip()
+        key_path = Path(os.path.expandvars(self.api_key_file)) if self.api_key_file else None
+        if key_path and key_path.exists():
+            value = key_path.read_text(encoding="utf-8-sig", errors="replace").strip()
+            if "=" in value and "\n" not in value:
+                key, candidate = value.split("=", 1)
+                if not self.api_key_env or key.strip() == self.api_key_env:
+                    value = candidate.strip().strip('"').strip("'")
+            if value:
+                return value
         env_path = Path(os.path.expandvars(self.env_file)) if self.env_file else None
         if env_path and env_path.exists():
             for line in env_path.read_text(encoding="utf-8-sig", errors="replace").splitlines():

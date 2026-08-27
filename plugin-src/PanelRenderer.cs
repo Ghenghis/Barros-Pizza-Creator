@@ -12,9 +12,11 @@ namespace Barros.PizzaCreator.AI
     {
         private const float VirtualWidth = 640f;
         private const float VirtualHeight = 1050f;
-        private readonly Color parchment = new Color(0.91f, 0.74f, 0.63f, 1f);
-        private readonly Color parchmentLight = new Color(0.98f, 0.87f, 0.79f, 1f);
-        private readonly Color card = new Color(0.96f, 0.82f, 0.73f, 1f);
+        // Keep the recovered mock-up's warm parchment character without the
+        // heavy orange cast that made adjacent cards feel like hard boxes.
+        private readonly Color parchment = new Color(0.94f, 0.84f, 0.78f, 1f);
+        private readonly Color parchmentLight = new Color(0.99f, 0.93f, 0.89f, 1f);
+        private readonly Color card = new Color(0.97f, 0.88f, 0.82f, 1f);
         private readonly Color maroon = new Color(0.43f, 0.12f, 0.13f, 1f);
         private readonly Color red = new Color(0.68f, 0.16f, 0.18f, 1f);
         private readonly Color ink = new Color(0.18f, 0.13f, 0.12f, 1f);
@@ -56,6 +58,7 @@ namespace Barros.PizzaCreator.AI
         private float recordingStarted;
         private string transcript = "";
         private string pendingVoiceError = "";
+        private bool layoutEvidenceRecorded;
 
         private GUIStyle panelStyle;
         private GUIStyle cardStyle;
@@ -153,6 +156,7 @@ namespace Barros.PizzaCreator.AI
             Rect screenRect = GetScreenRect(panelRect);
             if (screenRect.width < 200f || screenRect.height < 300f)
                 screenRect = new Rect(Screen.width * 0.69f, 60f, Screen.width * 0.31f, Screen.height - 60f);
+            screenRect = FitBesideTabRail(screenRect);
             Matrix4x4 previous = GUI.matrix;
             Color previousColor = GUI.color;
             bool previousEnabled = GUI.enabled;
@@ -170,6 +174,33 @@ namespace Barros.PizzaCreator.AI
                 GUI.color = previousColor;
                 GUI.enabled = previousEnabled;
             }
+        }
+
+        private Rect FitBesideTabRail(Rect screenRect)
+        {
+            RectTransform activeTabRect = tab != null ? tab.transform as RectTransform : null;
+            if (activeTabRect == null) return screenRect;
+            Rect tabScreenRect = GetScreenRect(activeTabRect);
+            if (tabScreenRect.width <= 1f || tabScreenRect.height <= 1f) return screenRect;
+
+            float gap = Mathf.Max(6f, Screen.width * 0.003f);
+            float desiredLeft = tabScreenRect.xMax + gap;
+            float originalRight = screenRect.xMax;
+            if (desiredLeft > screenRect.x && originalRight - desiredLeft >= 360f)
+                screenRect.xMin = desiredLeft;
+
+            if (!layoutEvidenceRecorded && evidence != null)
+            {
+                layoutEvidenceRecorded = true;
+                evidence.Record(
+                    "ui.panel_fitted",
+                    "left=" + screenRect.xMin.ToString("0.0") +
+                    "; right=" + screenRect.xMax.ToString("0.0") +
+                    "; width=" + screenRect.width.ToString("0.0") +
+                    "; tab_right=" + tabScreenRect.xMax.ToString("0.0") +
+                    "; gap=" + (screenRect.xMin - tabScreenRect.xMax).ToString("0.0"));
+            }
+            return screenRect;
         }
 
         private void DrawPanel()
@@ -388,15 +419,16 @@ namespace Barros.PizzaCreator.AI
 
         private void DrawVoice()
         {
+            bool microphoneAvailable = HasMicrophone();
             GUILayout.BeginVertical(cardStyle);
             GUILayout.BeginHorizontal();
             GUILayout.Label("Chef Voice", titleStyle);
             GUILayout.FlexibleSpace();
-            GUILayout.Label(recording ? "● Listening" : "Ready", recording ? speakerStyle : smallStyle);
+            GUILayout.Label(recording ? "● Listening" : (microphoneAvailable ? "Ready" : "No mic"), recording || !microphoneAvailable ? speakerStyle : smallStyle, GUILayout.Width(110f));
             GUILayout.EndHorizontal();
             Rect waveRect = GUILayoutUtility.GetRect(560f, 112f, GUILayout.ExpandWidth(true));
             DrawWaveform(waveRect);
-            string micLabel = recording ? "STOP & TRANSCRIBE" : "START LISTENING";
+            string micLabel = recording ? "STOP & TRANSCRIBE" : (microphoneAvailable ? "START LISTENING" : "RETRY MICROPHONE");
             if (GUILayout.Button(micLabel, recording ? activeButtonStyle : primaryButtonStyle, GUILayout.Height(52f)))
             {
                 if (recording) StopVoiceAndTranscribe(); else StartVoice();
@@ -538,7 +570,7 @@ namespace Barros.PizzaCreator.AI
             }
             GUI.enabled = true;
             if (GUI.Button(new Rect(rect.x + 10f, rect.y + 119f, 78f, 39f), "Attach", buttonStyle)) Attach();
-            if (GUI.Button(new Rect(rect.x + 94f, rect.y + 119f, 76f, 39f), recording ? "Stop mic" : "Mic", buttonStyle))
+            if (GUI.Button(new Rect(rect.x + 94f, rect.y + 119f, 76f, 39f), recording ? "Stop mic" : (HasMicrophone() ? "Mic" : "No mic"), buttonStyle))
             {
                 if (recording) StopVoiceAndTranscribe(); else StartVoice();
             }
@@ -737,9 +769,9 @@ namespace Barros.PizzaCreator.AI
         private void StartVoice()
         {
             pendingVoiceError = "";
-            if (Microphone.devices == null || Microphone.devices.Length == 0)
+            if (!HasMicrophone())
             {
-                pendingVoiceError = "Windows did not report a microphone.";
+                pendingVoiceError = "No Windows recording device is active. Connect or enable a microphone, then press Retry microphone.";
                 status = pendingVoiceError;
                 if (evidence != null) evidence.Record("voice.capture.failed", pendingVoiceError);
                 return;
@@ -760,6 +792,12 @@ namespace Barros.PizzaCreator.AI
                 status = "Microphone failed: " + exception.Message;
                 if (evidence != null) evidence.Record("voice.capture.failed", exception.Message);
             }
+        }
+
+        private static bool HasMicrophone()
+        {
+            try { return Microphone.devices != null && Microphone.devices.Length > 0; }
+            catch { return false; }
         }
 
         private void StopVoiceAndTranscribe()
@@ -822,17 +860,19 @@ namespace Barros.PizzaCreator.AI
         private void EnsureStyles()
         {
             if (panelStyle != null) return;
-            parchmentTexture = Solid(parchment);
-            cardTexture = Solid(card);
-            maroonTexture = Solid(maroon);
-            redTexture = Solid(red);
-            lightTexture = Solid(parchmentLight);
+            Color parchmentEdge = new Color(0.50f, 0.29f, 0.25f, 0.62f);
+            Color cardEdge = new Color(0.57f, 0.37f, 0.32f, 0.50f);
+            parchmentTexture = Rounded(parchment, parchmentEdge, 12, 1);
+            cardTexture = Rounded(card, cardEdge, 11, 1);
+            maroonTexture = Rounded(maroon, new Color(0.30f, 0.09f, 0.08f, 1f), 10, 1);
+            redTexture = Rounded(red, new Color(0.43f, 0.08f, 0.08f, 1f), 10, 1);
+            lightTexture = Rounded(parchmentLight, cardEdge, 10, 1);
             greenTexture = Solid(green);
             amberTexture = Solid(amber);
             whiteTexture = Solid(Color.white);
             Font font = gameFont != null ? gameFont : Resources.GetBuiltinResource<Font>("Arial.ttf");
-            panelStyle = BoxStyle(parchmentTexture, 10, font);
-            cardStyle = BoxStyle(cardTexture, 10, font);
+            panelStyle = BoxStyle(parchmentTexture, 12, font);
+            cardStyle = BoxStyle(cardTexture, 11, font);
             titleStyle = LabelStyle(font, 26, FontStyle.Bold, ink);
             subtitleStyle = LabelStyle(font, 19, FontStyle.Bold, ink);
             bodyStyle = LabelStyle(font, 15, FontStyle.Normal, ink);
@@ -849,6 +889,7 @@ namespace Barros.PizzaCreator.AI
             inputStyle.fontSize = 15;
             inputStyle.wordWrap = true;
             inputStyle.padding = new RectOffset(10, 10, 8, 8);
+            inputStyle.border = new RectOffset(10, 10, 10, 10);
             inputStyle.normal.background = lightTexture;
             inputStyle.normal.textColor = ink;
             tagStyle = new GUIStyle(buttonStyle);
@@ -866,7 +907,8 @@ namespace Barros.PizzaCreator.AI
             style.wordWrap = true;
             style.alignment = TextAnchor.UpperLeft;
             style.padding = new RectOffset(padding, padding, padding, padding);
-            style.margin = new RectOffset(2, 2, 2, 2);
+            style.margin = new RectOffset(3, 3, 4, 4);
+            style.border = new RectOffset(11, 11, 11, 11);
             return style;
         }
 
@@ -896,8 +938,50 @@ namespace Barros.PizzaCreator.AI
             style.hover.textColor = Color.white;
             style.active.textColor = Color.white;
             style.padding = new RectOffset(8, 8, 6, 6);
-            style.margin = new RectOffset(2, 2, 2, 2);
+            style.margin = new RectOffset(3, 3, 3, 3);
+            style.border = new RectOffset(10, 10, 10, 10);
             return style;
+        }
+
+        private Texture2D Rounded(Color fill, Color outline, int radius, int outlineWidth)
+        {
+            const int size = 32;
+            Texture2D texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            texture.wrapMode = TextureWrapMode.Clamp;
+            texture.filterMode = FilterMode.Bilinear;
+            Color clear = new Color(0f, 0f, 0f, 0f);
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float px = x + 0.5f;
+                    float py = y + 0.5f;
+                    float nearestX = Mathf.Clamp(px, radius, size - radius);
+                    float nearestY = Mathf.Clamp(py, radius, size - radius);
+                    float dx = px - nearestX;
+                    float dy = py - nearestY;
+                    float distance = Mathf.Sqrt(dx * dx + dy * dy);
+                    float alpha = Mathf.Clamp01(radius + 0.5f - distance);
+                    if (alpha <= 0f)
+                    {
+                        texture.SetPixel(x, y, clear);
+                        continue;
+                    }
+                    int innerRadius = Mathf.Max(1, radius - outlineWidth);
+                    float innerX = Mathf.Clamp(px, radius, size - radius);
+                    float innerY = Mathf.Clamp(py, radius, size - radius);
+                    float innerDx = px - innerX;
+                    float innerDy = py - innerY;
+                    bool borderPixel = Mathf.Sqrt(innerDx * innerDx + innerDy * innerDy) > innerRadius ||
+                        px < outlineWidth || py < outlineWidth || px > size - outlineWidth || py > size - outlineWidth;
+                    Color pixel = borderPixel ? outline : fill;
+                    pixel.a *= alpha;
+                    texture.SetPixel(x, y, pixel);
+                }
+            }
+            texture.Apply();
+            texture.hideFlags = HideFlags.HideAndDontSave;
+            return texture;
         }
 
         private Texture2D Solid(Color color)

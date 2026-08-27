@@ -287,7 +287,10 @@ namespace Barros.PizzaCreator.AI
         private static Vector3 PositionFor(string distribution, int index, int count, int global, System.Random random, string shape)
         {
             string mode = (distribution ?? "even").ToLowerInvariant();
-            double angle = (index * 2.399963229728653 + random.NextDouble() * 0.35);
+            // Use the pizza-wide placement index so every ingredient family
+            // continues the same golden-angle spread. Restarting from the
+            // per-ingredient index clustered each new topping on one side.
+            double angle = (global * 2.399963229728653 + random.NextDouble() * 0.35);
             double radius;
             if (mode == "center") radius = Math.Sqrt(random.NextDouble()) * 1.15;
             else if (mode == "ring") radius = 1.35 + random.NextDouble() * 0.55;
