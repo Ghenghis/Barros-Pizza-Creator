@@ -26,7 +26,7 @@ namespace Barros.PizzaCreator.AI
             eventPath = Path.Combine(evidenceRoot, "runtime-events.jsonl");
             screenshotRoot = Path.Combine(evidenceRoot, "screenshots");
             TryCreateDirectories();
-            Record("session.start", "Barro's AI Pizza Designer 1.0.0-rc1");
+            Record("session.start", "Barro's AI Pizza Designer 1.2.0-rc1");
         }
 
         public void Record(string eventName, string detail)

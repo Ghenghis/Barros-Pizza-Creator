@@ -38,6 +38,10 @@ class CreatorHealthCapabilityTests(unittest.TestCase):
         self.assertTrue(health["ok"])
         self.assertTrue(health["capabilities"]["chat"])
         self.assertTrue(health["capabilities"]["compose"])
+        self.assertTrue(health["capabilities"]["ingredient_intelligence"])
+        self.assertTrue(health["capabilities"]["inspiration_library"])
+        self.assertEqual(0, health["inspiration"]["count"])
+        self.assertEqual(500, health["inspiration"]["max_items"])
         self.assertFalse(health["capabilities"]["stt_configured"])
         self.assertFalse(health["stt"]["configured"])
         self.assertFalse(health["stt"]["dedicated_endpoint_configured"])
@@ -57,6 +61,16 @@ class CreatorHealthCapabilityTests(unittest.TestCase):
         self.assertEqual("whisper-test", health["stt"]["model"])
         self.assertNotIn("endpoint", health["stt"])
         self.assertNotIn("available", health["stt"])
+
+    def test_online_text_provider_does_not_imply_stt(self) -> None:
+        health = self._health({
+            "provider": "openai-compatible",
+            "endpoint": "http://127.0.0.1:9/v1",
+            "model": "text-only-test",
+        })
+        self.assertTrue(health["online"])
+        self.assertFalse(health["capabilities"]["stt_configured"])
+        self.assertFalse(health["stt"]["configured"])
 
 
 if __name__ == "__main__":

@@ -10,7 +10,7 @@ param(
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 $packageRoot = $PSScriptRoot
-$version = "1.1.0-rc1"
+$version = "1.2.0-rc1"
 $bepVersion = "5.4.23.5"
 $bepUrl = "https://github.com/BepInEx/BepInEx/releases/download/v5.4.23.5/BepInEx_win_x64_5.4.23.5.zip"
 $bepSha = "82F9878551030F54657792C0740D9D51A09500EEAE1FBA21106B0C441E6732C4"
@@ -58,9 +58,13 @@ try {
     if (-not (Test-Path $gameExe) -or -not (Test-Path $assembly) -or -not (Test-Path $firstpass)) {
         throw "This is not the complete standalone Pizza Creator folder. Expected $gameExe, $assembly and $firstpass"
     }
-    $processName = [IO.Path]::GetFileNameWithoutExtension($exeName)
-    $running = Get-Process -Name $processName -ErrorAction SilentlyContinue
-    if ($running) { throw "Close Pizza Connection 3 - Pizza Creator before installing." }
+    $targetExePath = [IO.Path]::GetFullPath($gameExe)
+    $running = Get-CimInstance Win32_Process -Filter ("Name='" + $exeName.Replace("'", "''") + "'") -ErrorAction SilentlyContinue |
+        Where-Object {
+            -not [string]::IsNullOrWhiteSpace($_.ExecutablePath) -and
+            [string]::Equals([IO.Path]::GetFullPath($_.ExecutablePath), $targetExePath, [StringComparison]::OrdinalIgnoreCase)
+        }
+    if ($running) { throw "Close the target Pizza Connection 3 - Pizza Creator copy before installing: $targetExePath" }
 
     $actualAssemblySha = (Get-FileHash -Algorithm SHA256 -LiteralPath $assembly).Hash
     $actualFirstpassSha = (Get-FileHash -Algorithm SHA256 -LiteralPath $firstpass).Hash

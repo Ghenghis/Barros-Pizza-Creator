@@ -37,6 +37,22 @@ class BackendTests(unittest.TestCase):
     def setUp(self) -> None:
         self.orchestrator = PizzaOrchestrator(ProviderClient(ProviderSettings()))
 
+    def test_provider_resolves_plaintext_api_key_file(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "proxy-token"
+            path.write_text("local-secret\n", encoding="utf-8")
+            settings = ProviderSettings(api_key_env="", api_key_file=str(path), env_file="")
+            self.assertEqual("local-secret", settings.resolved_key())
+
+    def test_provider_resolves_named_api_key_file(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "proxy-token.env"
+            path.write_text('CLAUDE_PROXY_TOKEN="local-secret"\n', encoding="utf-8")
+            settings = ProviderSettings(
+                api_key_env="CLAUDE_PROXY_TOKEN", api_key_file=str(path), env_file=""
+            )
+            self.assertEqual("local-secret", settings.resolved_key())
+
     def test_invalid_ids_are_repaired_or_removed(self) -> None:
         recipe = Recipe.from_dict({"name": "x", "ingredients": [{"id": "Jalapeño"}, {"id": "Ranch"}, {"id": "Cooked Chicken"}]})
         result = repair_recipe(recipe, CatalogIndex.from_payload(CATALOG))

@@ -11,6 +11,7 @@ artifacts/*
 **/__pycache__/
 *.py[cod]
 backend/data/conversation_history.json
+backend/data/inspiration/
 backend/settings.json
 
 # Installed runtime trees must never be committed

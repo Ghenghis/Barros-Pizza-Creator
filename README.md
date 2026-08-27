@@ -1,6 +1,6 @@
-# Pizza Connection 3 / Barro's Pizza — Barro's Pizza Creator 1.1 RC
+# Pizza Connection 3 / Barro's Pizza — Barro's Pizza Creator 1.2 RC
 
-Version **1.1.0-rc1** is the in-game AI design layer for the exact standalone Windows x64 **Pizza Connection 3 - Pizza Creator 0.11.272** binary profile.
+Version **1.2.0-rc1** is the in-game AI design layer for the exact standalone Windows x64 **Pizza Connection 3 - Pizza Creator 0.11.272** binary profile.
 
 The ecosystem-facing brand is **Pizza Connection 3 / Barro's Pizza**. The technical Creator target remains the original standalone executable/data/assembly identity because changing those names would invalidate reverse-engineering and proof contracts.
 
@@ -12,6 +12,8 @@ It adds one real fifth tab to the existing Bakehouse panel and keeps recipe desi
 - **AI Lab** — three game-valid alternatives with native Preview and Use actions.
 - **Design Crew** — Flavor Chef, Cost Manager, Customer Scout and Creative Director with independent opinions and consensus.
 - **Chef Voice** — Windows microphone capture and OpenAI-compatible/Whisper transcription.
+- **Ingredient intelligence** — flavor tags, dietary/allergen awareness, curated pairing strengths and cohesion-aware recipe estimates for every exact game ingredient.
+- **Inspiration Library** — opt-in use of up to three locally indexed pizza-design images per request from a private library of as many as 500 files.
 
 The UI follows the locked four-mode Barro's references while using the game's parchment/maroon/wood language. It does **not** replace `Assembly-CSharp.dll`, rewrite saves or fake mouse input.
 
@@ -56,7 +58,7 @@ Run `CONFIGURE_AI_PROVIDER.bat` for model/voice provider setup. Offline recipe d
 
 ## Visual attachments and JPEG parsing
 
-Creator 1.1 validates image bytes before provider orchestration. It does not trust a `.jpg`, `.png` or `.webp` extension by itself.
+Creator 1.2 validates image bytes before provider orchestration. It does not trust a `.jpg`, `.png` or `.webp` extension by itself.
 
 ```mermaid
 flowchart LR
@@ -86,6 +88,12 @@ Current visual limits:
 `POST /inspect-attachment` returns normalized metadata and SHA-256 without echoing raw image bytes. Workbench exposes the same parser through its `pizza_creator_inspect_attachment` tool.
 
 Text attachments (JSON/TXT/Markdown and related bounded text input) stay separate from binary visual parsing.
+
+## Local Inspiration Library
+
+Run `IMPORT_Barros_Inspiration.ps1` and choose a folder containing pizza-design JPG, PNG or WebP files. The Windows helper finds the installed Steam Barro's backend when available, validates real image bytes, rejects malformed or spoofed files, deduplicates by SHA-256 and indexes at most 500 images. The in-game **Ideas OFF/ON** button controls whether up to three relevant local designs accompany the next AI request.
+
+The library lives under `backend/data/inspiration`, is ignored by Git and is explicitly excluded from release ZIPs. Images remain local reference material; every import records `user-owned`, `permission-granted` or `reference-only` rights. Only import images you are allowed to retain and use. A Facebook archive or album download can be imported after it is obtained through an authorized account or export flow.
 
 ## Using Chat
 

@@ -131,6 +131,7 @@ namespace Barros.PizzaCreator.AI
         [JsonProperty("seed")] public int Seed;
         [JsonProperty("current_pizza")] public string CurrentPizza = "";
         [JsonProperty("attachments")] public List<AiAttachment> Attachments = new List<AiAttachment>();
+        [JsonProperty("use_inspiration_library")] public bool UseInspirationLibrary;
     }
 
     [Serializable]
@@ -162,4 +163,3 @@ namespace Barros.PizzaCreator.AI
         }
     }
 }
-

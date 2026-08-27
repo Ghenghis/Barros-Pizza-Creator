@@ -142,7 +142,10 @@ def is_evidence_only(path: str) -> bool:
 
 def matches_allowed(path: str, allowed: Sequence[str]) -> bool:
     normalized = normalized_path(path)
-    return any(fnmatch.fnmatchcase(normalized, pattern) for pattern in allowed)
+    # ``placements[*]`` is our literal normalized family token. Python's
+    # fnmatch otherwise interprets ``[*]`` as a character class and fails to
+    # match the brackets present in the normalized path itself.
+    return any(normalized == pattern or fnmatch.fnmatchcase(normalized, pattern) for pattern in allowed)
 
 
 def compare(a: Dict[str, Any], b: Dict[str, Any], allowed: Sequence[str]) -> Dict[str, Any]:

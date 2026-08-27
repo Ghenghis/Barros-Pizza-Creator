@@ -13,6 +13,7 @@ from urllib.parse import urlparse
 
 from .attachments import AttachmentError, normalize_attachment, normalize_attachments
 from .history import HistoryStore
+from .inspiration import InspirationLibrary
 from .orchestrator import PizzaOrchestrator
 from .proof_status import ProofStatusError, latest_proof_status
 from .providers import ProviderClient, ProviderError, ProviderSettings
@@ -28,7 +29,8 @@ class App:
         self.settings_path = settings_path
         self.settings = ProviderSettings.load(settings_path)
         self.provider = ProviderClient(self.settings)
-        self.orchestrator = PizzaOrchestrator(self.provider)
+        self.inspiration = InspirationLibrary(root / "data" / "inspiration")
+        self.orchestrator = PizzaOrchestrator(self.provider, self.inspiration)
         self.history = HistoryStore(root / "data" / "conversation_history.json")
         self.started = time.time()
         self.server: ThreadingHTTPServer | None = None
@@ -36,7 +38,7 @@ class App:
     def reload(self) -> None:
         self.settings = ProviderSettings.load(self.settings_path)
         self.provider = ProviderClient(self.settings)
-        self.orchestrator = PizzaOrchestrator(self.provider)
+        self.orchestrator = PizzaOrchestrator(self.provider, self.inspiration)
 
     def _contract_path(self) -> Path:
         """Resolve the RC contract in source and installed layouts.
@@ -126,7 +128,7 @@ class App:
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "BarrosPizzaAI/1.1"
+    server_version = "BarrosPizzaAI/1.2"
 
     @property
     def app(self) -> App:
@@ -163,13 +165,17 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802
         path = urlparse(self.path).path
         if path == "/health":
-            stt_configured = bool(self.app.provider.online or self.app.settings.stt_endpoint)
+            # A text provider being online does not prove that it implements
+            # OpenAI's audio-transcription route. Require an explicit endpoint
+            # so health never reports Chef Voice ready on a text-only gateway.
+            stt_configured = bool(self.app.settings.stt_endpoint)
+            inspiration = self.app.inspiration.status()
             self._json(
                 HTTPStatus.OK,
                 {
                     "ok": True,
                     "name": "Barro's AI Pizza Designer",
-                    "version": "1.1.0-rc1",
+                    "version": "1.2.0-rc1",
                     "provider": self.app.settings.provider,
                     "online": self.app.provider.online,
                     "image_parser": "png+jpeg+webp-v1",
@@ -183,8 +189,11 @@ class Handler(BaseHTTPRequestHandler):
                         "attachment_inspection": True,
                         "contract": True,
                         "proof_results": True,
+                        "ingredient_intelligence": True,
+                        "inspiration_library": True,
                         "stt_configured": stt_configured,
                     },
+                    "inspiration": inspiration,
                     "stt": {
                         "configured": stt_configured,
                         "dedicated_endpoint_configured": bool(self.app.settings.stt_endpoint),
@@ -194,6 +203,9 @@ class Handler(BaseHTTPRequestHandler):
                     "uptime_seconds": round(time.time() - self.app.started, 1),
                 },
             )
+            return
+        if path == "/inspiration":
+            self._json(HTTPStatus.OK, {"ok": True, **self.app.inspiration.status()})
             return
         if path == "/contract":
             try:
@@ -244,8 +256,8 @@ class Handler(BaseHTTPRequestHandler):
                 encoded = str(payload.get("audio_base64", ""))
                 if not encoded:
                     raise ValueError("audio_base64 is required.")
-                if not self.app.provider.online and not self.app.settings.stt_endpoint:
-                    raise ProviderError("Voice transcription needs an OpenAI-compatible or configured STT endpoint.")
+                if not self.app.settings.stt_endpoint:
+                    raise ProviderError("Voice transcription needs a dedicated STT endpoint in settings.json.")
                 text = self.app.provider.transcribe(base64.b64decode(encoded), str(payload.get("filename", "voice.wav")))
                 self._json(HTTPStatus.OK, {"ok": True, "text": text})
                 return
