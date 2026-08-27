@@ -54,7 +54,7 @@ class ProofContractTests(unittest.TestCase):
         requirements = " ".join(
             gate["requirement"] for layer in self.contract["layers"] for gate in layer["gates"]
         ).lower()
-        for term in ("fifth tab", "header", "preview", "restore", "apply", "save", "reload", "microphone", "speech provider", "chat", "lab", "crew", "voice"):
+        for term in ("fifth tab", "header", "preview", "restore", "apply", "save", "reload", "microphone", "speech provider", "chat", "lab", "crew", "voice", "media"):
             self.assertIn(term, requirements)
 
     def test_bepinex_plugin_version_is_numeric_and_installer_is_target_scoped(self):
@@ -79,6 +79,74 @@ class ProofContractTests(unittest.TestCase):
         self.assertIn("FitBesideTabRail(screenRect)", renderer)
         self.assertIn("tabScreenRect.xMax + gap", renderer)
         self.assertIn('"ui.panel_fitted"', renderer)
+
+    def test_designer_panel_blocks_clicks_from_reaching_hidden_stock_controls(self):
+        installer = (ROOT / "plugin-src" / "RuntimeTabInstaller.cs").read_text(encoding="utf-8")
+        self.assertIn("blocker.raycastTarget = true", installer)
+
+    def test_music_uses_native_service_and_releases_one_clip_before_loading_the_next(self):
+        deck = (ROOT / "plugin-src" / "MediaDeck.cs").read_text(encoding="utf-8")
+        bridge = (ROOT / "plugin-src" / "GameBridge.cs").read_text(encoding="utf-8")
+        self.assertNotIn("OnAudioFilterRead", deck)
+        self.assertNotIn("ThreeBandEq", deck)
+        self.assertIn("ReleaseLoadedClip();", deck)
+        self.assertIn("audioReachedPlayback = true", deck)
+        self.assertIn("if (musicSource.isPlaying)", deck)
+        self.assertIn("new WWW(audioUrl)", deck)
+        self.assertIn("request.GetAudioClip(false, false, AudioType.WAV)", deck)
+        self.assertIn("loadedClip.loadState == AudioDataLoadState.Unloaded", deck)
+        self.assertNotIn("DownloadHandlerAudioClip.GetContent", deck)
+        self.assertIn("CacheWaveform(52);", deck)
+        self.assertNotIn("cachedWaveform = new float[0];\n                    status = \"Playing \"", deck)
+        self.assertIn("audio.StartMusic(clip", bridge)
+
+    def test_barros_playlist_replaces_stock_by_default_and_stock_is_reversible(self):
+        deck = (ROOT / "plugin-src" / "MediaDeck.cs").read_text(encoding="utf-8")
+        bridge = (ROOT / "plugin-src" / "GameBridge.cs").read_text(encoding="utf-8")
+        panel = (ROOT / "plugin-src" / "PanelRenderer.cs").read_text(encoding="utf-8")
+        self.assertIn("barrosReplacesStock = true", deck)
+        self.assertIn('audio.StartPreloadedMusic("PizzaCreator\\\\PizzaCreator"', bridge)
+        self.assertIn('"BARRO\'S"', panel)
+        self.assertIn('"STOCK"', panel)
+        self.assertIn("if (barrosReplacesStock && currentIndex < 0", deck)
+        self.assertIn("StopPlayback();\n            ReleaseLoadedClip();\n            barrosReplacesStock = false", deck)
+        self.assertIn("if (game != null) game.StopMusic();", deck)
+
+    def test_saved_music_queue_and_agent_speech_focus_are_wired(self):
+        deck = (ROOT / "plugin-src" / "MediaDeck.cs").read_text(encoding="utf-8")
+        panel = (ROOT / "plugin-src" / "PanelRenderer.cs").read_text(encoding="utf-8")
+        for term in (
+            "music-playlist.json",
+            "ToggleQueued",
+            "MoveQueued",
+            "SavePlaylist",
+            "LoadPlaylist",
+            "NextPlaylistIndex",
+            "BeginSpeechFocus",
+            "EndSpeechFocus",
+            "InboxRevision",
+            "ConversionReportFile",
+            "BassDb = bassDb",
+            "AutoImport = autoImport",
+            "UseBarros = barrosReplacesStock",
+        ):
+            self.assertIn(term, deck)
+        self.assertIn("SAVE QUEUE", panel)
+        self.assertIn("LOAD SAVED", panel)
+        self.assertIn("Auto import", panel)
+        self.assertIn("REPORT", panel)
+        self.assertIn("new WaitForSecondsRealtime(1f)", panel)
+        self.assertIn("pausedBeforeSpeech = paused", deck)
+        self.assertIn("paused = true", deck)
+        self.assertIn("do you want to save it to the recipe book now?", panel)
+
+    def test_interactive_provider_requests_are_bounded_and_have_local_fallback(self):
+        orchestrator = (ROOT / "backend" / "barros_ai" / "orchestrator.py").read_text(encoding="utf-8")
+        client = (ROOT / "plugin-src" / "BackendClient.cs").read_text(encoding="utf-8")
+        self.assertIn("timeout_seconds=20", orchestrator)
+        self.assertIn("retries=0", orchestrator)
+        self.assertIn("Online provider failed; used the built-in designer", orchestrator)
+        self.assertIn("request.Timeout = 45000", client)
 
     def test_educational_and_audio_pipeline_assets_are_real_and_present(self):
         for relative in (
@@ -116,10 +184,15 @@ class ProofContractTests(unittest.TestCase):
             {path for path in manifest_paths if path.startswith("artifacts/")},
         )
 
-        bundled_audio = []
-        for extension in ("*.wav", "*.mp3", "*.flac", "*.m4a", "*.aac", "*.wma", "*.aiff", "*.aif", "*.opus", "*.oga", "*.ogg"):
-            bundled_audio.extend(ROOT.rglob(extension))
-        self.assertEqual([], bundled_audio, "RC1 must not ship placeholder or unlicensed music")
+        music_readme = (ROOT / "assets" / "music" / "README.md").read_text(encoding="utf-8")
+        self.assertIn("supplied by the project owner", music_readme)
+        self.assertIn("Unity-friendly, audio-only 48 kHz stereo OGG/Vorbis", music_readme)
+        ogg_tracks = sorted((ROOT / "assets" / "music").glob("*.ogg"))
+        source_mp3 = sorted((ROOT / "assets" / "music").glob("*.mp3"))
+        self.assertEqual(5, len(ogg_tracks))
+        self.assertEqual(5, len(source_mp3))
+        self.assertTrue(all(path.stat().st_size > 500_000 for path in ogg_tracks))
+        self.assertIn('path.suffix.lower() == ".mp3"', release_builder)
 
 
 if __name__ == "__main__":

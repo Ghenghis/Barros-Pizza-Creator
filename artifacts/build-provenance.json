@@ -1,15 +1,23 @@
 {
   "schema_version": "1.0",
   "artifact": "Barros.PizzaCreator.AI.dll",
-  "artifact_bytes": 71168,
-  "artifact_sha256": "e29f62d202ce4fb4037945da0b490e46dc4c657dabc42a65fcbcf6dfce2483ae",
-  "built_utc": "2026-08-27T12:38:18Z",
-  "source_parent_commit": "da9349a629926d8794f7c7b3d3dac66b284bb5a7",
-  "source_tree_sha256": "5cf3523d8ce28fffb3de8a152f46f068a705551e8e4c40b195e593d31a9f821b",
+  "artifact_bytes": 129536,
+  "artifact_sha256": "0a56a95f336ea1d671c32078b43ebd0b22ede44c2895f3189a54c65a66282342",
+  "built_utc": "2026-08-27T15:37:14Z",
+  "source_parent_commit": "f89e1298aee210134aebf1641f76cb436eb627a8",
+  "source_tree_sha256": "5742939afc814eec622352c3606e9a5addee7ee49992232f7dfd01cbd909a1ec",
   "compiler": "Microsoft Visual C# Compiler 4.8.9032.0",
-  "compiler_host": ".NET Framework 4.8.9032.0 on Windows 11 x64",
+  "compiler_host": ".NET Framework on Windows AMD64",
   "output_kind": "PE32 AnyCPU .NET/Mono library",
-  "options": ["nologo", "target:library", "optimize+", "debug:pdbonly", "platform:anycpu", "utf8output", "codepage:65001"],
+  "options": [
+    "nologo",
+    "target:library",
+    "optimize+",
+    "debug:pdbonly",
+    "platform:anycpu",
+    "utf8output",
+    "codepage:65001"
+  ],
   "target": {
     "game_version": "0.11.272",
     "unity": "2017.3.1p4 x64",
@@ -20,9 +28,9 @@
     "bepinex_dll_sha256": "8255b28902886085c578b9e427d3073c97002db85176d2090cdeda90ef14ce70"
   },
   "reference_sha256": {
-    "mscorlib.dll": "ab407e540fed93d3f6d42c648a5d01772432d04700a871dc12e2ab397caef384",
-    "System.dll": "133f23da3e4c3f4442e52810b536ca73683fc6470aa349b92f2c9b1816d85b62",
-    "System.Core.dll": "c063f1c9695af200fa27baad68ba7a6369f040c811d7dac1da66cf110afdf170",
+    "mscorlib.dll": "25a5c002fa0f6509bdf18d362a04d6375ae5547248957d29f1bf7eb6b6f1f9f4",
+    "System.dll": "9c1142fa8a10b3e0bb9e2f46acfd3b7a2ee2328f8d547b64e992d20875259013",
+    "System.Core.dll": "9bb94d2a79ebc23f57689e08dea2a8e1a641caa35dde9d7bde373bbf237ecef7",
     "BepInEx.dll": "8255b28902886085c578b9e427d3073c97002db85176d2090cdeda90ef14ce70",
     "Assembly-CSharp.dll": "ebf8698df7cb4af904c98c299994705ea529efbdf1e8ccb3e7ca8cb42a1cbc1c",
     "Assembly-CSharp-firstpass.dll": "f9cbf0951fc4d4b0788c47bbe41a3820fa333d293175bbb7cb398eb4728fd284",
@@ -37,26 +45,32 @@
     "UnityEngine.AudioModule.dll": "beb34573681fb395b9feba52bc56663dd695b9bbb965e52841318bfbb1b6c999",
     "UnityEngine.InputModule.dll": "0fe93fb9abe4effd5ecf62112906c439b94a8ee96bda424b2970eeee3ec8c1ff",
     "UnityEngine.ImageConversionModule.dll": "b4d4409dc2f66d4bfd2f08553d8a567f4149550bbc8183faa403aa452f454968",
-    "UnityEngine.ScreenCaptureModule.dll": "1edc04781756894c272f9011553ab81e456304448e9d6eb24298352a22743f40"
+    "UnityEngine.ScreenCaptureModule.dll": "1edc04781756894c272f9011553ab81e456304448e9d6eb24298352a22743f40",
+    "UnityEngine.VideoModule.dll": "167de9e05b9805eacebeb0d104abe3f1d2e1bf41ce4dd3e349ee72825cb200bf",
+    "UnityEngine.UnityWebRequestWWWModule.dll": "90df00f655e052286cb99c52b375c31816e74f7c805cd2fdaf6f511160f9df9a",
+    "UnityEngine.UnityWebRequestModule.dll": "5012a6bcf5e798842b338116d8bc286a6cfbcda144bc4cf8fe37fd447161d637",
+    "UnityEngine.UnityWebRequestAudioModule.dll": "67083951555ca6585dd70de09ec931ea1a6e8349766aa43fb7cc4c83334d4f24"
   },
   "source_files_sha256": {
     "AssemblyInfo.cs": "3a817d064faa76a907a424ca77b157d967eefe7cd1dfcfaa57c8aff8c6317f48",
-    "BackendClient.cs": "6d26ae4dd0a65a71a5387cd90e352f3484e0e4323b5029a4af0751ada7b7f44a",
-    "BarrosAiPlugin.cs": "9d2f7bac14a4c9b182ee60f4514e134b5f8f2e453494ceeb8ac6e587f4ea1e32",
-    "EvidenceRecorder.cs": "0d52fa72328c89d1ef1946f8aec4c453fcc8a2de74f1699b50ee88fe03c53f50",
+    "BackendClient.cs": "15e26bbeff70fbe1b6f9ff3526a479255c35ba80379166e67f690ad35cfbda2e",
+    "BarrosAiPlugin.cs": "84df52f8fd1690e2029efa1a9cc9bd8db73853779244f7e23603a8d5a1392a6c",
+    "EvidenceRecorder.cs": "c286bac3bd573b2bf13c8cdcfde5facdc1e58845010f13f36b90ffa2c96df03c",
     "FileDialog.cs": "f6fe47361f5da0e1ffbce60449416f897564e92281ed90ed6ed9d48f43bf3f34",
-    "GameBridge.cs": "a8b0b7204aa6819c0e60e4e498b1fd7792bc187b0f684a9a20f8fe16bad97659",
+    "GameBridge.cs": "228ddee918e51370472d7983262bb6aa9311c1729ed9f9142f8c3048a1195fa9",
     "MainThreadDispatcher.cs": "2789e3d9ee8a8d7526052505ea3f6f21f7be22a13e06a5646e7ed5740974b03f",
-    "Models.cs": "f2e3819fc105143c8a9b0dd034db6c6add3fad93afeb72b8e15cf57b8bdaad5c",
-    "PanelRenderer.cs": "0029bdd535cf5be11ab6da1cb91f2e02ac856ed5e9e9d55bbe086e309be849c7",
-    "RuntimeTabInstaller.cs": "948c88af4c9c03deceb8f645798784f584236dc46fe7ad72afd1e28a6f2bbd49",
+    "MediaDeck.cs": "cd273d80fb7b4d707fd653c1da841ce8bba30a0502f8ba6bcad39343d661af29",
+    "Models.cs": "1315bd746554b02aeb6d0f8be53a6191274712c1109efad611c7c4b945823e3e",
+    "PanelRenderer.cs": "80ecb7834e7112b3c1a6bac5696e867e32bb946df2e5ae560a6c09d6cf747a8a",
+    "RuntimeTabInstaller.cs": "26b1a030af1a7bcb2d4140c8a46d494464e5270f122af2c05b66a6c5c07d15fd",
+    "WavDecoder.cs": "c81f38bec9ac2407826e20cbf6d59c496e827dbec5097fdb5be16cacbe3d03b5",
     "WavEncoder.cs": "7de6cfa1287a00979f512e4f16cb13863315e0aa7dc3fb47d78a862c1468356c"
   },
   "verification": {
     "compile_exit_code": 0,
     "compiler_errors": 0,
     "absolute_build_path_embedded": false,
-    "backend_and_contract_tests": "71 tests passed on Windows 11"
+    "backend_and_contract_tests": "102 passed"
   },
-  "boundary": "This proves v1.2 compilation and 71 static tests against the exact supplied Windows game assemblies. A separate real-game smoke run proves the v1.2 loader, fitted UI, Inspiration Library toggle, and healthy empty-library endpoint. Earlier retained runtime evidence proves the v1.1 base workflow. No Facebook/export images were supplied, so bulk import and online visual use remain not run. Microphone/STT remains blocked by Windows hardware and a missing dedicated STT endpoint."
+  "boundary": "Compilation and portable tests only; live behavior requires separately retained game evidence."
 }

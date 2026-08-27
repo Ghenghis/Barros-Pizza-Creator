@@ -26,6 +26,12 @@ class ProviderSettings:
     retries: int = 2
     stt_endpoint: str = ""
     stt_model: str = "whisper-1"
+    tts_provider: str = "disabled"
+    tts_endpoint: str = ""
+    tts_region: str = ""
+    tts_key: str = ""
+    tts_key_env: str = "AZURE_SPEECH_KEY"
+    tts_key_file: str = ""
 
     @classmethod
     def load(cls, path: str | os.PathLike[str]) -> "ProviderSettings":
@@ -63,6 +69,31 @@ class ProviderSettings:
                     return value.strip().strip('"').strip("'")
         return ""
 
+    def resolved_tts_key(self) -> str:
+        if self.tts_key:
+            return self.tts_key.strip()
+        if self.tts_key_env and os.getenv(self.tts_key_env):
+            return str(os.getenv(self.tts_key_env)).strip()
+        key_path = Path(os.path.expandvars(self.tts_key_file)) if self.tts_key_file else None
+        if key_path and key_path.exists():
+            value = key_path.read_text(encoding="utf-8-sig", errors="replace").strip()
+            if "=" in value and "\n" not in value:
+                key, candidate = value.split("=", 1)
+                if not self.tts_key_env or key.strip() == self.tts_key_env:
+                    value = candidate.strip().strip('"').strip("'")
+            if value:
+                return value
+        env_path = Path(os.path.expandvars(self.env_file)) if self.env_file else None
+        if env_path and env_path.exists():
+            for line in env_path.read_text(encoding="utf-8-sig", errors="replace").splitlines():
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, value = line.split("=", 1)
+                if key.strip() == self.tts_key_env:
+                    return value.strip().strip('"').strip("'")
+        return ""
+
 
 class ProviderError(RuntimeError):
     pass
@@ -96,8 +127,23 @@ class ProviderClient:
     def online(self) -> bool:
         return self.settings.provider.casefold() not in {"", "offline", "none"}
 
-    def complete(self, system: str, user: str, temperature: float = 0.65) -> str:
-        return self.complete_multimodal(system, user, [], temperature)
+    def complete(
+        self,
+        system: str,
+        user: str,
+        temperature: float = 0.65,
+        *,
+        timeout_seconds: int | None = None,
+        retries: int | None = None,
+    ) -> str:
+        return self.complete_multimodal(
+            system,
+            user,
+            [],
+            temperature,
+            timeout_seconds=timeout_seconds,
+            retries=retries,
+        )
 
     def complete_multimodal(
         self,
@@ -105,31 +151,59 @@ class ProviderClient:
         user: str,
         attachments: list[dict[str, Any]],
         temperature: float = 0.65,
+        *,
+        timeout_seconds: int | None = None,
+        retries: int | None = None,
     ) -> str:
         provider = self.settings.provider.casefold()
         if not self.online:
             raise ProviderError("Provider is configured for offline mode.")
         if provider == "ollama":
-            return self._ollama(system, user, temperature, attachments)
+            return self._ollama(
+                system, user, temperature, attachments, timeout_seconds, retries
+            )
         if provider == "anthropic":
-            return self._anthropic(system, user, temperature, attachments)
-        return self._openai_compatible(system, user, temperature, attachments)
+            return self._anthropic(
+                system, user, temperature, attachments, timeout_seconds, retries
+            )
+        return self._openai_compatible(
+            system, user, temperature, attachments, timeout_seconds, retries
+        )
 
-    def _request(self, request: urllib.request.Request) -> bytes:
+    def _request(
+        self,
+        request: urllib.request.Request,
+        timeout_seconds: int | None = None,
+        retries: int | None = None,
+    ) -> bytes:
+        effective_timeout = max(
+            1,
+            int(self.settings.timeout_seconds if timeout_seconds is None else timeout_seconds),
+        )
+        effective_retries = max(
+            0,
+            int(self.settings.retries if retries is None else retries),
+        )
         last_error: Exception | None = None
-        for attempt in range(max(0, int(self.settings.retries)) + 1):
+        for attempt in range(effective_retries + 1):
             try:
-                with urllib.request.urlopen(request, timeout=int(self.settings.timeout_seconds)) as response:
+                with urllib.request.urlopen(request, timeout=effective_timeout) as response:
                     return response.read()
             except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError) as exc:
                 last_error = exc
-                if attempt >= int(self.settings.retries):
+                if attempt >= effective_retries:
                     break
                 time.sleep((2**attempt) + random.random() * 0.2)
         raise ProviderError("Provider request failed: %s" % last_error)
 
     def _openai_compatible(
-        self, system: str, user: str, temperature: float, attachments: list[dict[str, Any]]
+        self,
+        system: str,
+        user: str,
+        temperature: float,
+        attachments: list[dict[str, Any]],
+        timeout_seconds: int | None = None,
+        retries: int | None = None,
     ) -> str:
         endpoint = self.settings.endpoint.rstrip("/")
         if not endpoint.endswith("/chat/completions"):
@@ -163,13 +237,21 @@ class ProviderClient:
                 data=json.dumps(payload).encode("utf-8"),
                 headers=headers,
                 method="POST",
-            )
+            ),
+            timeout_seconds,
+            retries,
         )
         response = json.loads(raw.decode("utf-8"))
         return str(response["choices"][0]["message"]["content"])
 
     def _ollama(
-        self, system: str, user: str, temperature: float, attachments: list[dict[str, Any]]
+        self,
+        system: str,
+        user: str,
+        temperature: float,
+        attachments: list[dict[str, Any]],
+        timeout_seconds: int | None = None,
+        retries: int | None = None,
     ) -> str:
         endpoint = self.settings.endpoint.rstrip("/")
         if endpoint.endswith("/v1"):
@@ -199,13 +281,21 @@ class ProviderClient:
                 data=json.dumps(payload).encode("utf-8"),
                 headers={"Content-Type": "application/json"},
                 method="POST",
-            )
+            ),
+            timeout_seconds,
+            retries,
         )
         response = json.loads(raw.decode("utf-8"))
         return str(response["message"]["content"])
 
     def _anthropic(
-        self, system: str, user: str, temperature: float, attachments: list[dict[str, Any]]
+        self,
+        system: str,
+        user: str,
+        temperature: float,
+        attachments: list[dict[str, Any]],
+        timeout_seconds: int | None = None,
+        retries: int | None = None,
     ) -> str:
         endpoint = self.settings.endpoint.rstrip("/")
         if not endpoint.endswith("/messages"):
@@ -239,7 +329,9 @@ class ProviderClient:
                 data=json.dumps(payload).encode("utf-8"),
                 headers=headers,
                 method="POST",
-            )
+            ),
+            timeout_seconds,
+            retries,
         )
         response = json.loads(raw.decode("utf-8"))
         return str(response["content"][0]["text"])

@@ -12,6 +12,12 @@ from typing import Any
 from .ingredient_intelligence import ingredient_profile, ingredient_set_cohesion, suggest_pairings
 from .inspiration import InspirationLibrary
 from .models import AgentOpinion, Recipe, RecipeIngredient, RecipeScores
+from .pizza_art import (
+    compile_recipe_artwork,
+    has_explicit_builtin_template,
+    ingredient_visual_profile,
+    is_art_request,
+)
 from .providers import ProviderClient, ProviderError, extract_json
 from .solver import CatalogIndex, repair_recipe
 
@@ -110,6 +116,7 @@ def _catalog_for_prompt(catalog: CatalogIndex) -> list[dict[str, Any]]:
                 "family": item.type_id,
                 "craziness": round(item.craziness, 3),
                 "profile": ingredient_profile(item),
+                "visual": ingredient_visual_profile(item),
                 "sizes": [{"size": size.size, "grams": size.grams} for size in item.sizes],
             }
         )
@@ -254,6 +261,10 @@ def _estimate(recipe: Recipe, catalog: CatalogIndex) -> None:
         originality=round(max(0, min(100, originality)), 1),
         source="backend-estimate+ingredient-intelligence-v1; game recalculates taste/cost/popularity",
     )
+    if recipe.placements:
+        recipe.scores.novelty = max(recipe.scores.novelty, 92.0)
+        recipe.scores.originality = max(recipe.scores.originality, 96.0)
+        recipe.scores.source += "+precision-artwork-v1"
 
 
 def _piece_cost(recipe_ingredient: RecipeIngredient, catalog: CatalogIndex) -> tuple[float, float]:
@@ -376,19 +387,36 @@ class PizzaOrchestrator:
         recipes: list[Recipe]
         warning = ""
         provider_completed_with_inspiration = False
-        if self.provider.online:
+        provider_used = False
+        local_template_art = (
+            is_art_request(planning_prompt)
+            and has_explicit_builtin_template(planning_prompt)
+            and not attachments
+        )
+        local_only = bool(payload.get("local_only"))
+        if self.provider.online and not local_template_art and not local_only:
             try:
+                provider_used = True
                 recipes = self._online_compose(
                     planning_prompt, constraints, catalog, count, seed, attachments
                 )
                 provider_completed_with_inspiration = bool(inspiration_used)
             except (ProviderError, ValueError, KeyError, TypeError) as exc:
+                provider_used = False
                 warning = "Online provider failed; used the built-in designer: %s" % exc
                 recipes = [_offline_recipe(planning_prompt, catalog, seed, i, constraints) for i in range(count)]
         else:
             recipes = [_offline_recipe(planning_prompt, catalog, seed, i, constraints) for i in range(count)]
-        for recipe in recipes:
+        artwork_summaries: list[str] = []
+        for recipe_index, recipe in enumerate(recipes):
             _enforce_request_constraints(recipe, constraints, catalog, prompt)
+            if is_art_request(planning_prompt, recipe.artwork):
+                compile_recipe_artwork(recipe, planning_prompt, catalog, seed + recipe_index)
+                repair_recipe(recipe, catalog)
+                if recipe.artwork.enabled:
+                    artwork_summaries.append(
+                        "%s (%d precise pieces)" % (recipe.artwork.subject, recipe.artwork.piece_count)
+                    )
             _estimate(recipe, catalog)
             if warning:
                 recipe.warnings.append(warning)
@@ -399,10 +427,15 @@ class PizzaOrchestrator:
             )
         elif inspiration_used:
             message += " I selected local inspiration, but visual analysis needs an online vision provider."
+        if artwork_summaries:
+            message += " Artwork compiled: " + ", ".join(artwork_summaries) + "."
+            if local_template_art:
+                message += " Built-in artwork was compiled locally without waiting for the text provider."
         return {
             "ok": True,
             "message": message,
             "provider": self.provider.settings.provider,
+            "provider_used": provider_used,
             "recipes": [recipe.to_dict() for recipe in recipes],
             "warnings": [warning] if warning else [],
             "inspiration": inspiration_used,
@@ -423,11 +456,18 @@ class PizzaOrchestrator:
             "You design recipes for the standalone Pizza Connection 3 Pizza Creator. "
             "Use ONLY catalog IDs. Sauce and dough are already present and are not ingredients. "
             "Use each catalog item's compact flavor, dietary and allergen profile to prefer coherent pairings. "
-            "Amounts are grams, and size must be Large, Medium, or Small. Return strict JSON only: "
+            "Amounts are grams, and size must be Large, Medium, or Small. "
+            "For a requested picture, portrait, face, logo, holiday design or pizza artwork, also return "
+            "an artwork object. Prefer a built-in template name (santa, tree, snowman, smiley, face, heart, star). "
+            "For a custom subject, provide pixel_map with 3-19 equal-width rows using only "
+            "R=red,W=white,K=dark,G=green,Y=yellow,O=orange,B=brown,P=pink,S=skin,U=purple,.=empty. "
+            "The local deterministic compiler validates the map and converts it to exact game placements. "
+            "Return strict JSON only: "
             '{"recipes":[{"name":"...","summary":"...","shape":"Round|Square|Star|Triangle",'
             '"profit_factor":0.6,"ingredients":[{"id":"exact ID","size":"Medium",'
             '"target_grams":80,"distribution":"even|center|ring|edge|random|spiral|artistic"}],'
-            '"rationale":"..."}]}. Create exactly %d alternatives.' % count
+            '"artwork":{"enabled":false,"template":"","subject":"","detail":"draft|standard|high",'
+            '"style":"mosaic","pixel_map":[]},"rationale":"..."}]}. Create exactly %d alternatives.' % count
         )
         attachment_notes = []
         for attachment in attachments:
@@ -449,7 +489,19 @@ class PizzaOrchestrator:
             },
             ensure_ascii=False,
         )
-        parsed = extract_json(self.provider.complete_multimodal(system, user, attachments))
+        # Interactive screens must never sit in "Working" for the provider's
+        # full retry window. One bounded attempt preserves online quality when
+        # the gateway is healthy; compose() then falls back to the deterministic
+        # local designer if it is slow or unavailable.
+        parsed = extract_json(
+            self.provider.complete_multimodal(
+                system,
+                user,
+                attachments,
+                timeout_seconds=20,
+                retries=0,
+            )
+        )
         raw_recipes = parsed.get("recipes") if isinstance(parsed, dict) else parsed
         if not isinstance(raw_recipes, list) or not raw_recipes:
             raise ValueError("Provider returned no recipe alternatives.")
@@ -466,16 +518,30 @@ class PizzaOrchestrator:
         return result
 
     def crew(self, payload: dict[str, Any]) -> dict[str, Any]:
-        composed = self.compose({**payload, "count": 1}, count=1)
+        # Crew review must stay interactive even when the configured gateway is slow.
+        # Build a valid local draft first, then give each selected persona one bounded
+        # provider attempt for its opinion.
+        composed = self.compose({**payload, "count": 1, "local_only": True}, count=1)
         recipe = Recipe.from_dict(composed["recipes"][0])
+        requested_focus = str(payload.get("focus_agent", "")).strip().casefold()
+        selected_agents = [item for item in AGENTS if item[0].casefold() == requested_focus]
+        if not selected_agents:
+            selected_agents = list(AGENTS)
         if self.provider.online:
-            opinions = self._online_crew(str(payload.get("prompt", "")), recipe)
+            opinions = self._online_crew(str(payload.get("prompt", "")), recipe, selected_agents)
         else:
-            opinions = self._offline_crew(recipe)
+            all_opinions = self._offline_crew(recipe)
+            selected_names = {agent for agent, _ in selected_agents}
+            opinions = [opinion for opinion in all_opinions if opinion.agent in selected_names]
         consensus = round(sum(opinion.score for opinion in opinions) / max(1, len(opinions)), 1)
+        message = (
+            "%s completed a focused review." % opinions[0].agent
+            if len(opinions) == 1
+            else "The four-person design crew reached %.0f%% consensus." % consensus
+        )
         return {
             **composed,
-            "message": "The four-person design crew reached %.0f%% consensus." % consensus,
+            "message": message,
             "agents": [opinion.to_dict() for opinion in opinions],
             "consensus": {
                 "name": recipe.name,
@@ -495,22 +561,42 @@ class PizzaOrchestrator:
             AgentOpinion("Creative Director", AGENTS[3][1], "The name and placement pattern give this pizza a recognizable signature.", recipe.scores.originality),
         ]
 
-    def _online_crew(self, prompt: str, recipe: Recipe) -> list[AgentOpinion]:
+    def _online_crew(
+        self,
+        prompt: str,
+        recipe: Recipe,
+        selected_agents: list[tuple[str, str]] | None = None,
+    ) -> list[AgentOpinion]:
         system_base = "You are one member of a four-person pizza design crew. Be concrete and concise. Return JSON {\"message\":\"...\",\"score\":0-100}."
         recipe_json = json.dumps(recipe.to_dict(), ensure_ascii=False)
+        offline_fallback = {item.agent: item for item in self._offline_crew(recipe)}
 
         def ask(agent: str, role: str) -> AgentOpinion:
-            raw = self.provider.complete(system_base + " You are %s. %s" % (agent, role), "Request: %s\nDraft: %s" % (prompt, recipe_json), 0.4)
+            raw = self.provider.complete(
+                system_base + " You are %s. %s" % (agent, role),
+                "Request: %s\nDraft: %s" % (prompt, recipe_json),
+                0.4,
+                timeout_seconds=25,
+                retries=0,
+            )
             parsed = extract_json(raw)
             return AgentOpinion(agent, role, str(parsed.get("message", "Ready."))[:280], float(parsed.get("score", 75)))
 
         opinions: dict[str, AgentOpinion] = {}
-        with ThreadPoolExecutor(max_workers=4) as executor:
-            futures = {executor.submit(ask, agent, role): (agent, role) for agent, role in AGENTS}
+        roster = selected_agents or list(AGENTS)
+        with ThreadPoolExecutor(max_workers=len(roster)) as executor:
+            futures = {executor.submit(ask, agent, role): (agent, role) for agent, role in roster}
             for future in as_completed(futures):
                 agent, role = futures[future]
                 try:
                     opinions[agent] = future.result()
                 except Exception as exc:  # one persona must not break the crew
-                    opinions[agent] = AgentOpinion(agent, role, "Unavailable: %s" % exc, 50, "warning")
-        return [opinions[agent] for agent, _ in AGENTS]
+                    fallback = offline_fallback[agent]
+                    opinions[agent] = AgentOpinion(
+                        agent,
+                        role,
+                        "Local fallback: %s" % fallback.message,
+                        fallback.score,
+                        "fallback",
+                    )
+        return [opinions[agent] for agent, _ in roster]

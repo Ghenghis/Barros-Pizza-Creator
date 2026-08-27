@@ -83,6 +83,27 @@ class CreatorChatVoiceHTTPTests(unittest.TestCase):
             server.server_close()
             temp.cleanup()
 
+    def test_agent_speech_fails_closed_when_azure_is_not_configured(self) -> None:
+        temp, server = self._server()
+        try:
+            base = f"http://127.0.0.1:{server.server_address[1]}"
+            request = urllib.request.Request(
+                base + "/speak",
+                data=json.dumps({"agent": "Flavor Chef", "message": "Use more basil."}).encode("utf-8"),
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            with self.assertRaises(urllib.error.HTTPError) as caught:
+                urllib.request.urlopen(request)
+            self.assertEqual(400, caught.exception.code)
+            payload = json.loads(caught.exception.read().decode("utf-8"))
+            self.assertFalse(payload["ok"])
+            self.assertIn("not configured", payload["error"].lower())
+        finally:
+            server.shutdown()
+            server.server_close()
+            temp.cleanup()
+
 
 if __name__ == "__main__":
     unittest.main()

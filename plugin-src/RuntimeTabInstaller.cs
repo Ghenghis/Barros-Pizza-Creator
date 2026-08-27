@@ -91,7 +91,10 @@ namespace Barros.PizzaCreator.AI
                 contentRect.SetAsLastSibling();
                 Image blocker = content.GetComponent<Image>();
                 blocker.color = new Color(0f, 0f, 0f, 0.005f);
-                blocker.raycastTarget = false;
+                // The IMGUI panel sits over the native Pizza Creator canvas. This
+                // transparent image must consume pointer events or a Media/Chat
+                // button can also press a hidden stock control underneath it.
+                blocker.raycastTarget = true;
 
                 aiTab = clonedTab;
                 aiTab.content = content;

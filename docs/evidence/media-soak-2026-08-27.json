@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.0",
+  "started_utc": "2026-08-27T15:25:30.0218606Z",
+  "ended_utc": "2026-08-27T15:35:33.5560763Z",
+  "duration_seconds": 603.534,
+  "sample_interval_seconds": 30,
+  "sample_count": 21,
+  "passed": true,
+  "installed_artifact_sha256": "0a56a95f336ea1d671c32078b43ebd0b22ede44c2895f3189a54c65a66282342",
+  "game": {
+    "continuous": true,
+    "pid": 89424,
+    "successful_samples": 21
+  },
+  "backend": {
+    "continuous": true,
+    "pid": 93212,
+    "successful_process_samples": 21,
+    "successful_health_samples": 21,
+    "health_endpoint": "http://127.0.0.1:48173/health"
+  },
+  "runtime_log": {
+    "initial_bytes": 2525,
+    "final_bytes": 3374,
+    "initial_relevant_error_lines": 0,
+    "final_relevant_error_lines": 0,
+    "patterns": [
+      "[Error :",
+      "Unhandled",
+      "NullReferenceException",
+      "Crash!!!"
+    ]
+  },
+  "live_observations": {
+    "started_track": "Lets Go to Barros 84",
+    "automatic_transition_seen": "Twelve Slices of Christmas",
+    "post_soak_track": "Barros Calling Red White Mashup",
+    "queue_count": 5,
+    "library_count": 5,
+    "stock_music_off": true,
+    "barros_music_on": true,
+    "waveform_and_pause_state_visible": true
+  },
+  "truth_boundary": "Process, health, log, queue-transition and visible playback-state stability passed. Subjective audible smoothness cannot be judged by the automation channel and still benefits from the user's listening confirmation."
+}

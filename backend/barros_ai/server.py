@@ -9,14 +9,16 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 
 from .attachments import AttachmentError, normalize_attachment, normalize_attachments
 from .history import HistoryStore
 from .inspiration import InspirationLibrary
+from .music import MusicLibrary
 from .orchestrator import PizzaOrchestrator
 from .proof_status import ProofStatusError, latest_proof_status
 from .providers import ProviderClient, ProviderError, ProviderSettings
+from .tts import AzureSpeechService
 
 
 MAX_BODY = 16 * 1024 * 1024
@@ -31,6 +33,9 @@ class App:
         self.provider = ProviderClient(self.settings)
         self.inspiration = InspirationLibrary(root / "data" / "inspiration")
         self.orchestrator = PizzaOrchestrator(self.provider, self.inspiration)
+        self.tts = AzureSpeechService(self.settings)
+        assets_root = root.parent / "assets" if (root.parent / "assets").is_dir() else root / "assets"
+        self.music = MusicLibrary(assets_root / "music")
         self.history = HistoryStore(root / "data" / "conversation_history.json")
         self.started = time.time()
         self.server: ThreadingHTTPServer | None = None
@@ -39,6 +44,7 @@ class App:
         self.settings = ProviderSettings.load(self.settings_path)
         self.provider = ProviderClient(self.settings)
         self.orchestrator = PizzaOrchestrator(self.provider, self.inspiration)
+        self.tts = AzureSpeechService(self.settings)
 
     def _contract_path(self) -> Path:
         """Resolve the RC contract in source and installed layouts.
@@ -128,7 +134,7 @@ class App:
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "BarrosPizzaAI/1.2"
+    server_version = "BarrosPizzaAI/1.4"
 
     @property
     def app(self) -> App:
@@ -155,6 +161,18 @@ class Handler(BaseHTTPRequestHandler):
             raise ValueError("Request JSON must be an object.")
         return payload
 
+    def _file(self, path: Path) -> None:
+        content_type = {".ogg": "audio/ogg", ".mp3": "audio/mpeg", ".wav": "audio/wav", ".mp4": "video/mp4"}.get(path.suffix.casefold(), "application/octet-stream")
+        size = path.stat().st_size
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(size))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        with path.open("rb") as stream:
+            while chunk := stream.read(1024 * 1024):
+                self.wfile.write(chunk)
+
     def do_OPTIONS(self) -> None:  # noqa: N802
         self.send_response(HTTPStatus.NO_CONTENT)
         self.send_header("Access-Control-Allow-Origin", "*")
@@ -164,6 +182,16 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:  # noqa: N802
         path = urlparse(self.path).path
+        if path.startswith("/music/playback/"):
+            track = self.app.music.resolve_track(unquote(path[len("/music/playback/"):]))
+            if track is None:
+                self._json(HTTPStatus.NOT_FOUND, {"ok": False, "error": "Music track not found."})
+            else:
+                try:
+                    self._file(self.app.music.prepare_playback(track))
+                except RuntimeError as exc:
+                    self._json(HTTPStatus.SERVICE_UNAVAILABLE, {"ok": False, "error": str(exc)})
+            return
         if path == "/health":
             # A text provider being online does not prove that it implements
             # OpenAI's audio-transcription route. Require an explicit endpoint
@@ -175,7 +203,7 @@ class Handler(BaseHTTPRequestHandler):
                 {
                     "ok": True,
                     "name": "Barro's AI Pizza Designer",
-                    "version": "1.2.0-rc1",
+                    "version": "1.4.0-rc1",
                     "provider": self.app.settings.provider,
                     "online": self.app.provider.online,
                     "image_parser": "png+jpeg+webp-v1",
@@ -191,7 +219,9 @@ class Handler(BaseHTTPRequestHandler):
                         "proof_results": True,
                         "ingredient_intelligence": True,
                         "inspiration_library": True,
+                        "pizza_art": True,
                         "stt_configured": stt_configured,
+                        "tts_configured": self.app.tts.configured,
                     },
                     "inspiration": inspiration,
                     "stt": {
@@ -200,6 +230,8 @@ class Handler(BaseHTTPRequestHandler):
                         "model": self.app.settings.stt_model,
                         "reachability": "not_probed",
                     },
+                    "tts": self.app.tts.status(),
+                    "music": self.app.music.status(),
                     "uptime_seconds": round(time.time() - self.app.started, 1),
                 },
             )
@@ -261,9 +293,32 @@ class Handler(BaseHTTPRequestHandler):
                 text = self.app.provider.transcribe(base64.b64decode(encoded), str(payload.get("filename", "voice.wav")))
                 self._json(HTTPStatus.OK, {"ok": True, "text": text})
                 return
+            if path == "/speak":
+                audio, profile, clean = self.app.tts.synthesize(
+                    str(payload.get("agent", "")),
+                    str(payload.get("message", "")),
+                    str(payload.get("voice", "")),
+                )
+                self._json(
+                    HTTPStatus.OK,
+                    {
+                        "ok": True,
+                        "agent": profile.agent,
+                        "voice": profile.voice,
+                        "locale": profile.locale,
+                        "label": profile.label,
+                        "spoken_text": clean,
+                        "mime_type": "audio/wav",
+                        "audio_base64": base64.b64encode(audio).decode("ascii"),
+                    },
+                )
+                return
             if path == "/reload":
                 self.app.reload()
                 self._json(HTTPStatus.OK, {"ok": True, "provider": self.app.settings.provider})
+                return
+            if path == "/music/refresh":
+                self._json(HTTPStatus.OK, self.app.music.refresh())
                 return
             if path == "/shutdown":
                 self._json(HTTPStatus.OK, {"ok": True})

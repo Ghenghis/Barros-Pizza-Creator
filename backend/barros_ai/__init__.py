@@ -1,3 +1,3 @@
 """Barro's Pizza Creator AI backend."""
 
-__version__ = "1.2.0-rc1"
+__version__ = "1.4.0-rc1"

@@ -83,6 +83,64 @@ class RecipeIngredient:
 
 
 @dataclass(slots=True)
+class ArtworkPlacement:
+    ingredient_id: str
+    size: str = "Small"
+    x: float = 0.0
+    y: float = 0.0
+    rotation: float = 0.0
+    layer: int = 0
+    role: str = ""
+
+    @classmethod
+    def from_dict(cls, value: dict[str, Any]) -> "ArtworkPlacement":
+        return cls(
+            ingredient_id=str(value.get("ingredient_id", value.get("id", ""))).strip(),
+            size=normalize_size(value.get("size")),
+            x=float(value.get("x", 0) or 0),
+            y=float(value.get("y", value.get("z", 0)) or 0),
+            rotation=float(value.get("rotation", 0) or 0),
+            layer=int(value.get("layer", 0) or 0),
+            role=str(value.get("role", "")).strip().lower(),
+        )
+
+
+@dataclass(slots=True)
+class ArtworkMetadata:
+    enabled: bool = False
+    template: str = ""
+    subject: str = ""
+    detail: str = "standard"
+    style: str = "mosaic"
+    piece_count: int = 0
+    symmetry: str = "balanced"
+    algorithm: str = ""
+    source: str = ""
+    palette: dict[str, str] = field(default_factory=dict)
+    pixel_map: list[str] = field(default_factory=list)
+
+    @classmethod
+    def from_dict(cls, value: Any) -> "ArtworkMetadata":
+        if not isinstance(value, dict):
+            return cls()
+        palette = value.get("palette") if isinstance(value.get("palette"), dict) else {}
+        pixels = value.get("pixel_map") if isinstance(value.get("pixel_map"), list) else []
+        return cls(
+            enabled=bool(value.get("enabled", True)),
+            template=str(value.get("template", "")).strip().lower(),
+            subject=str(value.get("subject", "")).strip()[:120],
+            detail=str(value.get("detail", "standard")).strip().lower(),
+            style=str(value.get("style", "mosaic")).strip().lower(),
+            piece_count=int(value.get("piece_count", 0) or 0),
+            symmetry=str(value.get("symmetry", "balanced")).strip().lower(),
+            algorithm=str(value.get("algorithm", "")).strip()[:160],
+            source=str(value.get("source", "")).strip()[:80],
+            palette={str(key)[:20]: str(item)[:80] for key, item in palette.items()},
+            pixel_map=[str(row)[:21] for row in pixels[:21]],
+        )
+
+
+@dataclass(slots=True)
 class RecipeScores:
     taste: float = 0.0
     cost: float = 0.0
@@ -104,6 +162,8 @@ class Recipe:
     rationale: str = ""
     warnings: list[str] = field(default_factory=list)
     seed: int = 0
+    placements: list[ArtworkPlacement] = field(default_factory=list)
+    artwork: ArtworkMetadata = field(default_factory=ArtworkMetadata)
 
     @classmethod
     def from_dict(cls, value: dict[str, Any]) -> "Recipe":
@@ -128,6 +188,12 @@ class Recipe:
             rationale=str(value.get("rationale", value.get("why_it_works", ""))).strip(),
             warnings=[str(item) for item in value.get("warnings", [])],
             seed=int(value.get("seed", 0) or 0),
+            placements=[
+                ArtworkPlacement.from_dict(item)
+                for item in value.get("placements", [])
+                if isinstance(item, dict)
+            ][:180],
+            artwork=ArtworkMetadata.from_dict(value.get("artwork")),
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -144,4 +210,3 @@ class AgentOpinion:
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
-

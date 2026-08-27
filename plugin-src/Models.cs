@@ -9,7 +9,8 @@ namespace Barros.PizzaCreator.AI
         Chat,
         Lab,
         Crew,
-        Voice
+        Voice,
+        Media
     }
 
     [Serializable]
@@ -54,6 +55,34 @@ namespace Barros.PizzaCreator.AI
     }
 
     [Serializable]
+    public sealed class AiArtworkPlacement
+    {
+        [JsonProperty("ingredient_id")] public string IngredientId = "";
+        [JsonProperty("size")] public string Size = "Small";
+        [JsonProperty("x")] public float X;
+        [JsonProperty("y")] public float Y;
+        [JsonProperty("rotation")] public float Rotation;
+        [JsonProperty("layer")] public int Layer;
+        [JsonProperty("role")] public string Role = "";
+    }
+
+    [Serializable]
+    public sealed class AiArtworkMetadata
+    {
+        [JsonProperty("enabled")] public bool Enabled;
+        [JsonProperty("template")] public string Template = "";
+        [JsonProperty("subject")] public string Subject = "";
+        [JsonProperty("detail")] public string Detail = "standard";
+        [JsonProperty("style")] public string Style = "precision mosaic";
+        [JsonProperty("piece_count")] public int PieceCount;
+        [JsonProperty("symmetry")] public string Symmetry = "balanced";
+        [JsonProperty("algorithm")] public string Algorithm = "";
+        [JsonProperty("source")] public string Source = "";
+        [JsonProperty("palette")] public Dictionary<string, string> Palette = new Dictionary<string, string>();
+        [JsonProperty("pixel_map")] public List<string> PixelMap = new List<string>();
+    }
+
+    [Serializable]
     public sealed class AiRecipe
     {
         [JsonProperty("name")] public string Name = "AI Pizza";
@@ -65,6 +94,8 @@ namespace Barros.PizzaCreator.AI
         [JsonProperty("rationale")] public string Rationale = "";
         [JsonProperty("warnings")] public List<string> Warnings = new List<string>();
         [JsonProperty("seed")] public int Seed;
+        [JsonProperty("placements")] public List<AiArtworkPlacement> Placements = new List<AiArtworkPlacement>();
+        [JsonProperty("artwork")] public AiArtworkMetadata Artwork = new AiArtworkMetadata();
     }
 
     [Serializable]
@@ -132,6 +163,7 @@ namespace Barros.PizzaCreator.AI
         [JsonProperty("current_pizza")] public string CurrentPizza = "";
         [JsonProperty("attachments")] public List<AiAttachment> Attachments = new List<AiAttachment>();
         [JsonProperty("use_inspiration_library")] public bool UseInspirationLibrary;
+        [JsonProperty("focus_agent")] public string FocusAgent = "";
     }
 
     [Serializable]
@@ -146,6 +178,55 @@ namespace Barros.PizzaCreator.AI
     {
         [JsonProperty("ok")] public bool Ok;
         [JsonProperty("text")] public string Text = "";
+        [JsonProperty("error")] public string Error = "";
+    }
+
+    [Serializable]
+    public sealed class SpeechRequest
+    {
+        [JsonProperty("agent")] public string Agent = "";
+        [JsonProperty("message")] public string Message = "";
+        [JsonProperty("voice")] public string Voice = "";
+    }
+
+    [Serializable]
+    public sealed class SpeechResponse
+    {
+        [JsonProperty("ok")] public bool Ok;
+        [JsonProperty("agent")] public string Agent = "";
+        [JsonProperty("voice")] public string Voice = "";
+        [JsonProperty("locale")] public string Locale = "";
+        [JsonProperty("label")] public string Label = "";
+        [JsonProperty("spoken_text")] public string SpokenText = "";
+        [JsonProperty("mime_type")] public string MimeType = "";
+        [JsonProperty("audio_base64")] public string AudioBase64 = "";
+        [JsonProperty("error")] public string Error = "";
+    }
+
+    [Serializable]
+    public sealed class MusicImportFailure
+    {
+        [JsonProperty("file")] public string File = "";
+        [JsonProperty("error")] public string Error = "";
+    }
+
+    [Serializable]
+    public sealed class MusicImportResponse
+    {
+        [JsonProperty("ok")] public bool Ok;
+        [JsonProperty("converter_available")] public bool ConverterAvailable;
+        [JsonProperty("track_count")] public int TrackCount;
+        [JsonProperty("import_count")] public int ImportCount;
+        [JsonProperty("converted")] public int Converted;
+        [JsonProperty("copied")] public int Copied;
+        [JsonProperty("skipped")] public int Skipped;
+        [JsonProperty("inbox")] public string Inbox = "";
+        [JsonProperty("quality_profile")] public string QualityProfile = "";
+        [JsonProperty("sample_rate_hz")] public int SampleRateHz;
+        [JsonProperty("loudness_target_lufs")] public float LoudnessTargetLufs;
+        [JsonProperty("true_peak_dbfs")] public float TruePeakDbfs;
+        [JsonProperty("report")] public string Report = "";
+        [JsonProperty("failed")] public List<MusicImportFailure> Failed = new List<MusicImportFailure>();
         [JsonProperty("error")] public string Error = "";
     }
 

@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "contract_id": "barros-pc3-rc1",
   "product": "Barro's AI Pizza Designer for Pizza Connection 3 - Pizza Creator",
-  "release": "1.2.0-rc1",
+  "release": "1.4.0-rc1",
   "target": {
     "game_path_default": "S:\\Unity_Games\\PC3 - Pizza Creator",
     "game_version": "0.11.272",
@@ -61,7 +61,8 @@
       "gates": [
         {"id": "UI-301", "requirement": "A fifth tab is registered and remains inside the stock side rail", "release_required": true, "automation": "runtime marker plus screenshot", "evidence": "ui-tab.png and runtime-events.jsonl"},
         {"id": "UI-302", "requirement": "BARRO'S PIZZA CREATOR header aspect-fits the title strip without covering the close button", "release_required": true, "automation": "runtime geometry marker plus screenshot", "evidence": "ui-header.png and runtime-events.jsonl"},
-        {"id": "UI-303", "requirement": "The stock Bakehouse header returns on stock tabs", "release_required": true, "automation": "runtime marker plus screenshot", "evidence": "ui-stock-header.png and runtime-events.jsonl"}
+        {"id": "UI-303", "requirement": "The stock Bakehouse header returns on stock tabs", "release_required": true, "automation": "runtime marker plus screenshot", "evidence": "ui-stock-header.png and runtime-events.jsonl"},
+        {"id": "UI-304", "requirement": "The compact two-row Chat actions and Pizza Art Studio controls remain inside the fitted panel without covering native tabs", "release_required": true, "automation": "runtime screenshot and fitted-panel marker", "evidence": "docs/evidence/live-v13-santa-art-panel-2026-08-27.png and runtime-events.jsonl"}
       ]
     },
     {
@@ -82,7 +83,8 @@
       "runs_on": "Windows game runtime with configured STT",
       "gates": [
         {"id": "VOX-501", "requirement": "At least one Windows microphone device is enumerated and capture returns non-empty PCM", "release_required": true, "automation": "runtime event", "evidence": "runtime-events.jsonl"},
-        {"id": "VOX-502", "requirement": "The configured speech provider returns a non-empty transcript used as a recipe prompt", "release_required": true, "automation": "runtime event", "evidence": "runtime-events.jsonl and voice.png"}
+        {"id": "VOX-502", "requirement": "The configured speech provider returns a non-empty transcript used as a recipe prompt", "release_required": true, "automation": "runtime event", "evidence": "runtime-events.jsonl and voice.png"},
+        {"id": "VOX-503", "requirement": "When optional Azure agent speech is configured and unmuted, one focused design-agent reply returns WAV audio and plays through Unity", "release_required": false, "automation": "runtime event plus operator audio confirmation", "evidence": "runtime-events.jsonl and agent-voice.png"}
       ]
     },
     {
@@ -94,6 +96,41 @@
         {"id": "VIS-602", "requirement": "Live Lab screenshot captured and compared with 02_lab.png", "release_required": true, "automation": "scripts/Compare-ReferenceImages.ps1", "evidence": "lab comparison report"},
         {"id": "VIS-603", "requirement": "Live Crew screenshot captured and compared with 03_crew.png", "release_required": true, "automation": "scripts/Compare-ReferenceImages.ps1", "evidence": "crew comparison report"},
         {"id": "VIS-604", "requirement": "Live Voice screenshot captured and compared with 04_voice.png", "release_required": true, "automation": "scripts/Compare-ReferenceImages.ps1", "evidence": "voice comparison report"}
+      ]
+    },
+    {
+      "id": "L7",
+      "name": "Precision pizza artwork",
+      "runs_on": "portable tests and Windows game runtime",
+      "gates": [
+        {"id": "ART-701", "requirement": "All seven built-in templates and custom provider pixel maps compile to valid catalog ingredients with no more than 180 exact placements", "release_required": true, "automation": "python -m unittest discover -s tests -p test_v13_art_voice.py", "evidence": "backend-tests.txt"},
+        {"id": "ART-702", "requirement": "A high-detail artwork preview loads through IPizzaCreatorService with retained runtime evidence and a recognizable ingredient picture", "release_required": true, "automation": "guided runtime preview", "evidence": "runtime-events.jsonl and docs/evidence/live-v13-santa-art-preview-2026-08-27.png"},
+        {"id": "ART-703", "requirement": "Draft, Standard and High visibly change real placement counts while Remix remains deterministic by seed", "release_required": true, "automation": "portable tests plus guided runtime comparison", "evidence": "backend-tests.txt and pizza-art-detail-comparison.png"}
+      ]
+    },
+    {
+      "id": "L8",
+      "name": "Barro's media deck",
+      "runs_on": "portable tests and Windows game runtime",
+      "gates": [
+        {"id": "MED-801", "requirement": "The Media tab lists and individually plays all five bundled Barro's OGG tracks with play, pause, stop, previous, next, seek, shuffle, repeat, volume, and tone controls", "release_required": true, "automation": "portable contract checks plus guided runtime playback", "evidence": "backend-tests.txt, runtime-events.jsonl, and media.png"},
+        {"id": "MED-802", "requirement": "Barro's music replaces stock Pizza Creator music by default and the Stock button reversibly restores the original soundtrack", "release_required": true, "automation": "guided runtime switch comparison", "evidence": "runtime-events.jsonl and media.png"},
+        {"id": "MED-803", "requirement": "Media playback observes a real started state before advancing and releases the previous decoded clip so playback cannot rapidly cycle or accumulate tracks", "release_required": true, "automation": "portable source contract plus ten-minute runtime soak", "evidence": "backend-tests.txt, BepInEx-LogOutput.log, and media-soak-2026-08-27.json"},
+        {"id": "MED-804", "requirement": "MP3, WAV, and compatible audio dropped into the Media inbox can be refreshed into Unity-friendly OGG while MP4 lyric video remains available", "release_required": false, "automation": "portable import tests plus guided runtime import", "evidence": "backend-tests.txt and runtime-events.jsonl"},
+        {"id": "MED-805", "requirement": "The custom Media panel consumes pointer events so its controls cannot activate hidden stock controls underneath", "release_required": true, "automation": "portable source contract plus guided runtime clicks", "evidence": "backend-tests.txt and media-controls.png"},
+        {"id": "MED-806", "requirement": "The Media tab keeps all files in a non-destructive library while a saved queue controls inclusion, order, shuffle, repeat, volume, tone, auto-import and preferred startup soundtrack", "release_required": true, "automation": "portable contract checks plus guided save/reload comparison", "evidence": "backend-tests.txt, music-playlist.json, runtime-events.jsonl, and media-queue.png"},
+        {"id": "MED-807", "requirement": "Bundled and imported OGG output is audio-only 48 kHz stereo Vorbis q8, fully decode-valid, timestamp-repaired, loudness-targeted and true-peak protected with retained conversion hashes", "release_required": true, "automation": "FFmpeg stream/decode/loudness audit plus import report", "evidence": "audio-quality-audit.json and runtime-auto-import-report.json"},
+        {"id": "MED-808", "requirement": "When configured agent voice begins, any active Barro's or Stock soundtrack pauses one second before speech and resumes only after speech finishes if it had been playing", "release_required": false, "automation": "portable contract plus configured Azure runtime event sequence", "evidence": "backend-tests.txt and runtime-events.jsonl"}
+      ]
+    },
+    {
+      "id": "L9",
+      "name": "Guided design and creative tools",
+      "runs_on": "portable tests and Windows game runtime",
+      "gates": [
+        {"id": "AIX-901", "requirement": "Guided pizza sessions offer 6, 8, 12, and 18 steps with Professional, Playful, and Goofball interaction modes", "release_required": true, "automation": "portable contract plus guided runtime control checks", "evidence": "backend-tests.txt and chat-guided.png"},
+        {"id": "AIX-902", "requirement": "Symmetry Studio, Ingredient Audition, Design Checkpoints, Contrast Coach, and Pizza DNA are visible and respond without leaving the fitted panel", "release_required": true, "automation": "portable contract plus guided runtime control checks", "evidence": "backend-tests.txt, lab-tools.png, and runtime-events.jsonl"},
+        {"id": "AIX-903", "requirement": "The Voice and Crew screens expose 24 allowlisted English Azure voices without displaying or persisting a speech key", "release_required": true, "automation": "portable voice tests plus guided runtime screen check", "evidence": "backend-tests.txt and voice-24.png"}
       ]
     }
   ]

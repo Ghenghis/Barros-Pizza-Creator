@@ -138,7 +138,7 @@ class InspirationLibraryTests(unittest.TestCase):
                 online = True
                 attachments: list[dict] = []
 
-                def complete_multimodal(self, system, user, attachments, temperature=0.65):
+                def complete_multimodal(self, system, user, attachments, temperature=0.65, **_kwargs):
                     self.attachments = attachments
                     return json.dumps(
                         {

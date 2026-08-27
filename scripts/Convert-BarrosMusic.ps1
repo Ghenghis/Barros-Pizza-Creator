@@ -4,11 +4,15 @@ param(
     [string]$OutputDirectory = "",
     [string]$FfmpegPath = "",
     [ValidateRange(-1.0, 10.0)]
-    [double]$Quality = 5.0,
+    [double]$Quality = 8.0,
     [ValidateSet(32000, 44100, 48000)]
-    [int]$SampleRate = 44100,
+    [int]$SampleRate = 48000,
     [ValidateSet(1, 2)]
     [int]$Channels = 2,
+    [ValidateRange(-24.0, -8.0)]
+    [double]$LoudnessTarget = -14.0,
+    [ValidateRange(-3.0, -0.1)]
+    [double]$TruePeak = -1.0,
     [switch]$Overwrite,
     [switch]$IncludeExistingOgg
 )
@@ -120,7 +124,9 @@ foreach ($input in $inputs) {
         $arguments = @(
             "-hide_banner", "-nostdin", "-v", "error", "-y",
             "-i", $input.FullName,
-            "-map", "0:a:0", "-vn", "-map_metadata", "0",
+            "-map", "0:a:0", "-vn", "-sn", "-dn",
+            "-map_metadata", "-1", "-map_chapters", "-1",
+            "-af", ("aresample={0}:async=1:first_pts=0,loudnorm=I={1}:TP={2}:LRA=11" -f $SampleRate, $LoudnessTarget.ToString([System.Globalization.CultureInfo]::InvariantCulture), $TruePeak.ToString([System.Globalization.CultureInfo]::InvariantCulture)),
             "-c:a", "libvorbis", "-q:a", $Quality.ToString([System.Globalization.CultureInfo]::InvariantCulture),
             "-ar", $SampleRate.ToString(), "-ac", $Channels.ToString(),
             $temporary
@@ -173,6 +179,8 @@ $manifest = [ordered]@{
     quality = $Quality
     sample_rate_hz = $SampleRate
     channels = $Channels
+    loudness_target_lufs = $LoudnessTarget
+    true_peak_dbfs = $TruePeak
     counts = [ordered]@{
         discovered = $inputs.Count
         converted = $converted
