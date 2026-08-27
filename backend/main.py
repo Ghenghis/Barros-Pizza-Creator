@@ -9,7 +9,11 @@ from barros_ai.server import run
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Local sidecar for Barro's AI Pizza Designer")
-    parser.add_argument("--host", default="127.0.0.1")
+    parser.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="Loopback only. Use an SSH local-forward for a VPS; direct remote binding is blocked.",
+    )
     parser.add_argument("--port", type=int, default=48173)
     parser.add_argument("--settings", default="")
     args = parser.parse_args()
@@ -23,4 +27,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-

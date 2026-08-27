@@ -182,7 +182,11 @@ namespace Barros.PizzaCreator.AI
             {
                 Rect modeRect = new Rect(16f + i * 153f, 55f, 145f, 39f);
                 GUIStyle style = (int)mode == i ? activeButtonStyle : buttonStyle;
-                if (GUI.Button(modeRect, labels[i], style)) SetMode((DesignerMode)i);
+                string modeHelp = i == 0 ? "Chat step by step with the Barro's pizza designer."
+                    : i == 1 ? "Generate and compare three game-valid ideas."
+                    : i == 2 ? "Ask the four specialist agents for a balanced draft."
+                    : "Use the Windows microphone, then review the transcript before applying.";
+                if (GUI.Button(modeRect, Help(labels[i], modeHelp), style)) SetMode((DesignerMode)i);
             }
 
             Rect content = new Rect(14f, 105f, 612f, 755f);
@@ -197,6 +201,20 @@ namespace Barros.PizzaCreator.AI
             GUILayout.EndArea();
 
             DrawComposer(new Rect(14f, 868f, 612f, 168f));
+            DrawHoverHelp();
+        }
+
+        private static GUIContent Help(string label, string tooltip)
+        {
+            return new GUIContent(label, tooltip);
+        }
+
+        private void DrawHoverHelp()
+        {
+            string tooltip = GUI.tooltip;
+            if (string.IsNullOrEmpty(tooltip)) return;
+            GUI.Box(new Rect(14f, 832f, 612f, 29f), GUIContent.none, cardStyle);
+            GUI.Label(new Rect(24f, 837f, 592f, 20f), tooltip, smallStyle);
         }
 
         private void DrawConnection(Rect rect)
@@ -238,7 +256,10 @@ namespace Barros.PizzaCreator.AI
             for (int i = 0; i < actions.Length; i++)
             {
                 GUIStyle style = chatAction == actions[i] ? activeButtonStyle : buttonStyle;
-                if (GUILayout.Button(actions[i], style, GUILayout.Height(36f))) chatAction = actions[i];
+                string actionHelp = i == 0 ? "Build a validated pizza with your guidance."
+                    : i == 1 ? "Ask for a distinctive game-valid draft automatically."
+                    : "Improve the current pizza while preserving its main idea.";
+                if (GUILayout.Button(Help(actions[i], actionHelp), style, GUILayout.Height(36f))) chatAction = actions[i];
             }
             GUILayout.EndHorizontal();
             GUILayout.Space(8f);
@@ -283,7 +304,7 @@ namespace Barros.PizzaCreator.AI
             if (GUILayout.Button("+", buttonStyle, GUILayout.Width(42f), GUILayout.Height(30f))) priceCeiling = Mathf.Min(50f, priceCeiling + 1f);
             GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
-            if (GUILayout.Button("SURPRISE ME — GENERATE 3", primaryButtonStyle, GUILayout.Height(52f)))
+            if (GUILayout.Button(Help("SURPRISE ME — GENERATE 3", "Generate three validated candidates from the selected heat, shape and price limits."), primaryButtonStyle, GUILayout.Height(52f)))
             {
                 if (string.IsNullOrEmpty(prompt)) prompt = "Create three distinctive crowd-pleasing pizzas.";
                 Submit("/lab", 3);
@@ -304,7 +325,7 @@ namespace Barros.PizzaCreator.AI
                 GUILayout.BeginVertical(cardStyle);
                 GUILayout.Label("Why it works", subtitleStyle);
                 GUILayout.Label(recipes[selectedRecipe].Rationale, bodyStyle);
-                if (GUILayout.Button("Generate 3 more", buttonStyle, GUILayout.Height(38f))) Submit("/lab", 3);
+                if (GUILayout.Button(Help("Generate 3 more", "Keep the same constraints and request three different candidates."), buttonStyle, GUILayout.Height(38f))) Submit("/lab", 3);
                 GUILayout.EndVertical();
             }
         }
@@ -315,8 +336,8 @@ namespace Barros.PizzaCreator.AI
             GUILayout.BeginHorizontal();
             GUILayout.Label(recipe.Name, subtitleStyle);
             GUILayout.FlexibleSpace();
-            if (GUILayout.Button("Preview", buttonStyle, GUILayout.Width(104f), GUILayout.Height(34f))) Preview(recipe, index);
-            if (GUILayout.Button("Use", primaryButtonStyle, GUILayout.Width(90f), GUILayout.Height(34f))) Apply(recipe, index);
+            if (GUILayout.Button(Help("Preview", "Temporarily show this candidate on the live pizza without saving it."), buttonStyle, GUILayout.Width(104f), GUILayout.Height(34f))) Preview(recipe, index);
+            if (GUILayout.Button(Help("Use", "Apply this validated candidate to the live Creator editor; saving remains a separate action."), primaryButtonStyle, GUILayout.Width(90f), GUILayout.Height(34f))) Apply(recipe, index);
             GUILayout.EndHorizontal();
             DrawCompactScore("Taste", recipe.Scores.Taste, green);
             DrawCompactScore("Cost", CostScore(recipe.Scores.Cost), amber);
@@ -337,7 +358,7 @@ namespace Barros.PizzaCreator.AI
                 DrawAgentReady("Cost Manager", "Keeping ingredients efficient.");
                 DrawAgentReady("Customer Scout", "Tracking broad preferences.");
                 DrawAgentReady("Creative Director", "Ensuring a unique signature.");
-                if (GUILayout.Button("ASK THE CREW", primaryButtonStyle, GUILayout.Height(52f))) Submit("/crew", 1);
+                if (GUILayout.Button(Help("ASK THE CREW", "Ask Flavor, Cost, Customer and Creative agents to produce one reconciled draft."), primaryButtonStyle, GUILayout.Height(52f))) Submit("/crew", 1);
                 GUILayout.EndVertical();
                 return;
             }
@@ -368,11 +389,11 @@ namespace Barros.PizzaCreator.AI
             if (recipes.Count > 0)
             {
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Balanced", buttonStyle, GUILayout.Height(35f))) ApplyCrewPreset("balanced");
-                if (GUILayout.Button("Max flavor", activeButtonStyle, GUILayout.Height(35f))) ApplyCrewPreset("flavor");
-                if (GUILayout.Button("Max profit", buttonStyle, GUILayout.Height(35f))) ApplyCrewPreset("profit");
+                if (GUILayout.Button(Help("Balanced", "Balance live game cost and score facts without claiming a stock optimum."), buttonStyle, GUILayout.Height(35f))) ApplyCrewPreset("balanced");
+                if (GUILayout.Button(Help("Max flavor", "Prefer the crew's flavor direction, then recompute with live game services."), activeButtonStyle, GUILayout.Height(35f))) ApplyCrewPreset("flavor");
+                if (GUILayout.Button(Help("Max profit", "Prefer lower cost and a higher profit factor, then recompute live facts."), buttonStyle, GUILayout.Height(35f))) ApplyCrewPreset("profit");
                 GUILayout.EndHorizontal();
-                if (GUILayout.Button("APPLY CREW RECIPE", primaryButtonStyle, GUILayout.Height(52f))) Apply(recipes[0], 0);
+                if (GUILayout.Button(Help("APPLY CREW RECIPE", "Apply the validated crew draft to the editor. This does not save automatically."), primaryButtonStyle, GUILayout.Height(52f))) Apply(recipes[0], 0);
             }
         }
 
@@ -397,7 +418,7 @@ namespace Barros.PizzaCreator.AI
             Rect waveRect = GUILayoutUtility.GetRect(560f, 112f, GUILayout.ExpandWidth(true));
             DrawWaveform(waveRect);
             string micLabel = recording ? "STOP & TRANSCRIBE" : "START LISTENING";
-            if (GUILayout.Button(micLabel, recording ? activeButtonStyle : primaryButtonStyle, GUILayout.Height(52f)))
+            if (GUILayout.Button(Help(micLabel, "Record from the Windows default microphone for up to 30 seconds, then transcribe for review."), recording ? activeButtonStyle : primaryButtonStyle, GUILayout.Height(52f)))
             {
                 if (recording) StopVoiceAndTranscribe(); else StartVoice();
             }
@@ -446,7 +467,7 @@ namespace Barros.PizzaCreator.AI
             GUILayout.Label(recipe.Name, titleStyle);
             GUILayout.FlexibleSpace();
             GUILayout.Label(recipe.Shape, tagStyle);
-            if (GUILayout.Button(editRecipe ? "DONE" : "EDIT", editRecipe ? activeButtonStyle : buttonStyle, GUILayout.Width(72f), GUILayout.Height(31f))) editRecipe = !editRecipe;
+            if (GUILayout.Button(Help(editRecipe ? "DONE" : "EDIT", "Edit planning grams, piece size and placement distribution before preview."), editRecipe ? activeButtonStyle : buttonStyle, GUILayout.Width(72f), GUILayout.Height(31f))) editRecipe = !editRecipe;
             GUILayout.EndHorizontal();
             GUILayout.Label(recipe.Summary, bodyStyle);
             GUILayout.Space(5f);
@@ -487,13 +508,13 @@ namespace Barros.PizzaCreator.AI
             if (showActions)
             {
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button("PREVIEW ON PIZZA", buttonStyle, GUILayout.Height(48f))) Preview(recipe, recipes.IndexOf(recipe));
-                if (GUILayout.Button("APPLY RECIPE", primaryButtonStyle, GUILayout.Height(48f))) Apply(recipe, recipes.IndexOf(recipe));
+                if (GUILayout.Button(Help("PREVIEW ON PIZZA", "Temporarily load this draft into the live pizza editor without saving."), buttonStyle, GUILayout.Height(48f))) Preview(recipe, recipes.IndexOf(recipe));
+                if (GUILayout.Button(Help("APPLY RECIPE", "Apply the validated recipe to the editor. Use Save separately after review."), primaryButtonStyle, GUILayout.Height(48f))) Apply(recipe, recipes.IndexOf(recipe));
                 GUILayout.EndHorizontal();
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Save to recipe book", buttonStyle, GUILayout.Height(38f))) SaveToBook();
-                if (GUILayout.Button("Export stock JPG", buttonStyle, GUILayout.Height(38f))) ExportJpeg();
-                if (GUILayout.Button("Start over", buttonStyle, GUILayout.Height(38f))) StartOver();
+                if (GUILayout.Button(Help("Save to recipe book", "Use the Creator's native recipe save service and retain the save receipt."), buttonStyle, GUILayout.Height(38f))) SaveToBook();
+                if (GUILayout.Button(Help("Export stock JPG", "Use the Creator's stock ScreenCapture path; the JPG is visual output, not editable recipe data."), buttonStyle, GUILayout.Height(38f))) ExportJpeg();
+                if (GUILayout.Button(Help("Start over", "Clear the AI draft and attachments; it does not delete a saved stock recipe."), buttonStyle, GUILayout.Height(38f))) StartOver();
                 GUILayout.EndHorizontal();
             }
             GUILayout.EndVertical();
@@ -531,21 +552,21 @@ namespace Barros.PizzaCreator.AI
             GUI.Label(new Rect(rect.x + 10f, rect.y + 7f, rect.width - 20f, 22f), status, smallStyle);
             prompt = GUI.TextArea(new Rect(rect.x + 10f, rect.y + 33f, rect.width - 130f, 77f), prompt, 800, inputStyle);
             GUI.enabled = !busy && game != null && game.Ready;
-            if (GUI.Button(new Rect(rect.x + rect.width - 111f, rect.y + 33f, 101f, 77f), busy ? "WORKING…" : "SEND  ➜", primaryButtonStyle))
+            if (GUI.Button(new Rect(rect.x + rect.width - 111f, rect.y + 33f, 101f, 77f), Help(busy ? "WORKING…" : "SEND  ➜", "Send the prompt and current live catalog/constraints to the configured local sidecar."), primaryButtonStyle))
             {
                 if (mode == DesignerMode.Lab) Submit("/lab", 3);
                 else if (mode == DesignerMode.Crew) Submit("/crew", 1);
                 else Submit("/chat", 1);
             }
             GUI.enabled = true;
-            if (GUI.Button(new Rect(rect.x + 10f, rect.y + 119f, 78f, 39f), "Attach", buttonStyle)) Attach();
-            if (GUI.Button(new Rect(rect.x + 94f, rect.y + 119f, 76f, 39f), recording ? "Stop mic" : "Mic", buttonStyle))
+            if (GUI.Button(new Rect(rect.x + 10f, rect.y + 119f, 78f, 39f), Help("Attach", "Attach a PNG, JPEG, WebP or supported text reference; files are validated before use."), buttonStyle)) Attach();
+            if (GUI.Button(new Rect(rect.x + 94f, rect.y + 119f, 76f, 39f), Help(recording ? "Stop mic" : "Mic", "Use the Windows default microphone; keyboard input always remains available."), buttonStyle))
             {
                 if (recording) StopVoiceAndTranscribe(); else StartVoice();
             }
-            if (GUI.Button(new Rect(rect.x + 176f, rect.y + 119f, 93f, 39f), "History", showHistory ? activeButtonStyle : buttonStyle)) showHistory = !showHistory;
-            if (GUI.Button(new Rect(rect.x + 275f, rect.y + 119f, 91f, 39f), shape, buttonStyle)) CycleShape();
-            if (GUI.Button(new Rect(rect.x + 372f, rect.y + 119f, 88f, 39f), heat, buttonStyle)) CycleHeat();
+            if (GUI.Button(new Rect(rect.x + 176f, rect.y + 119f, 93f, 39f), Help("History", "Show or hide earlier prompts retained by the local sidecar."), showHistory ? activeButtonStyle : buttonStyle)) showHistory = !showHistory;
+            if (GUI.Button(new Rect(rect.x + 275f, rect.y + 119f, 91f, 39f), Help(shape, "Cycle among the exact four Creator dough-shape contracts."), buttonStyle)) CycleShape();
+            if (GUI.Button(new Rect(rect.x + 372f, rect.y + 119f, 88f, 39f), Help(heat, "Cycle the requested heat preference; this is a user constraint, not a stock score."), buttonStyle)) CycleHeat();
             string attachmentText = attachments.Count == 0 ? "No files" : attachments.Count + " attached";
             GUI.Label(new Rect(rect.x + 467f, rect.y + 126f, 132f, 28f), attachmentText, smallStyle);
         }

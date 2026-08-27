@@ -20,6 +20,17 @@ from .providers import ProviderClient, ProviderError, ProviderSettings
 
 MAX_BODY = 16 * 1024 * 1024
 TRUTH_STATES = ("not_run", "pass", "fail", "blocked")
+LOOPBACK_HOSTS = {"127.0.0.1", "::1", "localhost"}
+
+
+def validate_bind_host(host: str) -> str:
+    normalized = (host or "").strip().casefold()
+    if normalized not in LOOPBACK_HOSTS:
+        raise ValueError(
+            "The Creator sidecar is loopback-only. For a VPS, bind 127.0.0.1 on the VPS "
+            "and use an SSH local-forward; direct LAN/Internet exposure is blocked."
+        )
+    return normalized
 
 
 class App:
@@ -140,7 +151,6 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(raw)))
-        self.send_header("Access-Control-Allow-Origin", "*")
         self.end_headers()
         self.wfile.write(raw)
 
@@ -155,7 +165,6 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_OPTIONS(self) -> None:  # noqa: N802
         self.send_response(HTTPStatus.NO_CONTENT)
-        self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.end_headers()
@@ -169,7 +178,8 @@ class Handler(BaseHTTPRequestHandler):
                 {
                     "ok": True,
                     "name": "Barro's AI Pizza Designer",
-                    "version": "1.2.0-rc2",
+                    "version": "1.3.0-rc1",
+                    "network_scope": "loopback_only",
                     "provider": self.app.settings.provider,
                     "online": self.app.provider.online,
                     "image_parser": "png+jpeg+webp-v1",
@@ -265,6 +275,7 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def run(root: Path, settings_path: Path, host: str = "127.0.0.1", port: int = 48173) -> None:
+    host = validate_bind_host(host)
     app = App(root, settings_path)
     server = ThreadingHTTPServer((host, port), Handler)
     server.app = app  # type: ignore[attr-defined]

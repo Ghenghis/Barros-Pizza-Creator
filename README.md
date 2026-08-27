@@ -1,6 +1,6 @@
-# Pizza Connection 3 / Barro's Pizza — Barro's Pizza Creator 1.2 RC2
+# Pizza Connection 3 / Barro's Pizza — Barro's Pizza Creator 1.3 RC1
 
-Version **1.2.0-rc2** is the in-game AI design layer for the exact standalone Windows x64 **Pizza Connection 3 - Pizza Creator 0.11.272** binary profile.
+Version **1.3.0-rc1** is the in-game AI design layer for the exact standalone Windows x64 **Pizza Connection 3 - Pizza Creator 0.11.272** binary profile. It adds beginner hover help, loopback-only VPS routing and explicit Windows installer/portable/headless package contracts while keeping all Windows runtime gates pending until retained proof exists.
 
 The ecosystem-facing brand is **Pizza Connection 3 / Barro's Pizza**. The technical Creator target remains the original standalone executable/data/assembly identity because changing those names would invalidate reverse-engineering and proof contracts.
 
@@ -176,7 +176,7 @@ The shared release line is tracked by:
 
 - `contracts/ecosystem.acceptance.json` — base three-project gates;
 - `contracts/ecosystem.image.acceptance.json` — PNG/JPEG/image-handoff gates;
-- `contracts/ecosystem.release.acceptance.json` — Creator 1.2 / Workbench 2.3 / Studio 1.2 release overlay.
+- `contracts/ecosystem.release.acceptance.json` — Creator 1.3 / Workbench 2.5 / Studio 1.4 release overlay.
 
 Both Workbench v2.3 and Studio v1.2 expose the same conceptual **ecosystem audit**. It reports readiness/attention and never substitutes for retained Creator All-stage runtime certification.
 
