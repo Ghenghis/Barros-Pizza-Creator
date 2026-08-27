@@ -6,6 +6,7 @@ import os
 import random
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 import uuid
 from dataclasses import dataclass
@@ -24,8 +25,14 @@ class ProviderSettings:
     env_file: str = "G:\\private\\.env.openai"
     timeout_seconds: int = 90
     retries: int = 2
+    stt_provider: str = "disabled"
     stt_endpoint: str = ""
     stt_model: str = "whisper-1"
+    stt_region: str = ""
+    stt_language: str = "en-US"
+    stt_key: str = ""
+    stt_key_env: str = "AZURE_SPEECH_KEY"
+    stt_key_file: str = ""
     tts_provider: str = "disabled"
     tts_endpoint: str = ""
     tts_region: str = ""
@@ -94,6 +101,31 @@ class ProviderSettings:
                     return value.strip().strip('"').strip("'")
         return ""
 
+    def resolved_stt_key(self) -> str:
+        if self.stt_key:
+            return self.stt_key.strip()
+        if self.stt_key_env and os.getenv(self.stt_key_env):
+            return str(os.getenv(self.stt_key_env)).strip()
+        key_path = Path(os.path.expandvars(self.stt_key_file)) if self.stt_key_file else None
+        if key_path and key_path.exists():
+            value = key_path.read_text(encoding="utf-8-sig", errors="replace").strip()
+            if "=" in value and "\n" not in value:
+                key, candidate = value.split("=", 1)
+                if not self.stt_key_env or key.strip() == self.stt_key_env:
+                    value = candidate.strip().strip('"').strip("'")
+            if value:
+                return value
+        env_path = Path(os.path.expandvars(self.env_file)) if self.env_file else None
+        if env_path and env_path.exists():
+            for line in env_path.read_text(encoding="utf-8-sig", errors="replace").splitlines():
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, value = line.split("=", 1)
+                if key.strip() == self.stt_key_env:
+                    return value.strip().strip('"').strip("'")
+        return ""
+
 
 class ProviderError(RuntimeError):
     pass
@@ -126,6 +158,40 @@ class ProviderClient:
     @property
     def online(self) -> bool:
         return self.settings.provider.casefold() not in {"", "offline", "none"}
+
+    @property
+    def stt_configured(self) -> bool:
+        provider = self._stt_provider()
+        if provider == "azure":
+            has_route = bool(
+                str(self.settings.stt_endpoint or "").strip()
+                or str(self.settings.stt_region or "").strip()
+                or str(self.settings.tts_region or "").strip()
+            )
+            return has_route and bool(self.settings.resolved_stt_key())
+        if provider in {"openai", "openai-compatible", "whisper"}:
+            return bool(str(self.settings.stt_endpoint or "").strip())
+        return False
+
+    def _stt_provider(self) -> str:
+        provider = str(self.settings.stt_provider or "").strip().casefold()
+        if provider in {"", "disabled", "none"} and str(self.settings.stt_endpoint or "").strip():
+            return "openai-compatible"
+        return provider or "disabled"
+
+    def stt_status(self) -> dict[str, object]:
+        provider = self._stt_provider()
+        region = str(self.settings.stt_region or self.settings.tts_region or "").strip()
+        return {
+            "provider": provider,
+            "configured": self.stt_configured,
+            "dedicated_endpoint_configured": bool(str(self.settings.stt_endpoint or "").strip()),
+            "region": region,
+            "language": str(self.settings.stt_language or "en-US").strip() or "en-US",
+            "model": self.settings.stt_model,
+            "key_configured": bool(self.settings.resolved_stt_key()) if provider == "azure" else bool(self.settings.resolved_key()),
+            "reachability": "not_probed",
+        }
 
     def complete(
         self,
@@ -337,6 +403,12 @@ class ProviderClient:
         return str(response["content"][0]["text"])
 
     def transcribe(self, wav: bytes, filename: str = "voice.wav") -> str:
+        stt_provider = self._stt_provider()
+        if stt_provider == "azure":
+            return self._transcribe_azure(wav)
+        legacy_text_provider_fallback = stt_provider in {"disabled", "none", ""} and self.online
+        if not self.stt_configured and not legacy_text_provider_fallback:
+            raise ProviderError("Voice transcription is not configured.")
         endpoint = (self.settings.stt_endpoint or self.settings.endpoint).rstrip("/")
         if endpoint.endswith("/v1"):
             endpoint += "/audio/transcriptions"
@@ -376,3 +448,54 @@ class ProviderClient:
         )
         response = json.loads(raw.decode("utf-8"))
         return str(response.get("text", "")).strip()
+
+    def _transcribe_azure(self, wav: bytes) -> str:
+        if not self.stt_configured:
+            raise ProviderError(
+                "Azure voice input is not configured. Set stt_provider, stt_region, "
+                "and the AZURE_SPEECH_KEY environment variable."
+            )
+        endpoint = str(self.settings.stt_endpoint or "").strip()
+        if not endpoint:
+            region = str(self.settings.stt_region or self.settings.tts_region or "").strip()
+            endpoint = "https://%s.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1" % region
+        query = urllib.parse.urlencode(
+            {
+                "language": str(self.settings.stt_language or "en-US").strip() or "en-US",
+                "format": "detailed",
+                "profanity": "masked",
+            }
+        )
+        endpoint += ("&" if "?" in endpoint else "?") + query
+        sample_rate = int.from_bytes(wav[24:28], "little") if len(wav) >= 28 and wav[:4] == b"RIFF" else 16000
+        if sample_rate not in {8000, 16000, 24000, 32000, 44100, 48000}:
+            sample_rate = 16000
+        request = urllib.request.Request(
+            endpoint,
+            data=wav,
+            headers={
+                "Ocp-Apim-Subscription-Key": self.settings.resolved_stt_key(),
+                "Content-Type": "audio/wav; codecs=audio/pcm; samplerate=%d" % sample_rate,
+                "Accept": "application/json",
+                "User-Agent": "BarrosPizzaCreator/1.6",
+            },
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=int(self.settings.timeout_seconds)) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            raise ProviderError("Azure transcription returned HTTP %d." % exc.code) from exc
+        except (urllib.error.URLError, TimeoutError) as exc:
+            raise ProviderError("Azure transcription request failed: %s" % exc) from exc
+        status = str(payload.get("RecognitionStatus", ""))
+        text = str(payload.get("DisplayText", "")).strip()
+        if not text:
+            alternatives = payload.get("NBest") or []
+            if alternatives and isinstance(alternatives[0], dict):
+                text = str(alternatives[0].get("Display") or alternatives[0].get("Lexical") or "").strip()
+        if status and status.casefold() not in {"success", "endofdictation"}:
+            raise ProviderError("Azure transcription did not recognize speech (%s)." % status)
+        if not text:
+            raise ProviderError("Azure transcription returned no speech. Check the input level and try again.")
+        return text

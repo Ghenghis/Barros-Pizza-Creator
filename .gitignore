@@ -22,3 +22,12 @@ BarrosAI/
 Barros-AI-diagnostics-*.txt
 evidence/runs/
 releases/*.partial
+
+# Unity 2021 authoring lab: keep source/configuration, never cache/editor state.
+authoring/BarrosCreatorUiLab2021/[Ll]ibrary/
+authoring/BarrosCreatorUiLab2021/[Tt]emp/
+authoring/BarrosCreatorUiLab2021/[Oo]bj/
+authoring/BarrosCreatorUiLab2021/[Ll]ogs/
+authoring/BarrosCreatorUiLab2021/[Bb]uilds/
+authoring/BarrosCreatorUiLab2021/[Uu]ser[Ss]ettings/
+authoring/BarrosCreatorUiLab2021/MemoryCaptures/

@@ -217,9 +217,12 @@ namespace Barros.PizzaCreator.AI
         [JsonProperty("ok")] public bool Ok;
         [JsonProperty("converter_available")] public bool ConverterAvailable;
         [JsonProperty("track_count")] public int TrackCount;
+        [JsonProperty("video_count")] public int VideoCount;
         [JsonProperty("import_count")] public int ImportCount;
         [JsonProperty("converted")] public int Converted;
         [JsonProperty("copied")] public int Copied;
+        [JsonProperty("video_copied")] public int VideoCopied;
+        [JsonProperty("lyrics_copied")] public int LyricsCopied;
         [JsonProperty("skipped")] public int Skipped;
         [JsonProperty("inbox")] public string Inbox = "";
         [JsonProperty("quality_profile")] public string QualityProfile = "";

@@ -67,6 +67,7 @@ namespace Barros.PizzaCreator.AI
         private string artTemplate = "Santa";
         private int artSeed;
         private string crewFocusAgent = "";
+        private bool sttConfigured;
         private bool ttsConfigured;
         private bool agentVoicesMuted = true;
         private bool agentSpeechBusy;
@@ -95,6 +96,14 @@ namespace Barros.PizzaCreator.AI
         private string selectedMicrophoneName = "";
         private bool microphoneMuted;
         private float microphoneGain = 1f;
+        private bool voiceUseCrew = true;
+        private bool voiceAutoContinue;
+        private bool promptFromVoice;
+        private bool voiceResumeAfterSpeech;
+        private Coroutine voiceResumeRoutine;
+        // Compact is the safe default at 1080p. The user can still expand the
+        // portrait lyric video without pushing the remaining controls offscreen.
+        private bool mediaVideoExpanded;
         private readonly Dictionary<string, int> agentVoiceIndexes = new Dictionary<string, int>();
         private readonly List<AiRecipe> designCheckpoints = new List<AiRecipe>();
         private bool checkpointCompare;
@@ -163,6 +172,8 @@ namespace Barros.PizzaCreator.AI
         private GUIStyle primaryButtonStyle;
         private GUIStyle inputStyle;
         private GUIStyle tagStyle;
+        private GUIStyle mediaTrackButtonStyle;
+        private GUIStyle mediaTrackActiveButtonStyle;
         private GUIStyle speakerStyle;
         private GUIStyle scoreStyle;
         private Texture2D parchmentTexture;
@@ -173,6 +184,7 @@ namespace Barros.PizzaCreator.AI
         private Texture2D greenTexture;
         private Texture2D amberTexture;
         private Texture2D whiteTexture;
+        private bool exportedThemeEvidenceRecorded;
 
         public DesignerMode Mode { get { return mode; } }
 
@@ -206,10 +218,11 @@ namespace Barros.PizzaCreator.AI
             agentVoiceIndexes["Cost Manager"] = 11;
             agentVoiceIndexes["Customer Scout"] = 5;
             agentVoiceIndexes["Creative Director"] = 10;
-            backend.Health(delegate(bool ready, string label, bool speechReady)
+            backend.Health(delegate(bool ready, string label, bool inputReady, bool speechReady)
             {
                 backendReady = ready;
                 backendLabel = ready ? label : "Backend unavailable";
+                sttConfigured = inputReady;
                 ttsConfigured = speechReady;
                 if (!ready) status = "The local AI service is not responding. Run DIAGNOSE_Barros_AI.ps1.";
             });
@@ -667,6 +680,7 @@ namespace Barros.PizzaCreator.AI
                     status = agentVoicesMuted ? "Agent voices muted." : "Agent voices on. New focused replies will speak automatically.";
                 }
             }
+            if (GUILayout.Button("VOICE CHECK", buttonStyle, GUILayout.Width(102f), GUILayout.Height(32f))) QueueVoiceCheck();
             if (GUILayout.Button("STOP", buttonStyle, GUILayout.Width(72f), GUILayout.Height(32f))) StopAgentSpeech();
             GUILayout.EndHorizontal();
             GUILayout.Label("24 selectable English Azure voices: 12 feminine and 12 masculine across US, UK, AU, CA, IN, IE, NZ, ZA and SG. Speech starts muted and never reads links, code or file paths.", smallStyle);
@@ -680,6 +694,7 @@ namespace Barros.PizzaCreator.AI
                 agentSpeechGap = agentSpeechGap >= 0.75f ? 0.25f : agentSpeechGap + 0.25f;
             GUILayout.EndHorizontal();
             if (agentSpeechBusy) GUILayout.Label("Now speaking: " + currentSpeakingAgent + " · " + agentSpeechQueue.Count + " voice turn" + (agentSpeechQueue.Count == 1 ? "" : "s") + " queued · music stays paused until everyone finishes.", speakerStyle);
+            else GUILayout.Label(ttsConfigured ? "Ready for a focused reply or an orderly four-agent roundtable." : "Run provider setup to enable audible agent replies.", smallStyle);
             GUILayout.EndVertical();
             GUILayout.Space(6f);
         }
@@ -705,12 +720,44 @@ namespace Barros.PizzaCreator.AI
         private void DrawVoice()
         {
             bool microphoneAvailable = HasMicrophone();
+            float liveLevel = CurrentMicrophoneLevel();
             GUILayout.BeginVertical(cardStyle);
             GUILayout.BeginHorizontal();
             GUILayout.Label("Chef Voice", titleStyle);
             GUILayout.FlexibleSpace();
-            GUILayout.Label(recording ? "● Listening" : (microphoneAvailable ? "Ready" : "No mic"), recording || !microphoneAvailable ? speakerStyle : smallStyle, GUILayout.Width(110f));
+            string readiness = recording ? "● LISTENING" : (!microphoneAvailable ? "NO MICROPHONE" : (!sttConfigured ? "SETUP NEEDED" : "READY"));
+            GUILayout.Label(readiness, recording || !microphoneAvailable || !sttConfigured ? speakerStyle : smallStyle, GUILayout.Width(145f));
             GUILayout.EndHorizontal();
+            GUILayout.Label("Talk naturally, review the transcript, then hear the Designer or full Crew answer without overlapping the soundtrack.", smallStyle);
+
+            GUILayout.Space(5f);
+            GUILayout.Label("Conversation partner", subtitleStyle);
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("PIZZA DESIGNER", !voiceUseCrew ? activeButtonStyle : buttonStyle, GUILayout.Height(35f)))
+            {
+                voiceUseCrew = false;
+                status = "Voice questions will receive one concise Creative Director reply.";
+            }
+            if (GUILayout.Button("FULL DESIGN CREW", voiceUseCrew ? activeButtonStyle : buttonStyle, GUILayout.Height(35f)))
+            {
+                voiceUseCrew = true;
+                status = "Voice questions will receive four orderly specialist replies.";
+            }
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(voiceUseCrew ? "Four perspectives · one speaker at a time" : "One focused answer · fastest response", smallStyle);
+            GUILayout.FlexibleSpace();
+            if (GUILayout.Button(voiceAutoContinue ? "AUTO LISTEN ON" : "AUTO LISTEN OFF", voiceAutoContinue ? activeButtonStyle : buttonStyle, GUILayout.Width(145f), GUILayout.Height(31f)))
+            {
+                voiceAutoContinue = !voiceAutoContinue;
+                status = voiceAutoContinue
+                    ? "After spoken replies finish, Chef Voice will listen for the next turn."
+                    : "Automatic follow-up listening is off; press Start listening for each turn.";
+            }
+            GUILayout.EndHorizontal();
+
+            GUILayout.Space(7f);
+            GUILayout.Label("Microphone", subtitleStyle);
             GUILayout.BeginHorizontal();
             GUILayout.Label("Input", smallStyle, GUILayout.Width(48f));
             string deviceLabel = microphoneAvailable ? SelectedMicrophoneLabel() : "No Windows microphone";
@@ -729,31 +776,45 @@ namespace Barros.PizzaCreator.AI
             GUILayout.Label("Input gain", smallStyle, GUILayout.Width(78f));
             microphoneGain = GUILayout.HorizontalSlider(microphoneGain, 0.5f, 2f, GUILayout.Width(330f));
             GUILayout.Label(microphoneGain.ToString("0.0") + "×", smallStyle, GUILayout.Width(54f));
+            GUILayout.FlexibleSpace();
+            GUILayout.Label(VoiceSignalLabel(liveLevel), recording ? speakerStyle : smallStyle, GUILayout.Width(94f));
             GUILayout.EndHorizontal();
             Rect waveRect = GUILayoutUtility.GetRect(560f, 112f, GUILayout.ExpandWidth(true));
             DrawWaveform(waveRect);
-            string micLabel = recording ? "STOP & TRANSCRIBE" : (microphoneMuted ? "MICROPHONE MUTED" : (microphoneAvailable ? "START LISTENING" : "RETRY MICROPHONE"));
-            GUI.enabled = recording || !microphoneMuted;
+            string micLabel = recording ? "STOP & TRANSCRIBE" : (microphoneMuted ? "MICROPHONE MUTED" : (!microphoneAvailable ? "RETRY MICROPHONE" : (!sttConfigured ? "VOICE INPUT SETUP NEEDED" : "START LISTENING")));
+            GUI.enabled = recording || (!microphoneMuted && (microphoneAvailable ? sttConfigured : true));
             if (GUILayout.Button(micLabel, recording ? activeButtonStyle : primaryButtonStyle, GUILayout.Height(52f)))
             {
                 if (recording) StopVoiceAndTranscribe(); else StartVoice();
             }
             GUI.enabled = true;
-            GUILayout.Label("Tell me what kind of pizza you want", subtitleStyle);
-            GUILayout.Label("Windows-ready controls remember the selected input. Connect the microphone, press Refresh, choose it, then confirm the live meter moves before transcription.", smallStyle);
+            if (!sttConfigured) GUILayout.Label("Azure voice input is not configured. Run the provider setup and select Azure Speech before recording.", speakerStyle);
+            else if (!ttsConfigured) GUILayout.Label("Transcription is ready, but spoken agent replies still need Azure agent voices enabled.", speakerStyle);
+            else GUILayout.Label("Voice input and agent speech are configured. Voices remain muted until enabled in Design Crew.", smallStyle);
             GUILayout.EndVertical();
             GUILayout.Space(6f);
             if (!string.IsNullOrEmpty(transcript))
             {
                 GUILayout.BeginVertical(cardStyle);
-                GUILayout.Label("You", speakerStyle);
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("Latest transcript", speakerStyle);
+                GUILayout.FlexibleSpace();
+                if (GUILayout.Button("ASK AGAIN", buttonStyle, GUILayout.Width(92f), GUILayout.Height(28f)))
+                {
+                    prompt = transcript;
+                    promptFromVoice = true;
+                    Submit(voiceUseCrew ? "/crew" : "/chat", 1);
+                }
+                if (GUILayout.Button("CLEAR", buttonStyle, GUILayout.Width(64f), GUILayout.Height(28f))) transcript = "";
+                GUILayout.EndHorizontal();
                 GUILayout.Label(transcript, bodyStyle);
                 GUILayout.EndVertical();
             }
             if (!string.IsNullOrEmpty(pendingVoiceError)) GUILayout.Label(pendingVoiceError, speakerStyle);
             GUILayout.BeginVertical(cardStyle);
-            GUILayout.Label("Heat level", subtitleStyle);
+            GUILayout.Label("Quick voice preferences", subtitleStyle);
             GUILayout.BeginHorizontal();
+            GUILayout.Label("Heat", smallStyle, GUILayout.Width(48f));
             string[] heats = { "Mild", "Medium", "Hot" };
             for (int i = 0; i < heats.Length; i++)
             {
@@ -762,6 +823,14 @@ namespace Barros.PizzaCreator.AI
             GUILayout.EndHorizontal();
             GUILayout.EndVertical();
             if (recipes.Count > 0) DrawRecipeCard(recipes[0], true, true);
+        }
+
+        private static string VoiceSignalLabel(float level)
+        {
+            if (level <= 0.01f) return "Signal —";
+            if (level < 0.16f) return "Signal low";
+            if (level > 0.88f) return "Signal hot";
+            return "Signal good";
         }
 
         private void DrawMediaDeck()
@@ -804,15 +873,47 @@ namespace Barros.PizzaCreator.AI
             GUILayout.Label(mediaDeck.Status, smallStyle);
             GUILayout.Label("Drop MP3, WAV, or OGG into the folder. Import + Refresh creates playable OGG copies; MP4 lyric videos also appear here.", smallStyle);
 
-            if (mediaDeck.ShowingVideo && mediaDeck.VideoTexture != null)
+            if (mediaDeck.CurrentIsVideo)
             {
-                Rect videoRect = GUILayoutUtility.GetRect(560f, 285f, GUILayout.ExpandWidth(true));
-                GUI.DrawTexture(videoRect, mediaDeck.VideoTexture, ScaleMode.ScaleToFit, false);
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("LYRIC VIDEO · " + (mediaDeck.VideoPlaying ? "PLAYING" : mediaDeck.ShowingVideo ? "PAUSED" : "PREPARING"), subtitleStyle);
+                GUILayout.FlexibleSpace();
+                if (GUILayout.Button(mediaDeck.LyricsVisible ? "LYRICS ON" : "LYRICS OFF", mediaDeck.LyricsVisible ? activeButtonStyle : buttonStyle, GUILayout.Width(96f), GUILayout.Height(28f)))
+                    mediaDeck.LyricsVisible = !mediaDeck.LyricsVisible;
+                if (GUILayout.Button(mediaVideoExpanded ? "COMPACT" : "EXPAND", buttonStyle, GUILayout.Width(92f), GUILayout.Height(28f)))
+                    mediaVideoExpanded = !mediaVideoExpanded;
+                GUILayout.EndHorizontal();
+                float videoHeight = mediaVideoExpanded ? (mediaDeck.VideoAspect < 1f ? 520f : 330f) : 230f;
+                Rect videoRect = GUILayoutUtility.GetRect(560f, videoHeight, GUILayout.ExpandWidth(true));
+                GUI.Box(videoRect, GUIContent.none, panelStyle);
+                Rect fittedRect = new Rect(videoRect.x + 8f, videoRect.y + 8f, videoRect.width - 16f, videoRect.height - 16f);
+                if (!mediaDeck.LyricsVisible)
+                    GUI.Label(fittedRect, "Lyrics hidden · audio keeps playing from the same position", subtitleStyle);
+                else if (mediaDeck.ShowingVideo && mediaDeck.VideoTexture != null)
+                    GUI.DrawTexture(fittedRect, mediaDeck.VideoTexture, ScaleMode.ScaleToFit, false);
+                else
+                    GUI.Label(fittedRect, "Preparing lyric video…", subtitleStyle);
             }
             else
             {
                 Rect waveRect = GUILayoutUtility.GetRect(560f, 118f, GUILayout.ExpandWidth(true));
                 DrawMediaWaveform(waveRect, mediaDeck.GetWaveform(52));
+                GUILayout.BeginHorizontal();
+                GUILayout.Label(mediaDeck.TimedLyricsAvailable ? "TIMED LYRICS" : "LYRICS", subtitleStyle);
+                GUILayout.FlexibleSpace();
+                if (GUILayout.Button(mediaDeck.LyricsVisible ? "LYRICS ON" : "LYRICS OFF", mediaDeck.LyricsVisible ? activeButtonStyle : buttonStyle, GUILayout.Width(96f), GUILayout.Height(28f)))
+                    mediaDeck.LyricsVisible = !mediaDeck.LyricsVisible;
+                GUILayout.EndHorizontal();
+                if (mediaDeck.LyricsVisible && mediaDeck.TimedLyricsAvailable)
+                {
+                    GUILayout.BeginVertical(panelStyle);
+                    if (!string.IsNullOrEmpty(mediaDeck.PreviousLyric)) GUILayout.Label(mediaDeck.PreviousLyric, smallStyle);
+                    GUILayout.Label(string.IsNullOrEmpty(mediaDeck.CurrentLyric) ? "Instrumental intro…" : "▶  " + mediaDeck.CurrentLyric, speakerStyle);
+                    if (!string.IsNullOrEmpty(mediaDeck.NextLyric)) GUILayout.Label(mediaDeck.NextLyric, smallStyle);
+                    GUILayout.EndVertical();
+                }
+                else if (mediaDeck.LyricsVisible && mediaDeck.CurrentIndex >= 0)
+                    GUILayout.Label("No timed lyrics yet · add a same-name .lrc file beside this song to enable line highlighting.", smallStyle);
             }
 
             float progress = GUILayout.HorizontalSlider(mediaDeck.Progress, 0f, 1f, GUILayout.Height(24f));
@@ -876,25 +977,34 @@ namespace Barros.PizzaCreator.AI
             if (GUILayout.Button("ADD", buttonStyle, GUILayout.Width(64f), GUILayout.Height(29f))) mediaDeck.AddVisible(visibleTracks);
             if (GUILayout.Button("REMOVE", buttonStyle, GUILayout.Width(78f), GUILayout.Height(29f))) mediaDeck.RemoveVisible(visibleTracks);
             GUILayout.EndHorizontal();
-            mediaLibraryScroll = GUILayout.BeginScrollView(mediaLibraryScroll, panelStyle, GUILayout.Height(310f));
+            mediaLibraryScroll = GUILayout.BeginScrollView(
+                mediaLibraryScroll,
+                false,
+                true,
+                GUI.skin.horizontalScrollbar,
+                GUI.skin.verticalScrollbar,
+                panelStyle,
+                GUILayout.Height(340f));
             for (int visible = 0; visible < visibleTracks.Count; visible++)
             {
                 int i = visibleTracks[visible];
                 MediaTrack track = mediaDeck.Tracks[i];
                 int queuePosition = mediaDeck.QueuePosition(i);
-                string label = track.Title + "  [" + track.Extension + "]\n" + track.Folder;
+                string label = track.Title + (track.IsVideo ? "  [LYRIC VIDEO]" : "  [" + track.Extension + "]") + "\n" + track.Folder;
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button(label, mediaDeck.BarrosReplacesStock && i == mediaDeck.CurrentIndex ? activeButtonStyle : buttonStyle, GUILayout.Height(48f))) mediaDeck.Select(i);
-                if (GUILayout.Button(queuePosition >= 0 ? "IN · " + (queuePosition + 1) : "OUT", queuePosition >= 0 ? activeButtonStyle : buttonStyle, GUILayout.Width(72f), GUILayout.Height(48f))) mediaDeck.ToggleQueued(i);
+                GUIStyle trackStyle = mediaDeck.BarrosReplacesStock && i == mediaDeck.CurrentIndex ? mediaTrackActiveButtonStyle : mediaTrackButtonStyle;
+                if (GUILayout.Button(label, trackStyle, GUILayout.Width(360f), GUILayout.Height(56f))) mediaDeck.Select(i);
+                if (GUILayout.Button(queuePosition >= 0 ? "IN · " + (queuePosition + 1) : "OUT", queuePosition >= 0 ? activeButtonStyle : buttonStyle, GUILayout.Width(68f), GUILayout.Height(56f))) mediaDeck.ToggleQueued(i);
                 GUI.enabled = queuePosition > 0;
-                if (GUILayout.Button("↑", buttonStyle, GUILayout.Width(38f), GUILayout.Height(48f))) mediaDeck.MoveQueued(i, -1);
+                if (GUILayout.Button("↑", buttonStyle, GUILayout.Width(34f), GUILayout.Height(56f))) mediaDeck.MoveQueued(i, -1);
                 GUI.enabled = queuePosition >= 0 && queuePosition < mediaDeck.PlaylistCount - 1;
-                if (GUILayout.Button("↓", buttonStyle, GUILayout.Width(38f), GUILayout.Height(48f))) mediaDeck.MoveQueued(i, 1);
+                if (GUILayout.Button("↓", buttonStyle, GUILayout.Width(34f), GUILayout.Height(56f))) mediaDeck.MoveQueued(i, 1);
                 GUI.enabled = true;
                 GUILayout.EndHorizontal();
             }
             if (mediaDeck.Tracks.Count == 0) GUILayout.Label("Add project-owned files to BarrosAI/assets/music and press Refresh.", bodyStyle);
             else if (visibleTracks.Count == 0) GUILayout.Label("No songs match this search and filter. Clear the search or cycle the filter.", bodyStyle);
+            GUILayout.Space(10f);
             GUILayout.EndScrollView();
             GUILayout.EndVertical();
         }
@@ -958,13 +1068,13 @@ namespace Barros.PizzaCreator.AI
                     mediaDeck.SetStatus(status);
                     return;
                 }
-                string resultStatus = response.Converted + " converted, " + response.Copied + " copied, " + response.Skipped + " skipped; " + response.TrackCount + " tracks ready."
+                string resultStatus = response.Converted + " audio converted, " + response.VideoCopied + " lyric video" + (response.VideoCopied == 1 ? "" : "s") + " and " + response.LyricsCopied + " lyric sheet" + (response.LyricsCopied == 1 ? "" : "s") + " added, " + response.Skipped + " current; " + response.TrackCount + " total (" + response.VideoCount + " videos)."
                     + (string.IsNullOrEmpty(response.QualityProfile) ? "" : " Quality: " + response.QualityProfile + ".")
                     + (response.ConverterAvailable ? "" : " FFmpeg is not configured, so new MP3/WAV files will use direct playback until it is added.")
                     + (response.Failed == null || response.Failed.Count == 0 ? "" : " Failed: " + response.Failed[0].File + " — " + response.Failed[0].Error);
                 status = resultStatus;
                 mediaDeck.SetStatus(resultStatus);
-                if (evidence != null) evidence.Record("media.refresh", "converted=" + response.Converted + "; copied=" + response.Copied + "; tracks=" + response.TrackCount + "; converter=" + response.ConverterAvailable);
+                if (evidence != null) evidence.Record("media.refresh", "converted=" + response.Converted + "; copied=" + response.Copied + "; videos=" + response.VideoCount + "; tracks=" + response.TrackCount + "; converter=" + response.ConverterAvailable);
             });
         }
 
@@ -1341,10 +1451,11 @@ namespace Barros.PizzaCreator.AI
             if (busy) return;
             if (!backendReady)
             {
-                backend.Health(delegate(bool ready, string label, bool speechReady)
+                backend.Health(delegate(bool ready, string label, bool inputReady, bool speechReady)
                 {
                     backendReady = ready;
                     backendLabel = ready ? label : "Backend unavailable";
+                    sttConfigured = inputReady;
                     ttsConfigured = speechReady;
                     if (ready) Submit(endpoint, count);
                     else status = "Local AI backend is not running. Use the diagnostic script.";
@@ -1373,7 +1484,9 @@ namespace Barros.PizzaCreator.AI
             request.Attachments.AddRange(attachments);
             request.UseInspirationLibrary = useInspirationLibrary;
             request.FocusAgent = endpoint == "/crew" ? crewFocusAgent : "";
-            conversation.Add(new ConversationLine("You", effective));
+            bool submittedByVoice = promptFromVoice;
+            promptFromVoice = false;
+            conversation.Add(new ConversationLine(submittedByVoice ? "You (voice)" : "You", effective));
             busy = true;
             status = endpoint == "/crew"
                 ? (string.IsNullOrEmpty(request.FocusAgent)
@@ -1415,7 +1528,20 @@ namespace Barros.PizzaCreator.AI
                     status = "Guided pizza ready · Preview, Apply, then Save to recipe book when you approve.";
                 }
                 guidedBuildPending = false;
-                if (endpoint == "/crew" && !agentVoicesMuted && ttsConfigured && agents.Count > 0)
+                if (submittedByVoice)
+                {
+                    if (!ttsConfigured)
+                        status += " Text reply is ready; Azure agent speech still needs setup.";
+                    else if (agentVoicesMuted)
+                        status += " Text reply is ready; turn Agent voices ON to hear it.";
+                    else
+                    {
+                        voiceResumeAfterSpeech = voiceAutoContinue;
+                        if (endpoint == "/crew" && agents.Count > 0) QueueAgentRoundtable();
+                        else SpeakAgent("Creative Director", response.Message);
+                    }
+                }
+                else if (endpoint == "/crew" && !agentVoicesMuted && ttsConfigured && agents.Count > 0)
                     QueueAgentRoundtable();
             });
         }
@@ -1487,16 +1613,42 @@ namespace Barros.PizzaCreator.AI
             if (!agentSpeechBusy) BeginNextAgentSpeech();
         }
 
+        private void QueueVoiceCheck()
+        {
+            if (!ttsConfigured)
+            {
+                status = "Azure agent voices need setup before the voice check can run.";
+                return;
+            }
+            StopAgentSpeech();
+            agentVoicesMuted = false;
+            agentSpeechQueue.Add(new AgentSpeechTurn("Flavor Chef", "Flavor Chef ready. I will keep every pizza bold and delicious.", AgentVoiceName("Flavor Chef")));
+            agentSpeechQueue.Add(new AgentSpeechTurn("Cost Manager", "Cost Manager ready. I will protect the budget without flattening the idea.", AgentVoiceName("Cost Manager")));
+            agentSpeechQueue.Add(new AgentSpeechTurn("Customer Scout", "Customer Scout ready. I will keep the design inviting and memorable.", AgentVoiceName("Customer Scout")));
+            agentSpeechQueue.Add(new AgentSpeechTurn("Creative Director", "Creative Director ready. We will speak one at a time and build together.", AgentVoiceName("Creative Director")));
+            status = "Voice check queued. Music will remain paused until all four agents finish.";
+            BeginNextAgentSpeech();
+        }
+
         private void BeginNextAgentSpeech()
         {
             if (agentSpeechQueue.Count == 0)
             {
+                bool resumeVoice = voiceResumeAfterSpeech;
+                voiceResumeAfterSpeech = false;
                 agentSpeechBusy = false;
                 currentSpeakingAgent = "";
                 if (agentSpeechFocusHeld && mediaDeck != null) mediaDeck.EndSpeechFocus();
                 agentSpeechFocusHeld = false;
                 agentSpeechHasPlayed = false;
-                status = "Agent roundtable finished. Background music resumed if it was playing.";
+                status = resumeVoice
+                    ? "Agent roundtable finished. Chef Voice will listen for your next turn."
+                    : "Agent roundtable finished. Background music resumed if it was playing.";
+                if (resumeVoice && sttConfigured && HasMicrophone() && !microphoneMuted)
+                {
+                    if (voiceResumeRoutine != null) StopCoroutine(voiceResumeRoutine);
+                    voiceResumeRoutine = StartCoroutine(ResumeVoiceAfterAgents());
+                }
                 return;
             }
             agentSpeechBusy = true;
@@ -1567,7 +1719,18 @@ namespace Barros.PizzaCreator.AI
             if (agentSpeechFocusHeld && mediaDeck != null) mediaDeck.EndSpeechFocus();
             agentSpeechFocusHeld = false;
             agentSpeechHasPlayed = false;
+            voiceResumeAfterSpeech = false;
+            if (voiceResumeRoutine != null) StopCoroutine(voiceResumeRoutine);
+            voiceResumeRoutine = null;
             status = "Agent voice queue stopped.";
+        }
+
+        private IEnumerator ResumeVoiceAfterAgents()
+        {
+            yield return new WaitForSecondsRealtime(0.9f);
+            voiceResumeRoutine = null;
+            if (mode == DesignerMode.Voice && !recording && !busy && voiceAutoContinue && sttConfigured && HasMicrophone() && !microphoneMuted)
+                StartVoice();
         }
 
         private void Recalculate(AiRecipe recipe)
@@ -1855,10 +2018,10 @@ namespace Barros.PizzaCreator.AI
                 }
                 transcript = response.Text;
                 prompt = transcript;
-                conversation.Add(new ConversationLine("You (voice)", transcript));
-                status = "Voice transcribed. Building the recipe…";
+                promptFromVoice = true;
+                status = voiceUseCrew ? "Voice transcribed. Asking the full Design Crew…" : "Voice transcribed. Asking the Pizza Designer…";
                 if (evidence != null) evidence.Record("voice.transcription.success", "characters=" + transcript.Length);
-                Submit("/chat", 1);
+                Submit(voiceUseCrew ? "/crew" : "/chat", 1);
             });
         }
 
@@ -1888,11 +2051,11 @@ namespace Barros.PizzaCreator.AI
             if (panelStyle != null) return;
             Color parchmentEdge = new Color(0.50f, 0.29f, 0.25f, 0.62f);
             Color cardEdge = new Color(0.57f, 0.37f, 0.32f, 0.50f);
-            parchmentTexture = Rounded(parchment, parchmentEdge, 12, 1);
-            cardTexture = Rounded(card, cardEdge, 11, 1);
-            maroonTexture = Rounded(maroon, new Color(0.30f, 0.09f, 0.08f, 1f), 10, 1);
-            redTexture = Rounded(red, new Color(0.43f, 0.08f, 0.08f, 1f), 10, 1);
-            lightTexture = Rounded(parchmentLight, cardEdge, 10, 1);
+            parchmentTexture = LoadExportedSkin("panel.png") ?? Rounded(parchment, parchmentEdge, 12, 1);
+            cardTexture = LoadExportedSkin("card.png") ?? Rounded(card, cardEdge, 11, 1);
+            maroonTexture = LoadExportedSkin("active.png") ?? Rounded(maroon, new Color(0.30f, 0.09f, 0.08f, 1f), 10, 1);
+            redTexture = LoadExportedSkin("primary.png") ?? Rounded(red, new Color(0.43f, 0.08f, 0.08f, 1f), 10, 1);
+            lightTexture = LoadExportedSkin("button.png") ?? Rounded(parchmentLight, cardEdge, 10, 1);
             greenTexture = Solid(green);
             amberTexture = Solid(amber);
             whiteTexture = Solid(Color.white);
@@ -1921,6 +2084,49 @@ namespace Barros.PizzaCreator.AI
             tagStyle = new GUIStyle(buttonStyle);
             tagStyle.fontSize = 12;
             tagStyle.alignment = TextAnchor.MiddleCenter;
+            mediaTrackButtonStyle = MediaTrackStyle(buttonStyle);
+            mediaTrackActiveButtonStyle = MediaTrackStyle(activeButtonStyle);
+        }
+
+        private Texture2D LoadExportedSkin(string fileName)
+        {
+            try
+            {
+                string gameRoot = Directory.GetParent(Application.dataPath).FullName;
+                string path = Path.Combine(gameRoot, "BarrosAI", "assets", "ui", "generated", fileName);
+                FileInfo info = new FileInfo(path);
+                if (!info.Exists || info.Length <= 0 || info.Length > 5 * 1024 * 1024) return null;
+                Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                if (!texture.LoadImage(File.ReadAllBytes(path)) || texture.width < 16 || texture.height < 16 ||
+                    texture.width > 512 || texture.height > 512)
+                {
+                    Destroy(texture);
+                    return null;
+                }
+                texture.wrapMode = TextureWrapMode.Clamp;
+                texture.filterMode = FilterMode.Bilinear;
+                texture.hideFlags = HideFlags.HideAndDontSave;
+                if (!exportedThemeEvidenceRecorded && evidence != null)
+                {
+                    exportedThemeEvidenceRecorded = true;
+                    evidence.Record("ui.exported_theme_loaded", "format=png; source=BarrosCreatorUiLab2021; target=Unity2017");
+                }
+                return texture;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        private static GUIStyle MediaTrackStyle(GUIStyle source)
+        {
+            GUIStyle style = new GUIStyle(source);
+            style.fontSize = 13;
+            style.wordWrap = true;
+            style.clipping = TextClipping.Clip;
+            style.padding = new RectOffset(7, 7, 5, 5);
+            return style;
         }
 
         private GUIStyle BoxStyle(Texture2D background, int padding, Font font)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build and verify the deterministic Barro's Pizza Creator 1.5 release ZIP."""
+"""Build and verify the deterministic Barro's Pizza Creator 1.6 release ZIP."""
 
 from __future__ import annotations
 
@@ -11,12 +11,13 @@ import zipfile
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_ZIP = ROOT / "releases" / "Barros_Pizza_Creator_AI_Designer_v1.5.0.zip"
-ARCHIVE_ROOT = "Barros_Pizza_Creator_AI_Designer_v1.5.0"
+DEFAULT_ZIP = ROOT / "releases" / "Barros_Pizza_Creator_AI_Designer_v1.6.0.zip"
+ARCHIVE_ROOT = "Barros_Pizza_Creator_AI_Designer_v1.6.0"
 FIXED_ZIP_TIME = (2026, 8, 24, 0, 0, 0)
 EXCLUDED_ROOTS = {".git", "evidence", "releases"}
 EXCLUDED_NAMES = {"MANIFEST.sha256", "RELEASE_CHECKSUMS.sha256"}
 EXCLUDED_PARTS = {"__pycache__"}
+UNITY_TRANSIENT_PARTS = {"library", "temp", "obj", "logs", "builds", "usersettings", "memorycaptures"}
 EXCLUDED_SUFFIXES = {".pyc", ".pyo", ".pdb"}
 EXCLUDED_RELATIVE = {
     PurePosixPath("backend/settings.json"),
@@ -51,7 +52,13 @@ def package_files(root: Path) -> list[Path]:
             continue
         if relative.parts[0] == "artifacts" and relative not in ALLOWED_ARTIFACTS:
             continue
+        if relative.parts[0] == "authoring" and any(
+            part.casefold() in UNITY_TRANSIENT_PARTS for part in relative.parts[1:]
+        ):
+            continue
         if relative.parts[:3] == ("backend", "data", "inspiration"):
+            continue
+        if relative.parts[:2] == ("docs", "evidence"):
             continue
         if relative.parts[:2] == ("assets", "music") and path.suffix.lower() == ".mp3":
             continue

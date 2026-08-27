@@ -1,11 +1,11 @@
 {
   "schema_version": "1.0",
   "artifact": "Barros.PizzaCreator.AI.dll",
-  "artifact_bytes": 144384,
-  "artifact_sha256": "9514f6b339ddbf52001263e6922adfc51758aaf388f448f7372366f3826db5b3",
-  "built_utc": "2026-08-27T16:25:16Z",
-  "source_parent_commit": "8845d80be3fd26c4691bca5bdb16ed54b3dfb026",
-  "source_tree_sha256": "fb77bbbce69ae8e6e10d3bb6adb3baedef1ec4adfb76fd10f46e5ad05d529a68",
+  "artifact_bytes": 157184,
+  "artifact_sha256": "520c67b88c3cd06a1bc0089efa828c04e16b5a4323edb9ef6c8e33a8a3e15895",
+  "built_utc": "2026-08-27T22:35:07Z",
+  "source_parent_commit": "9fda4c83a66543ac2b2677e235e21ddf189642b4",
+  "source_tree_sha256": "2f58c5ad6e718dc181f7dca9472817482f70c76a311a1317e35a16d3403eb38b",
   "compiler": "Microsoft Visual C# Compiler 4.8.9032.0",
   "compiler_host": ".NET Framework on Windows AMD64",
   "output_kind": "PE32 AnyCPU .NET/Mono library",
@@ -53,15 +53,15 @@
   },
   "source_files_sha256": {
     "AssemblyInfo.cs": "3a817d064faa76a907a424ca77b157d967eefe7cd1dfcfaa57c8aff8c6317f48",
-    "BackendClient.cs": "567ea64fb9db5c5810a50952f9349009712f2c0e7d02e3012b999228bd341e1d",
-    "BarrosAiPlugin.cs": "0bb8c9cd2899cfc98578ae84af810b651036beeebaac6af921800d161ebd7e6f",
-    "EvidenceRecorder.cs": "151367e422cc6911a65cce54cec2434a7496d4a3f2fa4aafa4105be7f057ac56",
+    "BackendClient.cs": "9b403b8837ccf592b390540f3c1fa6cdeff5af8d59fdbd0dfc649b421191db25",
+    "BarrosAiPlugin.cs": "5b369849747ccf66de984052912a9c7fd28caa94114066346a291dfccec6d1a5",
+    "EvidenceRecorder.cs": "64420afbeda1cd3b0d23e375adff5de2e64f48e7fe81ddb343a231c30ce13abf",
     "FileDialog.cs": "f6fe47361f5da0e1ffbce60449416f897564e92281ed90ed6ed9d48f43bf3f34",
     "GameBridge.cs": "228ddee918e51370472d7983262bb6aa9311c1729ed9f9142f8c3048a1195fa9",
     "MainThreadDispatcher.cs": "2789e3d9ee8a8d7526052505ea3f6f21f7be22a13e06a5646e7ed5740974b03f",
-    "MediaDeck.cs": "1eff5a174fc68735e850fd9cffe6a261e7f053bc0f23fae5ecb720b6de222542",
-    "Models.cs": "0c0965e8da3f4ede8efa1b95ec23f7fa8b57ae3865a38103e3c724cf97058527",
-    "PanelRenderer.cs": "f4fbb51bd281fd8aae2590d6c41cfe720ccf84b136614ac62fa863d5868199af",
+    "MediaDeck.cs": "e7814cb6146fdfdef86694ab35b89ff51298f30e8791fa049441cacfdb3557f1",
+    "Models.cs": "89f9ab64b0f5626968190ca9fa62b76c0f4e0a73a319dd95e9adadfe04c128d0",
+    "PanelRenderer.cs": "3d59da8cfde38564dff440e428abd06310cf670e4a3329e44ab4b44d333402f5",
     "RuntimeTabInstaller.cs": "26b1a030af1a7bcb2d4140c8a46d494464e5270f122af2c05b66a6c5c07d15fd",
     "WavDecoder.cs": "c81f38bec9ac2407826e20cbf6d59c496e827dbec5097fdb5be16cacbe3d03b5",
     "WavEncoder.cs": "7de6cfa1287a00979f512e4f16cb13863315e0aa7dc3fb47d78a862c1468356c"
@@ -70,7 +70,7 @@
     "compile_exit_code": 0,
     "compiler_errors": 0,
     "absolute_build_path_embedded": false,
-    "backend_and_contract_tests": "105/105 automated tests passed on 2026-08-27"
+    "backend_and_contract_tests": "115/115 automated tests passed on 2026-08-27"
   },
-  "boundary": "Compilation and portable tests only; live behavior requires separately retained game evidence."
+  "boundary": "Creator 0.11.272 / Unity 2017.3.1p4 only; Unity 2021 authoring exports neutral PNG and JSON assets."
 }

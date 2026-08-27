@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using BepInEx;
 using Newtonsoft.Json;
@@ -26,6 +27,7 @@ namespace Barros.PizzaCreator.AI
         private readonly List<MediaTrack> tracks = new List<MediaTrack>();
         private readonly List<string> playlist = new List<string>();
         private readonly List<MediaNamedPlaylistState> namedPlaylists = new List<MediaNamedPlaylistState>();
+        private readonly List<LyricCue> lyricCues = new List<LyricCue>();
         private AudioSource musicSource;
         private AudioSource videoAudioSource;
         private VideoPlayer videoPlayer;
@@ -39,6 +41,7 @@ namespace Barros.PizzaCreator.AI
         private bool shuffle;
         private bool repeat;
         private bool autoImport = true;
+        private bool lyricsVisible = true;
         private bool paused;
         private bool audioReachedPlayback;
         private bool barrosReplacesStock = true;
@@ -64,6 +67,16 @@ namespace Barros.PizzaCreator.AI
         public bool Shuffle { get { return shuffle; } set { shuffle = value; } }
         public bool Repeat { get { return repeat; } set { repeat = value; } }
         public bool AutoImport { get { return autoImport; } set { autoImport = value; } }
+        public bool LyricsVisible
+        {
+            get { return lyricsVisible; }
+            set
+            {
+                if (lyricsVisible == value) return;
+                lyricsVisible = value;
+                if (evidence != null) evidence.Record("media.lyrics_visibility", "visible=" + lyricsVisible + "; title=" + CurrentTitle);
+            }
+        }
         public bool BarrosReplacesStock { get { return barrosReplacesStock; } }
         public string Status { get { return status; } }
         public void SetStatus(string value)
@@ -91,7 +104,32 @@ namespace Barros.PizzaCreator.AI
             }
         }
         public Texture VideoTexture { get { return videoTexture; } }
-        public bool ShowingVideo { get { return barrosReplacesStock && videoPlayer != null && videoPlayer.isPrepared && videoPlayer.isPlaying; } }
+        public bool CurrentIsVideo { get { return currentIndex >= 0 && currentIndex < tracks.Count && tracks[currentIndex].IsVideo; } }
+        public bool CurrentIsPortraitVideo
+        {
+            get
+            {
+                if (!CurrentIsVideo) return false;
+                MediaTrack track = tracks[currentIndex];
+                return track.Folder.IndexOf("lyrics", StringComparison.OrdinalIgnoreCase) >= 0
+                    || track.Title.IndexOf("lyrics video", StringComparison.OrdinalIgnoreCase) >= 0;
+            }
+        }
+        public bool ShowingVideo { get { return barrosReplacesStock && CurrentIsVideo && videoPlayer != null && videoPlayer.isPrepared; } }
+        public bool VideoPlaying { get { return ShowingVideo && videoPlayer.isPlaying; } }
+        public bool LyricsAvailable { get { return CurrentIsVideo || lyricCues.Count > 0; } }
+        public bool TimedLyricsAvailable { get { return lyricCues.Count > 0; } }
+        public string CurrentLyric { get { int index = CurrentLyricIndex(); return index >= 0 ? lyricCues[index].Text : ""; } }
+        public string PreviousLyric { get { int index = CurrentLyricIndex(); return index > 0 ? lyricCues[index - 1].Text : ""; } }
+        public string NextLyric { get { int index = CurrentLyricIndex(); return index >= 0 && index + 1 < lyricCues.Count ? lyricCues[index + 1].Text : ""; } }
+        public float VideoAspect
+        {
+            get
+            {
+                if (CurrentIsPortraitVideo) return 9f / 16f;
+                return videoTexture == null || videoTexture.height <= 0 ? 16f / 9f : (float)videoTexture.width / videoTexture.height;
+            }
+        }
         public bool IsPlaying
         {
             get
@@ -141,6 +179,7 @@ namespace Barros.PizzaCreator.AI
             set
             {
                 value = Mathf.Clamp01(value);
+                float previous = Progress;
                 if (videoPlayer != null && videoPlayer.isPrepared && videoPlayer.frameCount > 1)
                     videoPlayer.frame = (long)((videoPlayer.frameCount - 1) * value);
                 else
@@ -148,6 +187,8 @@ namespace Barros.PizzaCreator.AI
                     AudioClip active = barrosReplacesStock ? loadedClip : (musicSource == null ? null : musicSource.clip);
                     if (musicSource != null && active != null && musicSource.clip == active) musicSource.time = active.length * value;
                 }
+                if (evidence != null && Mathf.Abs(previous - value) > 0.002f)
+                    evidence.Record("media.seek", "title=" + CurrentTitle + "; from=" + previous.ToString("0.000") + "; to=" + value.ToString("0.000"));
             }
         }
 
@@ -341,6 +382,7 @@ namespace Barros.PizzaCreator.AI
                 state.MidDb = midDb;
                 state.TrebleDb = trebleDb;
                 state.AutoImport = autoImport;
+                state.LyricsVisible = lyricsVisible;
                 state.UseBarros = barrosReplacesStock;
                 File.WriteAllText(PlaylistFile, JsonConvert.SerializeObject(state, Formatting.Indented));
                 status = "Saved " + namedPlaylists.Count + " playlist" + (namedPlaylists.Count == 1 ? "" : "s") + "; " + ActivePlaylistName + " will start with Pizza Creator.";
@@ -430,7 +472,7 @@ namespace Barros.PizzaCreator.AI
                 for (int i = 0; i < files.Length; i++)
                 {
                     string extension = Path.GetExtension(files[i]).ToLowerInvariant();
-                    if (extension != ".ogg" && extension != ".mp3" && extension != ".wav" && extension != ".flac" && extension != ".m4a" && extension != ".aac" && extension != ".wma") continue;
+                    if (extension != ".ogg" && extension != ".mp3" && extension != ".wav" && extension != ".flac" && extension != ".m4a" && extension != ".aac" && extension != ".wma" && extension != ".mp4" && extension != ".lrc") continue;
                     FileInfo info = new FileInfo(files[i]);
                     unchecked { revision = revision * 31 + info.Length + info.LastWriteTimeUtc.Ticks; }
                 }
@@ -458,11 +500,29 @@ namespace Barros.PizzaCreator.AI
                 if (tracks.Count > 0) Select(0);
                 return;
             }
-            if (videoPlayer != null && videoPlayer.isPrepared && tracks[currentIndex].IsVideo)
+            if (tracks[currentIndex].IsVideo)
             {
-                if (videoPlayer.isPlaying) videoPlayer.Pause(); else videoPlayer.Play();
+                if (videoPlayer != null && videoPlayer.isPrepared)
+                {
+                    if (videoPlayer.isPlaying)
+                    {
+                        videoPlayer.Pause();
+                        paused = true;
+                        status = "Paused " + CurrentTitle;
+                        if (evidence != null) evidence.Record("media.pause", "title=" + CurrentTitle + "; type=video");
+                    }
+                    else
+                    {
+                        videoPlayer.Play();
+                        paused = false;
+                        status = "Playing " + CurrentTitle;
+                        if (evidence != null) evidence.Record("media.resume", "title=" + CurrentTitle + "; type=video");
+                    }
+                }
+                else Select(currentIndex);
+                return;
             }
-            else if (musicSource != null && game != null)
+            if (musicSource != null && game != null)
             {
                 if (musicSource.isPlaying)
                 {
@@ -567,12 +627,16 @@ namespace Barros.PizzaCreator.AI
             currentIndex = index;
             cachedWaveform = new float[0];
             MediaTrack track = tracks[index];
+            LoadTimedLyrics(track);
             status = "Loading " + track.Title + "…";
             if (track.IsVideo)
             {
                 if (game != null) game.StopMusic();
                 videoPlayer.source = VideoSource.Url;
-                videoPlayer.url = new Uri(track.Path).AbsoluteUri;
+                // Unity 2017's Windows backend accepts a native absolute path.
+                // A file: URI containing spaces/apostrophes can remain stuck in
+                // Prepare even though the same H.264/AAC file decodes normally.
+                videoPlayer.url = Path.GetFullPath(track.Path);
                 videoPlayer.EnableAudioTrack(0, true);
                 videoPlayer.Prepare();
                 float started = Time.realtimeSinceStartup;
@@ -581,8 +645,10 @@ namespace Barros.PizzaCreator.AI
                 if (!videoPlayer.isPrepared)
                 {
                     status = "This MP4 could not be prepared by the Unity 2017 video decoder.";
+                    if (evidence != null) evidence.Record("media.video_prepare_failed", "title=" + track.Title + "; path_mode=native");
                     yield break;
                 }
+                ConfigureVideoTexture();
                 videoPlayer.Play();
             }
             else
@@ -743,6 +809,7 @@ namespace Barros.PizzaCreator.AI
                         midDb = Mathf.Clamp(saved.MidDb, -12f, 12f);
                         trebleDb = Mathf.Clamp(saved.TrebleDb, -12f, 12f);
                         autoImport = saved.AutoImport;
+                        lyricsVisible = saved.LyricsVisible;
                         barrosReplacesStock = saved.UseBarros;
                         if (game != null) game.SetMusicVolume(volume);
                         ApplyTone();
@@ -854,6 +921,85 @@ namespace Barros.PizzaCreator.AI
         {
             loading = false;
             status = "Video playback failed: " + message;
+            if (evidence != null) evidence.Record("media.video_error", "title=" + CurrentTitle + "; message=" + message);
+        }
+
+        private void LoadTimedLyrics(MediaTrack track)
+        {
+            lyricCues.Clear();
+            string lyricPath = Path.ChangeExtension(track.Path, ".lrc");
+            if (!File.Exists(lyricPath)) return;
+            try
+            {
+                string[] lines = File.ReadAllLines(lyricPath);
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    string line = lines[i].Trim();
+                    int close = line.IndexOf(']');
+                    if (!line.StartsWith("[", StringComparison.Ordinal) || close < 4) continue;
+                    string stamp = line.Substring(1, close - 1);
+                    int colon = stamp.IndexOf(':');
+                    int minutes;
+                    double seconds;
+                    if (colon < 1
+                        || !int.TryParse(stamp.Substring(0, colon), NumberStyles.Integer, CultureInfo.InvariantCulture, out minutes)
+                        || !double.TryParse(stamp.Substring(colon + 1), NumberStyles.Float, CultureInfo.InvariantCulture, out seconds)) continue;
+                    string text = line.Substring(close + 1).Trim();
+                    if (text.Length == 0) continue;
+                    lyricCues.Add(new LyricCue { Time = (float)(minutes * 60 + seconds), Text = text });
+                }
+                lyricCues.Sort(delegate(LyricCue left, LyricCue right) { return left.Time.CompareTo(right.Time); });
+                if (evidence != null) evidence.Record("media.lyrics_loaded", "title=" + track.Title + "; cues=" + lyricCues.Count);
+            }
+            catch (Exception exception)
+            {
+                lyricCues.Clear();
+                status = "Lyrics could not be read: " + exception.Message;
+            }
+        }
+
+        private int CurrentLyricIndex()
+        {
+            if (lyricCues.Count == 0) return -1;
+            float currentSeconds = 0f;
+            if (CurrentIsVideo && videoPlayer != null && videoPlayer.isPrepared) currentSeconds = (float)videoPlayer.time;
+            else if (musicSource != null) currentSeconds = musicSource.time;
+            int active = -1;
+            for (int i = 0; i < lyricCues.Count; i++)
+            {
+                if (lyricCues[i].Time > currentSeconds + 0.01f) break;
+                active = i;
+            }
+            return active;
+        }
+
+        private void ConfigureVideoTexture()
+        {
+            if (videoPlayer == null || !videoPlayer.isPrepared) return;
+            float aspect = VideoAspect;
+            int width;
+            int height;
+            if (aspect < 1f)
+            {
+                height = 720;
+                width = Mathf.Clamp(Mathf.RoundToInt(height * aspect), 320, 720);
+            }
+            else
+            {
+                width = 720;
+                height = Mathf.Clamp(Mathf.RoundToInt(width / aspect), 320, 720);
+            }
+            if (videoTexture != null && videoTexture.width == width && videoTexture.height == height) return;
+            if (videoTexture != null)
+            {
+                videoPlayer.targetTexture = null;
+                videoTexture.Release();
+                Destroy(videoTexture);
+            }
+            videoTexture = new RenderTexture(width, height, 0, RenderTextureFormat.ARGB32);
+            videoTexture.name = "Barros Media Deck Video";
+            videoPlayer.targetTexture = videoTexture;
+            if (evidence != null) evidence.Record("media.video_fitted", "width=" + width + "; height=" + height + "; aspect=" + aspect.ToString("0.000"));
         }
 
         private static string FriendlyTitle(string value)
@@ -889,7 +1035,7 @@ namespace Barros.PizzaCreator.AI
         [Serializable]
         private sealed class MediaPlaylistState
         {
-            [JsonProperty("version")] public int Version = 2;
+            [JsonProperty("version")] public int Version = 3;
             [JsonProperty("queue")] public List<string> Queue = new List<string>();
             [JsonProperty("active_playlist")] public string ActivePlaylist = "Startup Mix";
             [JsonProperty("playlists")] public List<MediaNamedPlaylistState> Playlists = new List<MediaNamedPlaylistState>();
@@ -900,7 +1046,14 @@ namespace Barros.PizzaCreator.AI
             [JsonProperty("mid_db")] public float MidDb;
             [JsonProperty("treble_db")] public float TrebleDb;
             [JsonProperty("auto_import")] public bool AutoImport = true;
+            [JsonProperty("lyrics_visible")] public bool LyricsVisible = true;
             [JsonProperty("use_barros")] public bool UseBarros = true;
+        }
+
+        private sealed class LyricCue
+        {
+            public float Time;
+            public string Text = "";
         }
 
         [Serializable]

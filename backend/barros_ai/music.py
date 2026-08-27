@@ -12,7 +12,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 
-IMPORT_EXTENSIONS = {".mp3", ".wav", ".flac", ".m4a", ".aac", ".wma", ".aiff", ".aif", ".opus", ".oga", ".ogg"}
+IMPORT_EXTENSIONS = {".mp3", ".wav", ".flac", ".m4a", ".aac", ".wma", ".aiff", ".aif", ".opus", ".oga", ".ogg", ".mp4", ".lrc"}
 PLAY_EXTENSIONS = {".ogg", ".mp3", ".wav", ".mp4"}
 RESERVED_MUSIC_FOLDERS = {"imports", ".playback-cache", "tools"}
 MAX_IMPORT_BYTES = 500 * 1024 * 1024
@@ -56,7 +56,7 @@ class MusicLibrary:
         return sorted(tracks, key=lambda path: path.relative_to(self.root).as_posix().casefold())
 
     def _imports(self) -> list[Path]:
-        return sorted(
+        files = sorted(
             (
                 path
                 for path in self.inbox.rglob("*")
@@ -64,6 +64,17 @@ class MusicLibrary:
             ),
             key=lambda path: path.relative_to(self.inbox).as_posix().casefold(),
         )
+        video_stems = {
+            (path.parent.relative_to(self.inbox).as_posix().casefold(), path.stem.casefold())
+            for path in files
+            if path.suffix.casefold() == ".mp4"
+        }
+        return [
+            path
+            for path in files
+            if path.suffix.casefold() in {".mp4", ".lrc"}
+            or (path.parent.relative_to(self.inbox).as_posix().casefold(), path.stem.casefold()) not in video_stems
+        ]
 
     @staticmethod
     def _sha256(path: Path) -> str:
@@ -119,9 +130,10 @@ class MusicLibrary:
         return {
             "converter_available": bool(self._ffmpeg()),
             "track_count": len(tracks),
+            "video_count": sum(path.suffix.casefold() == ".mp4" for path in tracks),
             "import_count": len(imports),
             "inbox": str(self.inbox),
-            "quality_profile": "48 kHz stereo · Vorbis q8 · -14 LUFS · -1 dBTP",
+            "quality_profile": "Audio: 48 kHz stereo · Vorbis q8 · -14 LUFS · -1 dBTP · Video: MP4 passthrough",
             "sample_rate_hz": int(GAME_SAMPLE_RATE),
             "loudness_target_lufs": float(LOUDNESS_TARGET_LUFS),
             "true_peak_dbfs": float(TRUE_PEAK_DBFS),
@@ -210,6 +222,8 @@ class MusicLibrary:
         ffmpeg = self._ffmpeg()
         converted = 0
         copied = 0
+        video_copied = 0
+        lyrics_copied = 0
         skipped = 0
         failed: list[dict[str, str]] = []
         records: list[dict[str, Any]] = []
@@ -221,7 +235,9 @@ class MusicLibrary:
                 failed.append({"file": source_label, "error": "File exceeds the 500 MB import limit."})
                 records.append({"source": source_label, "state": "failed", "detail": "File exceeds the 500 MB import limit."})
                 continue
-            destination = (self.root / relative_source).with_suffix(".ogg")
+            is_video = extension == ".mp4"
+            is_lyrics = extension == ".lrc"
+            destination = self.root / relative_source if is_video or is_lyrics else (self.root / relative_source).with_suffix(".ogg")
             destination.parent.mkdir(parents=True, exist_ok=True)
             destination_label = destination.relative_to(self.root).as_posix()
             if destination.is_file() and destination.stat().st_size > 0 and destination.stat().st_mtime_ns >= source.stat().st_mtime_ns:
@@ -236,9 +252,19 @@ class MusicLibrary:
                     }
                 )
                 continue
-            temporary = destination.with_name(destination.stem + "." + uuid.uuid4().hex + ".partial.ogg")
+            temporary = destination.with_name(
+                destination.stem + "." + uuid.uuid4().hex + ".partial" + destination.suffix
+            )
             try:
-                if ffmpeg:
+                if is_video or is_lyrics:
+                    shutil.copy2(source, temporary)
+                    copied += 1
+                    if is_video:
+                        video_copied += 1
+                    else:
+                        lyrics_copied += 1
+                    measurements = {}
+                elif ffmpeg:
                     completed = subprocess.run(
                         [
                             ffmpeg,
@@ -289,8 +315,9 @@ class MusicLibrary:
                     failed.append({"file": source_label, "error": detail})
                     records.append({"source": source_label, "state": "failed", "detail": detail})
                     continue
-                if not temporary.is_file() or temporary.stat().st_size < 1024:
-                    raise RuntimeError("The converted OGG file was empty.")
+                minimum_bytes = 1 if is_lyrics else 1024
+                if not temporary.is_file() or temporary.stat().st_size < minimum_bytes:
+                    raise RuntimeError("The imported media file was empty.")
                 os.replace(temporary, destination)
                 records.append(
                     {
@@ -299,8 +326,8 @@ class MusicLibrary:
                         "output": destination_label,
                         "output_sha256": self._sha256(destination),
                         "output_bytes": destination.stat().st_size,
-                        "state": "converted_and_decode_validated" if ffmpeg else "copied_without_converter",
-                        **(measurements if ffmpeg else {}),
+                        "state": "video_copied" if is_video else ("lyrics_copied" if is_lyrics else ("converted_and_decode_validated" if ffmpeg else "copied_without_converter")),
+                        **(measurements if ffmpeg and not is_video and not is_lyrics else {}),
                     }
                 )
             except (OSError, subprocess.SubprocessError, RuntimeError) as exc:
@@ -315,9 +342,10 @@ class MusicLibrary:
             "schema_version": "1.0",
             "generated_utc": datetime.now(timezone.utc).isoformat(),
             "quality_profile": final["quality_profile"],
-            "audio_only": True,
+            "audio_only": False,
+            "video_passthrough": True,
             "decode_validation": True,
-            "counts": {"converted": converted, "copied": copied, "skipped": skipped, "failed": len(failed)},
+            "counts": {"converted": converted, "copied": copied, "video_copied": video_copied, "lyrics_copied": lyrics_copied, "skipped": skipped, "failed": len(failed)},
             "files": records,
         }
         try:
@@ -331,6 +359,8 @@ class MusicLibrary:
                 "ok": not failed,
                 "converted": converted,
                 "copied": copied,
+                "video_copied": video_copied,
+                "lyrics_copied": lyrics_copied,
                 "skipped": skipped,
                 "failed": failed,
                 "report": str(report_path),

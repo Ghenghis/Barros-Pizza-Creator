@@ -198,6 +198,49 @@ class BackendTests(unittest.TestCase):
         self.assertIn(b'name="file"; filename="voice.wav"', body)
         self.assertIn(b"RIFF-test-wav", body)
 
+    def test_azure_stt_request_uses_region_language_key_and_pcm_wav(self) -> None:
+        client = ProviderClient(
+            ProviderSettings(
+                provider="offline",
+                stt_provider="azure",
+                stt_region="westus",
+                stt_language="en-AU",
+                stt_key="test-only-azure-key",
+            )
+        )
+        observed: dict[str, object] = {}
+
+        class FakeResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, traceback):
+                return False
+
+            def read(self) -> bytes:
+                return b'{"RecognitionStatus":"Success","DisplayText":"Design a Santa pizza."}'
+
+        def fake_urlopen(request: urllib.request.Request, timeout: int):
+            observed["request"] = request
+            observed["timeout"] = timeout
+            return FakeResponse()
+
+        original = urllib.request.urlopen
+        urllib.request.urlopen = fake_urlopen  # type: ignore[assignment]
+        try:
+            transcript = client.transcribe(b"RIFF-test-wav", "voice.wav")
+        finally:
+            urllib.request.urlopen = original
+
+        self.assertEqual("Design a Santa pizza.", transcript)
+        request = observed["request"]
+        self.assertIn("westus.stt.speech.microsoft.com", request.full_url)
+        self.assertIn("language=en-AU", request.full_url)
+        headers = dict(request.header_items())
+        self.assertEqual("test-only-azure-key", headers["Ocp-apim-subscription-key"])
+        self.assertIn("audio/wav", headers["Content-type"])
+        self.assertEqual(b"RIFF-test-wav", request.data)
+
     def test_history_is_bounded(self) -> None:
         with tempfile.TemporaryDirectory() as folder:
             history = HistoryStore(Path(folder) / "history.json", max_entries=2)

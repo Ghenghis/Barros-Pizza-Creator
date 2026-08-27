@@ -134,7 +134,7 @@ class App:
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "BarrosPizzaAI/1.5"
+    server_version = "BarrosPizzaAI/1.6"
 
     @property
     def app(self) -> App:
@@ -193,17 +193,15 @@ class Handler(BaseHTTPRequestHandler):
                     self._json(HTTPStatus.SERVICE_UNAVAILABLE, {"ok": False, "error": str(exc)})
             return
         if path == "/health":
-            # A text provider being online does not prove that it implements
-            # OpenAI's audio-transcription route. Require an explicit endpoint
-            # so health never reports Chef Voice ready on a text-only gateway.
-            stt_configured = bool(self.app.settings.stt_endpoint)
+            stt = self.app.provider.stt_status()
+            stt_configured = bool(stt["configured"])
             inspiration = self.app.inspiration.status()
             self._json(
                 HTTPStatus.OK,
                 {
                     "ok": True,
                     "name": "Barro's AI Pizza Designer",
-                    "version": "1.5.0",
+                    "version": "1.6.0",
                     "provider": self.app.settings.provider,
                     "online": self.app.provider.online,
                     "image_parser": "png+jpeg+webp-v1",
@@ -224,12 +222,7 @@ class Handler(BaseHTTPRequestHandler):
                         "tts_configured": self.app.tts.configured,
                     },
                     "inspiration": inspiration,
-                    "stt": {
-                        "configured": stt_configured,
-                        "dedicated_endpoint_configured": bool(self.app.settings.stt_endpoint),
-                        "model": self.app.settings.stt_model,
-                        "reachability": "not_probed",
-                    },
+                    "stt": stt,
                     "tts": self.app.tts.status(),
                     "music": self.app.music.status(),
                     "uptime_seconds": round(time.time() - self.app.started, 1),
@@ -288,8 +281,8 @@ class Handler(BaseHTTPRequestHandler):
                 encoded = str(payload.get("audio_base64", ""))
                 if not encoded:
                     raise ValueError("audio_base64 is required.")
-                if not self.app.settings.stt_endpoint:
-                    raise ProviderError("Voice transcription needs a dedicated STT endpoint in settings.json.")
+                if not self.app.provider.stt_configured:
+                    raise ProviderError("Voice transcription is not configured in settings.json.")
                 text = self.app.provider.transcribe(base64.b64decode(encoded), str(payload.get("filename", "voice.wav")))
                 self._json(HTTPStatus.OK, {"ok": True, "text": text})
                 return

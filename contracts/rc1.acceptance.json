@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "contract_id": "barros-pc3-rc1",
   "product": "Barro's AI Pizza Designer for Pizza Connection 3 - Pizza Creator",
-  "release": "1.5.0",
+  "release": "1.6.0",
   "target": {
     "game_path_default": "S:\\Unity_Games\\PC3 - Pizza Creator",
     "game_version": "0.11.272",

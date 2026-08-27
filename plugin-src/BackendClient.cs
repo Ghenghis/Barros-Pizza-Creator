@@ -46,12 +46,13 @@ namespace Barros.PizzaCreator.AI
             Post<object, MusicImportResponse>("/music/refresh", new object(), callback);
         }
 
-        public void Health(Action<bool, string, bool> callback)
+        public void Health(Action<bool, string, bool, bool> callback)
         {
             ThreadPool.QueueUserWorkItem(delegate
             {
                 bool ok = false;
                 string message = "Offline";
+                bool sttConfigured = false;
                 bool ttsConfigured = false;
                 try
                 {
@@ -65,6 +66,8 @@ namespace Barros.PizzaCreator.AI
                         JObject root = JObject.Parse(body);
                         ok = response.StatusCode == HttpStatusCode.OK;
                         message = root["provider"] != null ? root["provider"].ToString() : "Ready";
+                        JObject stt = root["stt"] as JObject;
+                        sttConfigured = stt != null && stt["configured"] != null && stt["configured"].Value<bool>();
                         JObject tts = root["tts"] as JObject;
                         ttsConfigured = tts != null && tts["configured"] != null && tts["configured"].Value<bool>();
                     }
@@ -72,8 +75,9 @@ namespace Barros.PizzaCreator.AI
                 catch (Exception exception) { message = exception.Message; }
                 bool result = ok;
                 string detail = message;
+                bool inputReady = sttConfigured;
                 bool speechReady = ttsConfigured;
-                dispatcher.Enqueue(delegate { callback(result, detail, speechReady); });
+                dispatcher.Enqueue(delegate { callback(result, detail, inputReady, speechReady); });
             });
         }
 

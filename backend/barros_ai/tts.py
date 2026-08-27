@@ -154,7 +154,7 @@ class AzureSpeechService:
                 "Ocp-Apim-Subscription-Key": self.settings.resolved_tts_key(),
                 "Content-Type": "application/ssml+xml; charset=utf-8",
                 "X-Microsoft-OutputFormat": "riff-24khz-16bit-mono-pcm",
-                "User-Agent": "BarrosPizzaCreator/1.5",
+                "User-Agent": "BarrosPizzaCreator/1.6",
             },
             method="POST",
         )

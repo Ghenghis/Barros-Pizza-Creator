@@ -36,6 +36,50 @@ class MusicLibraryTests(unittest.TestCase):
             self.assertEqual(1, result["copied"])
             self.assertTrue((music.root / "New Barros Song.ogg").is_file())
 
+    def test_refresh_preserves_mp4_lyric_video_without_audio_conversion(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            music = MusicLibrary(Path(folder) / "music")
+            music.status()
+            source = music.inbox / "Lyrics" / "Barros Calling.mp4"
+            source.parent.mkdir(parents=True)
+            source.write_bytes(b"mp4-video" + b"v" * 4096)
+            with patch.dict(os.environ, {"BARROS_FFMPEG_PATH": ""}), patch("shutil.which", return_value=None):
+                result = music.refresh()
+            self.assertTrue(result["ok"])
+            self.assertEqual(1, result["video_copied"])
+            self.assertEqual(1, result["video_count"])
+            self.assertTrue((music.root / "Lyrics" / "Barros Calling.mp4").is_file())
+            self.assertFalse((music.root / "Lyrics" / "Barros Calling.ogg").exists())
+
+    def test_same_stem_mp4_is_preferred_over_audio_import(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            music = MusicLibrary(Path(folder) / "music")
+            music.status()
+            album = music.inbox / "Owner Uploads"
+            album.mkdir(parents=True)
+            (album / "Red White and Barros.mp4").write_bytes(b"mp4-video" + b"v" * 4096)
+            (album / "Red White and Barros.wav").write_bytes(b"RIFF" + b"w" * 4096)
+            self.assertEqual(1, music.status()["import_count"])
+            with patch.dict(os.environ, {"BARROS_FFMPEG_PATH": ""}), patch("shutil.which", return_value=None):
+                result = music.refresh()
+            self.assertTrue(result["ok"])
+            self.assertEqual(1, result["track_count"])
+            self.assertTrue((music.root / "Owner Uploads" / "Red White and Barros.mp4").is_file())
+            self.assertFalse((music.root / "Owner Uploads" / "Red White and Barros.ogg").exists())
+
+    def test_same_name_lrc_is_preserved_for_synchronized_audio_lyrics(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            music = MusicLibrary(Path(folder) / "music")
+            music.status()
+            (music.inbox / "Theme.ogg").write_bytes(b"OggS" + b"o" * 4096)
+            (music.inbox / "Theme.lrc").write_text("[00:01.00]Welcome to Barros\n[00:03.50]Design the pizza", encoding="utf-8")
+            with patch.dict(os.environ, {"BARROS_FFMPEG_PATH": ""}), patch("shutil.which", return_value=None):
+                result = music.refresh()
+            self.assertTrue(result["ok"])
+            self.assertEqual(1, result["lyrics_copied"])
+            self.assertTrue((music.root / "Theme.lrc").is_file())
+            self.assertEqual(1, result["track_count"])
+
     def test_ffmpeg_commands_strip_non_audio_streams_and_use_48khz(self) -> None:
         source = (ROOT / "backend" / "barros_ai" / "music.py").read_text(encoding="utf-8")
         for flag in ('"-vn"', '"-sn"', '"-dn"', '"-map_metadata"', '"-map_chapters"'):

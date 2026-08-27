@@ -2,3 +2,8 @@
 *.png binary
 *.zip binary
 
+# Unity serializes empty YAML values with a trailing space. Preserve its
+# generated files without weakening whitespace checks for source or docs.
+*.meta whitespace=-blank-at-eol
+*.unity whitespace=-blank-at-eol
+*.asset whitespace=-blank-at-eol

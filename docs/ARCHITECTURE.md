@@ -4,8 +4,10 @@
 
 | Layer | Location | Responsibility |
 |---|---|---|
+| Unity authoring lab | `authoring/BarrosCreatorUiLab2021` | Interactive 1920×1080 UI/art/animation prototyping in Unity 2021.3.45f2 |
+| Compatibility export | `assets/ui/generated` | Neutral PNG/JSON assets that the Unity 2017 runtime can validate and load safely |
 | Runtime tab | BepInEx plugin | Adds one registered Pizza Creator tab without replacing game assemblies |
-| Four-mode panel | Unity IMGUI anchored to the cloned content rect | Chat, Lab, Crew, Voice, history, attachments, recipe cards and actions |
+| Five-mode panel | Unity IMGUI anchored to the cloned content rect | Chat, Lab, Crew, Voice, Media, history, attachments, recipe cards and actions |
 | Header brand | Runtime-loaded PNG under `BarrosAI/assets` | Aspect-fits the Barro's Pizza Creator mark while the AI tab is active |
 | Game bridge | `GameBridge.cs` | Live catalog, model binding, positions, preview/apply/restore/save and native scores |
 | Sidecar | `backend/` on `127.0.0.1:48173` | Provider routing, deterministic fallback, repair, orchestration and history |
@@ -23,6 +25,12 @@ The supplied decompiled implementation establishes the following public path:
 
 The original `Assembly-CSharp.dll` is read as a compile reference and never modified.
 
+## Authoring and runtime compatibility boundary
+
+Unity 2021 is the visual design environment, not the game's source editor. Its menu exporter writes bounded PNG skins and a JSON theme manifest. The installer copies those files under `BarrosAI/assets/ui/generated`; `PanelRenderer` validates file size and decoded dimensions, loads them at runtime and falls back to built-in generated textures on any failure.
+
+Unity 2021 AssetBundles are prohibited for this target because the live Player is Unity 2017.3.1p4 and Unity does not support forward compatibility. Future 3D authoring crosses the boundary as FBX/OBJ plus PNG textures; only an isolated exact-version Unity 2017.3.1p4 project may produce the final Windows AssetBundle. Scripts remain in the BepInEx plug-in rather than an AssetBundle.
+
 ## Corrected game schema
 
 - Ingredient sizes are `Large = 0`, `Medium = 1`, `Small = 2`.
@@ -37,6 +45,7 @@ The original `Assembly-CSharp.dll` is read as a compile reference and never modi
 
 - Unknown IDs are removed or repaired before Unity receives the response.
 - A provider failure falls back to the deterministic offline designer.
+- Missing, corrupt, oversized or dimensionally invalid exported UI skins fall back to built-in rounded textures.
 - A failing persona cannot cancel the other Crew opinions.
 - Preview snapshots the current `PizzaModel`; Start over reloads it.
 - The installer refuses an incomplete game folder or incompatible BepInEx major version.

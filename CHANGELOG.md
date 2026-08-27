@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.6.0 — 2026-08-27
+
+- Added secure Azure Speech-to-Text support with language selection, live Windows microphone capture, truthful readiness states and automatic hands-free continuation after spoken agent replies.
+- Wired microphone transcripts into either the Pizza Designer or the full four-agent Design Crew while eliminating duplicate voice transcript entries.
+- Added an explicit four-voice check and polished sequential agent speech so music pauses for the complete roundtable and resumes only after the final voice finishes.
+- Added native MP4 lyric-video import and playback with portrait-aware rendering, persistent paused frames, play/pause/seek controls, a Lyrics On/Off display and duplicate same-stem audio suppression.
+- Added synchronized `.lrc` companion lyrics for audio-only songs with active-line highlighting that follows pause, resume and seek without losing position.
+- Added four owner-supplied lyric videos from the private Barro's music folder in a Unity-safe H.264/AAC profile without packaging duplicate WAV files.
+- Refined Voice, Crew and Media controls with clearer setup guidance, signal feedback, compact/expanded lyric-video viewing and more informative library status.
+- Preserved the exact Creator 0.11.272 ABI lock, private-key boundary, Stock/Barro's one-source audio exclusivity and unrelated-project isolation.
+- Added a real Unity 2021.3.45f2 Barro's UI authoring lab with an interactive 1920×1080 five-page prototype, a protected original-tab rail and beginner-safe menu commands.
+- Added a neutral PNG/JSON compatibility exporter instead of attempting to load forward-incompatible Unity 2021 AssetBundles in the Unity 2017.3.1p4 game.
+- Wired exported rounded skins into the live plug-in with bounded file validation, automatic built-in fallbacks and retained `ui.exported_theme_loaded` proof.
+- Added 1080p Unity-lab and exact-game proof images plus automated authoring/export/hash/fallback checks; final suite is 115/115.
+- Kept OCR-generated audio lyrics out of the release after review found transcription defects; MP4 visual lyrics remain the verified high-quality path while reviewed same-name `.lrc` files remain supported.
+
 ## 1.5.0 — 2026-08-27
 
 - Rebuilt the Media Deck for large owner libraries: nested album folders, duplicate-safe relative track IDs, a dedicated scroll area, search, queue/audio/video filters, A–Z/newest/folder/queue sorting and bulk add/remove.
