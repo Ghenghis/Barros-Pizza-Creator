@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.5.0 — 2026-08-27
+
+- Rebuilt the Media Deck for large owner libraries: nested album folders, duplicate-safe relative track IDs, a dedicated scroll area, search, queue/audio/video filters, A–Z/newest/folder/queue sorting and bulk add/remove.
+- Added multiple named playlists with create, duplicate, rename, protected removal, previous/next selection and automatic migration from the v1 single startup queue.
+- Made the import inbox recursive so owner-created album folders remain organized after lossless source intake and normalized 48 kHz OGG conversion.
+- Added a sequential agent roundtable. Crew turns enter one queue, never overlap or cut each other off, and hold one music-focus window until the final voice finishes.
+- Added agent voice volume, 0.9–1.1× speech rate and inter-speaker gap controls while retaining the balanced 24-voice English Azure roster and muted-by-default privacy boundary.
+- Added Windows microphone device selection, refresh, mute, input gain and a real live input meter. Hardware capture still requires the user to connect and select a working microphone.
+- Preserved Stock/Barro's one-source audio exclusivity, rounded panel styling, exact Creator 0.11.272 ABI lock and non-destructive game boundaries.
+
 ## 1.2.0-rc1 — 2026-08-27
 
 - Added ingredient intelligence for all 87 exact game ingredients: readable names, compact flavor profiles, dietary tags, allergen flags and curated pairing strengths.

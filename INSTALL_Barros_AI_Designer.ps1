@@ -10,7 +10,7 @@ param(
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 $packageRoot = $PSScriptRoot
-$version = "1.4.0-rc1"
+$version = "1.5.0"
 $bepVersion = "5.4.23.5"
 $bepUrl = "https://github.com/BepInEx/BepInEx/releases/download/v5.4.23.5/BepInEx_win_x64_5.4.23.5.zip"
 $bepSha = "82F9878551030F54657792C0740D9D51A09500EEAE1FBA21106B0C441E6732C4"
@@ -72,7 +72,7 @@ try {
     Write-Host "Game Assembly-CSharp SHA256: $actualAssemblySha"
     Write-Host "Game Assembly-CSharp-firstpass SHA256: $actualFirstpassSha"
     if ($actualAssemblySha -ne $assemblySha -or $actualFirstpassSha -ne $firstpassSha) {
-        throw "Unsupported game build. This RC1 is locked to Pizza Creator 0.11.272. No game or plugin files were changed. Run RUN_RC1_PROOF.bat and retain its assembly-hashes.json for adapter review."
+        throw "Unsupported game build. Creator 1.5 is locked to Pizza Creator 0.11.272. No game or plugin files were changed. Run RUN_RC1_PROOF.bat and retain its assembly-hashes.json for adapter review."
     }
     $core = Join-Path $GameRoot "BepInEx\core\BepInEx.dll"
     if (Test-Path $core) {

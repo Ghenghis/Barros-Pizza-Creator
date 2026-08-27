@@ -237,7 +237,7 @@ function Invoke-RuntimeGates {
         $content = Get-Content -LiteralPath $log -Raw
         if ($content -match "BepInEx 5\.") { Add-GateResult "RUN-201" "pass" "BepInEx 5 initialization is present in the live log." @($copiedLog) }
         else { Add-GateResult "RUN-201" "fail" "The live log does not show BepInEx 5 initialization." @($copiedLog) }
-        $loaded = $content -match "Barro's AI Pizza Designer 1\.0\.0-rc1 loaded"
+        $loaded = $content -match "Barro's AI Pizza Designer 1\.5\.0 loaded"
         $relevantErrors = @($content -split "`r?`n" | Where-Object { $_ -match "Barros|Pizza Designer" -and $_ -match "Error|Exception" })
         if ($loaded -and $relevantErrors.Count -eq 0) { Add-GateResult "RUN-202" "pass" "Plugin Awake completed with no relevant logged exception." @($copiedLog) }
         elseif ($relevantErrors.Count -gt 0) { Add-GateResult "RUN-202" "fail" ("Relevant loader errors: " + ($relevantErrors -join " | ")) @($copiedLog) }

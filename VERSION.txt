@@ -1,5 +1,5 @@
 Pizza Connection 3 / Barro's Pizza — Barro's Pizza Creator
-Version: 1.4.0-rc1
+Version: 1.5.0
 Runtime profile: creator-0.11.272
 Target: Pizza Connection 3 - Pizza Creator 0.11.272 / Windows x64 / Unity 2017.3.1p4
 Default game root: S:\Unity_Games\PC3 - Pizza Creator
@@ -7,5 +7,7 @@ Attachment parser: magic-byte PNG/JPEG/WebP validation
 Ingredient intelligence: flavor profiles, allergens, dietary tags, pairing cohesion
 Inspiration library: local-only, deduplicated, maximum 500 images
 Pizza art: seven templates, custom pixel maps, deterministic exact placements, 180-piece safety cap
-Agent voices: optional Azure en-GB/en-AU profiles, muted by default
+Agent voices: optional 24-voice English Azure roster, sequential roundtable, muted by default
+Music library: recursive albums, named playlists, search/filter/sort, automatic OGG inbox
+Microphone: Windows device picker, refresh, live meter, gain and mute
 Ecosystem: Workbench 2.3 RC + Runtime Proof Studio 1.2 RC

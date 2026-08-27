@@ -1,6 +1,6 @@
 # Barro's music library
 
-These five MP3 tracks were supplied by the project owner from the private Google Drive `Barros_Music` folder on 2026-08-27 for inclusion in Barro's Pizza Creator v1.4.
+These five MP3 tracks were supplied by the project owner from the private Google Drive `Barros_Music` folder on 2026-08-27 for inclusion in Barro's Pizza Creator v1.5.
 
 The source folder also contained WAV copies of the same songs. Each MP3 was converted to a Unity-friendly, audio-only 48 kHz stereo OGG/Vorbis quality-8 copy with timestamp repair, a -14 LUFS loudness target and -1 dBTP peak protection for dependable background playback in the Creator's Unity 2017 runtime. Each output has exactly one audio stream and was fully decoded during validation. The large duplicate WAV files are not packaged.
 

@@ -13,7 +13,11 @@ namespace Barros.PizzaCreator.AI
     public sealed class MediaTrack
     {
         public string Path = "";
+        public string Key = "";
         public string Title = "";
+        public string Folder = "Music";
+        public string Extension = "";
+        public long ModifiedUtcTicks;
         public bool IsVideo;
     }
 
@@ -21,6 +25,7 @@ namespace Barros.PizzaCreator.AI
     {
         private readonly List<MediaTrack> tracks = new List<MediaTrack>();
         private readonly List<string> playlist = new List<string>();
+        private readonly List<MediaNamedPlaylistState> namedPlaylists = new List<MediaNamedPlaylistState>();
         private AudioSource musicSource;
         private AudioSource videoAudioSource;
         private VideoPlayer videoPlayer;
@@ -38,6 +43,7 @@ namespace Barros.PizzaCreator.AI
         private bool audioReachedPlayback;
         private bool barrosReplacesStock = true;
         private bool playlistLoaded;
+        private int activePlaylistIndex;
         private bool speechFocusActive;
         private bool resumeMusicAfterSpeech;
         private bool resumeVideoAfterSpeech;
@@ -52,6 +58,8 @@ namespace Barros.PizzaCreator.AI
         public List<MediaTrack> Tracks { get { return tracks; } }
         public int CurrentIndex { get { return currentIndex; } }
         public int PlaylistCount { get { return playlist.Count; } }
+        public string ActivePlaylistName { get { return namedPlaylists.Count == 0 ? "Startup Mix" : namedPlaylists[Mathf.Clamp(activePlaylistIndex, 0, namedPlaylists.Count - 1)].Name; } }
+        public int NamedPlaylistCount { get { return namedPlaylists.Count; } }
         public bool Loading { get { return loading; } }
         public bool Shuffle { get { return shuffle; } set { shuffle = value; } }
         public bool Repeat { get { return repeat; } set { repeat = value; } }
@@ -70,7 +78,8 @@ namespace Barros.PizzaCreator.AI
                 return currentIndex >= 0 && currentIndex < tracks.Count ? tracks[currentIndex].Title : "No track selected";
             }
         }
-        public string ImportFolder { get { return Path.Combine(BepInEx.Paths.GameRootPath, "BarrosAI", "assets", "music", "imports"); } }
+        public string MusicRoot { get { return Path.Combine(BepInEx.Paths.GameRootPath, "BarrosAI", "assets", "music"); } }
+        public string ImportFolder { get { return Path.Combine(MusicRoot, "imports"); } }
         public string PlaylistFile { get { return Path.Combine(BepInEx.Paths.GameRootPath, "BarrosAI", "data", "music-playlist.json"); } }
         public string ConversionReportFile { get { return Path.Combine(BepInEx.Paths.GameRootPath, "BarrosAI", "assets", "music", "conversion-report.json"); } }
         public string NextTitle
@@ -169,21 +178,31 @@ namespace Barros.PizzaCreator.AI
         public void Refresh()
         {
             tracks.Clear();
-            string root = Path.Combine(BepInEx.Paths.GameRootPath, "BarrosAI", "assets", "music");
+            string root = MusicRoot;
             try
             {
                 Directory.CreateDirectory(root);
                 Directory.CreateDirectory(ImportFolder);
-                string[] files = Directory.GetFiles(root, "*.*", SearchOption.TopDirectoryOnly);
+                string[] files = Directory.GetFiles(root, "*.*", SearchOption.AllDirectories);
                 Array.Sort(files, StringComparer.OrdinalIgnoreCase);
                 for (int i = 0; i < files.Length; i++)
                 {
+                    string relative = files[i].Substring(root.Length).TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                    string[] parts = relative.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                    if (parts.Length > 1 && (string.Equals(parts[0], "imports", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(parts[0], ".playback-cache", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(parts[0], "tools", StringComparison.OrdinalIgnoreCase))) continue;
                     string extension = Path.GetExtension(files[i]).ToLowerInvariant();
                     if (extension != ".ogg" && extension != ".mp3" && extension != ".wav" && extension != ".mp4") continue;
                     if (extension == ".mp3" && File.Exists(Path.ChangeExtension(files[i], ".ogg"))) continue;
                     MediaTrack track = new MediaTrack();
                     track.Path = files[i];
+                    track.Key = relative.Replace(Path.DirectorySeparatorChar, '/').Replace(Path.AltDirectorySeparatorChar, '/');
                     track.Title = FriendlyTitle(Path.GetFileNameWithoutExtension(files[i]));
+                    string folder = Path.GetDirectoryName(relative);
+                    track.Folder = string.IsNullOrEmpty(folder) ? "Music" : folder.Replace(Path.DirectorySeparatorChar, '/');
+                    track.Extension = extension.TrimStart('.').ToUpperInvariant();
+                    track.ModifiedUtcTicks = File.GetLastWriteTimeUtc(files[i]).Ticks;
                     track.IsVideo = extension == ".mp4";
                     tracks.Add(track);
                 }
@@ -226,19 +245,19 @@ namespace Barros.PizzaCreator.AI
         public bool IsQueued(int index)
         {
             if (index < 0 || index >= tracks.Count) return false;
-            return playlist.Contains(Path.GetFileName(tracks[index].Path));
+            return playlist.Contains(tracks[index].Key);
         }
 
         public int QueuePosition(int index)
         {
             if (index < 0 || index >= tracks.Count) return -1;
-            return playlist.IndexOf(Path.GetFileName(tracks[index].Path));
+            return playlist.IndexOf(tracks[index].Key);
         }
 
         public void ToggleQueued(int index)
         {
             if (index < 0 || index >= tracks.Count) return;
-            string file = Path.GetFileName(tracks[index].Path);
+            string file = tracks[index].Key;
             int existing = playlist.IndexOf(file);
             if (existing >= 0)
             {
@@ -267,8 +286,30 @@ namespace Barros.PizzaCreator.AI
         public void SelectAll()
         {
             playlist.Clear();
-            for (int i = 0; i < tracks.Count; i++) playlist.Add(Path.GetFileName(tracks[i].Path));
+            for (int i = 0; i < tracks.Count; i++) playlist.Add(tracks[i].Key);
             status = "All " + playlist.Count + " tracks are in the startup queue.";
+        }
+
+        public void AddVisible(IList<int> indexes)
+        {
+            if (indexes == null) return;
+            for (int i = 0; i < indexes.Count; i++)
+            {
+                int index = indexes[i];
+                if (index >= 0 && index < tracks.Count && !playlist.Contains(tracks[index].Key)) playlist.Add(tracks[index].Key);
+            }
+            status = "Added the shown songs to " + ActivePlaylistName + ".";
+        }
+
+        public void RemoveVisible(IList<int> indexes)
+        {
+            if (indexes == null) return;
+            for (int i = 0; i < indexes.Count; i++)
+            {
+                int index = indexes[i];
+                if (index >= 0 && index < tracks.Count) playlist.Remove(tracks[index].Key);
+            }
+            status = "Removed the shown songs from " + ActivePlaylistName + ". The files remain in the library.";
         }
 
         public void ClearPlaylist()
@@ -282,8 +323,17 @@ namespace Barros.PizzaCreator.AI
             try
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(PlaylistFile));
+                SyncActivePlaylist();
                 MediaPlaylistState state = new MediaPlaylistState();
                 state.Queue.AddRange(playlist);
+                state.ActivePlaylist = ActivePlaylistName;
+                for (int i = 0; i < namedPlaylists.Count; i++)
+                {
+                    MediaNamedPlaylistState savedPlaylist = new MediaNamedPlaylistState();
+                    savedPlaylist.Name = namedPlaylists[i].Name;
+                    savedPlaylist.Queue.AddRange(namedPlaylists[i].Queue);
+                    state.Playlists.Add(savedPlaylist);
+                }
                 state.Shuffle = shuffle;
                 state.Repeat = repeat;
                 state.Volume = volume;
@@ -293,7 +343,7 @@ namespace Barros.PizzaCreator.AI
                 state.AutoImport = autoImport;
                 state.UseBarros = barrosReplacesStock;
                 File.WriteAllText(PlaylistFile, JsonConvert.SerializeObject(state, Formatting.Indented));
-                status = "Saved this play order for Pizza Creator startup.";
+                status = "Saved " + namedPlaylists.Count + " playlist" + (namedPlaylists.Count == 1 ? "" : "s") + "; " + ActivePlaylistName + " will start with Pizza Creator.";
                 if (evidence != null) evidence.Record("media.playlist_saved", "tracks=" + playlist.Count + "; shuffle=" + shuffle + "; repeat=" + repeat);
             }
             catch (Exception exception) { status = "Playlist save failed: " + exception.Message; }
@@ -307,13 +357,75 @@ namespace Barros.PizzaCreator.AI
             status = "Reloaded the saved startup queue with " + playlist.Count + " track" + (playlist.Count == 1 ? "" : "s") + ".";
         }
 
+        public void CyclePlaylist(int direction)
+        {
+            if (namedPlaylists.Count == 0) EnsureDefaultPlaylist();
+            SyncActivePlaylist();
+            activePlaylistIndex = (activePlaylistIndex + direction + namedPlaylists.Count) % namedPlaylists.Count;
+            LoadActivePlaylistQueue();
+            status = "Selected " + ActivePlaylistName + " · " + playlist.Count + " queued.";
+        }
+
+        public void CreatePlaylist(string requestedName)
+        {
+            SyncActivePlaylist();
+            MediaNamedPlaylistState created = new MediaNamedPlaylistState();
+            created.Name = UniquePlaylistName(requestedName, "New Mix");
+            namedPlaylists.Add(created);
+            activePlaylistIndex = namedPlaylists.Count - 1;
+            playlist.Clear();
+            status = "Created " + created.Name + ". Add songs, then Save playlists.";
+        }
+
+        public void DuplicatePlaylist(string requestedName)
+        {
+            EnsureDefaultPlaylist();
+            SyncActivePlaylist();
+            MediaNamedPlaylistState copy = new MediaNamedPlaylistState();
+            copy.Name = UniquePlaylistName(requestedName, ActivePlaylistName + " Copy");
+            copy.Queue.AddRange(playlist);
+            namedPlaylists.Add(copy);
+            activePlaylistIndex = namedPlaylists.Count - 1;
+            status = "Duplicated the playlist as " + copy.Name + ".";
+        }
+
+        public void RenamePlaylist(string requestedName)
+        {
+            EnsureDefaultPlaylist();
+            string cleaned = CleanPlaylistName(requestedName);
+            if (string.IsNullOrEmpty(cleaned)) { status = "Enter a playlist name first."; return; }
+            for (int i = 0; i < namedPlaylists.Count; i++)
+                if (i != activePlaylistIndex && string.Equals(namedPlaylists[i].Name, cleaned, StringComparison.OrdinalIgnoreCase))
+                { status = "A playlist already uses that name."; return; }
+            namedPlaylists[activePlaylistIndex].Name = cleaned;
+            status = "Renamed the active playlist to " + cleaned + ".";
+        }
+
+        public void DeletePlaylist()
+        {
+            EnsureDefaultPlaylist();
+            string removed = ActivePlaylistName;
+            if (namedPlaylists.Count == 1)
+            {
+                playlist.Clear();
+                namedPlaylists[0].Queue.Clear();
+                namedPlaylists[0].Name = "Startup Mix";
+                status = "Cleared the only playlist. Music files remain safely in the library.";
+                return;
+            }
+            namedPlaylists.RemoveAt(activePlaylistIndex);
+            activePlaylistIndex = Mathf.Clamp(activePlaylistIndex, 0, namedPlaylists.Count - 1);
+            LoadActivePlaylistQueue();
+            status = "Removed playlist " + removed + ". Music files remain safely in the library.";
+        }
+
         public long InboxRevision()
         {
             try
             {
                 Directory.CreateDirectory(ImportFolder);
                 long revision = 17;
-                string[] files = Directory.GetFiles(ImportFolder, "*.*", SearchOption.TopDirectoryOnly);
+                string[] files = Directory.GetFiles(ImportFolder, "*.*", SearchOption.AllDirectories);
                 Array.Sort(files, StringComparer.OrdinalIgnoreCase);
                 for (int i = 0; i < files.Length; i++)
                 {
@@ -475,7 +587,7 @@ namespace Barros.PizzaCreator.AI
             }
             else
             {
-                string audioUrl = "http://127.0.0.1:48173/music/playback/" + Uri.EscapeDataString(Path.GetFileName(track.Path));
+                string audioUrl = "http://127.0.0.1:48173/music/playback/" + Uri.EscapeDataString(track.Key);
                 using (WWW request = new WWW(audioUrl))
                 {
                     // Unity 2017's WWW compatibility API exposes the stream
@@ -577,7 +689,7 @@ namespace Barros.PizzaCreator.AI
         private int NextPlaylistIndex(int fromTrackIndex, int direction)
         {
             if (playlist.Count == 0) return -1;
-            string currentFile = fromTrackIndex >= 0 && fromTrackIndex < tracks.Count ? Path.GetFileName(tracks[fromTrackIndex].Path) : "";
+            string currentFile = fromTrackIndex >= 0 && fromTrackIndex < tracks.Count ? tracks[fromTrackIndex].Key : "";
             int position = playlist.IndexOf(currentFile);
             if (position < 0) position = direction >= 0 ? -1 : 0;
             position = (position + direction + playlist.Count) % playlist.Count;
@@ -586,6 +698,9 @@ namespace Barros.PizzaCreator.AI
 
         private int TrackIndexForFile(string file)
         {
+            for (int i = 0; i < tracks.Count; i++)
+                if (string.Equals(tracks[i].Key, file, StringComparison.OrdinalIgnoreCase)) return i;
+            // v1 playlist migration: an old queue stored only the basename.
             for (int i = 0; i < tracks.Count; i++)
                 if (string.Equals(Path.GetFileName(tracks[i].Path), file, StringComparison.OrdinalIgnoreCase)) return i;
             return -1;
@@ -601,8 +716,26 @@ namespace Barros.PizzaCreator.AI
                     MediaPlaylistState saved = JsonConvert.DeserializeObject<MediaPlaylistState>(File.ReadAllText(PlaylistFile));
                     if (saved != null)
                     {
-                        for (int i = 0; i < saved.Queue.Count; i++)
-                            if (TrackIndexForFile(saved.Queue[i]) >= 0 && !playlist.Contains(saved.Queue[i])) playlist.Add(saved.Queue[i]);
+                        namedPlaylists.Clear();
+                        if (saved.Playlists != null)
+                        {
+                            for (int i = 0; i < saved.Playlists.Count; i++)
+                            {
+                                MediaNamedPlaylistState normalized = NormalizePlaylist(saved.Playlists[i]);
+                                if (normalized != null) namedPlaylists.Add(normalized);
+                            }
+                        }
+                        if (namedPlaylists.Count == 0)
+                        {
+                            MediaNamedPlaylistState migrated = new MediaNamedPlaylistState();
+                            migrated.Name = "Startup Mix";
+                            if (saved.Queue != null) migrated.Queue.AddRange(saved.Queue);
+                            namedPlaylists.Add(NormalizePlaylist(migrated));
+                        }
+                        activePlaylistIndex = 0;
+                        for (int i = 0; i < namedPlaylists.Count; i++)
+                            if (string.Equals(namedPlaylists[i].Name, saved.ActivePlaylist, StringComparison.OrdinalIgnoreCase)) activePlaylistIndex = i;
+                        LoadActivePlaylistQueue();
                         shuffle = saved.Shuffle;
                         repeat = saved.Repeat;
                         volume = Mathf.Clamp01(saved.Volume);
@@ -618,13 +751,98 @@ namespace Barros.PizzaCreator.AI
                 }
                 catch (Exception exception) { status = "Saved playlist could not be read: " + exception.Message; }
             }
-            for (int i = 0; i < tracks.Count; i++) playlist.Add(Path.GetFileName(tracks[i].Path));
+            namedPlaylists.Clear();
+            MediaNamedPlaylistState defaults = new MediaNamedPlaylistState();
+            defaults.Name = "Startup Mix";
+            for (int i = 0; i < tracks.Count; i++) defaults.Queue.Add(tracks[i].Key);
+            namedPlaylists.Add(defaults);
+            activePlaylistIndex = 0;
+            LoadActivePlaylistQueue();
         }
 
         private void RemoveMissingPlaylistEntries()
         {
             for (int i = playlist.Count - 1; i >= 0; i--)
                 if (TrackIndexForFile(playlist[i]) < 0) playlist.RemoveAt(i);
+            SyncActivePlaylist();
+            for (int list = 0; list < namedPlaylists.Count; list++)
+                for (int i = namedPlaylists[list].Queue.Count - 1; i >= 0; i--)
+                    if (TrackIndexForFile(namedPlaylists[list].Queue[i]) < 0) namedPlaylists[list].Queue.RemoveAt(i);
+        }
+
+        private void EnsureDefaultPlaylist()
+        {
+            if (namedPlaylists.Count > 0) return;
+            MediaNamedPlaylistState defaults = new MediaNamedPlaylistState();
+            defaults.Name = "Startup Mix";
+            namedPlaylists.Add(defaults);
+            activePlaylistIndex = 0;
+        }
+
+        private void SyncActivePlaylist()
+        {
+            EnsureDefaultPlaylist();
+            activePlaylistIndex = Mathf.Clamp(activePlaylistIndex, 0, namedPlaylists.Count - 1);
+            namedPlaylists[activePlaylistIndex].Queue.Clear();
+            namedPlaylists[activePlaylistIndex].Queue.AddRange(playlist);
+        }
+
+        private void LoadActivePlaylistQueue()
+        {
+            EnsureDefaultPlaylist();
+            activePlaylistIndex = Mathf.Clamp(activePlaylistIndex, 0, namedPlaylists.Count - 1);
+            playlist.Clear();
+            for (int i = 0; i < namedPlaylists[activePlaylistIndex].Queue.Count; i++)
+            {
+                string key = namedPlaylists[activePlaylistIndex].Queue[i];
+                int trackIndex = TrackIndexForFile(key);
+                if (trackIndex >= 0)
+                {
+                    string normalized = tracks[trackIndex].Key;
+                    if (!playlist.Contains(normalized)) playlist.Add(normalized);
+                }
+            }
+            SyncActivePlaylist();
+        }
+
+        private MediaNamedPlaylistState NormalizePlaylist(MediaNamedPlaylistState value)
+        {
+            if (value == null) return null;
+            MediaNamedPlaylistState normalized = new MediaNamedPlaylistState();
+            normalized.Name = UniquePlaylistName(value.Name, "Imported Mix");
+            if (value.Queue != null)
+            {
+                for (int i = 0; i < value.Queue.Count; i++)
+                {
+                    int index = TrackIndexForFile(value.Queue[i]);
+                    if (index >= 0 && !normalized.Queue.Contains(tracks[index].Key)) normalized.Queue.Add(tracks[index].Key);
+                }
+            }
+            return normalized;
+        }
+
+        private string UniquePlaylistName(string requested, string fallback)
+        {
+            string baseName = CleanPlaylistName(requested);
+            if (string.IsNullOrEmpty(baseName)) baseName = fallback;
+            string candidate = baseName;
+            int suffix = 2;
+            bool exists = true;
+            while (exists)
+            {
+                exists = false;
+                for (int i = 0; i < namedPlaylists.Count; i++)
+                    if (string.Equals(namedPlaylists[i].Name, candidate, StringComparison.OrdinalIgnoreCase)) { exists = true; break; }
+                if (exists) candidate = baseName + " " + suffix++;
+            }
+            return candidate;
+        }
+
+        private static string CleanPlaylistName(string value)
+        {
+            string cleaned = (value ?? "").Trim();
+            if (cleaned.Length > 32) cleaned = cleaned.Substring(0, 32).Trim();
+            return cleaned;
         }
 
         private void OnVideoEnded(VideoPlayer player)
@@ -671,8 +889,10 @@ namespace Barros.PizzaCreator.AI
         [Serializable]
         private sealed class MediaPlaylistState
         {
-            [JsonProperty("version")] public int Version = 1;
+            [JsonProperty("version")] public int Version = 2;
             [JsonProperty("queue")] public List<string> Queue = new List<string>();
+            [JsonProperty("active_playlist")] public string ActivePlaylist = "Startup Mix";
+            [JsonProperty("playlists")] public List<MediaNamedPlaylistState> Playlists = new List<MediaNamedPlaylistState>();
             [JsonProperty("shuffle")] public bool Shuffle;
             [JsonProperty("repeat")] public bool Repeat;
             [JsonProperty("volume")] public float Volume = 0.75f;
@@ -681,6 +901,13 @@ namespace Barros.PizzaCreator.AI
             [JsonProperty("treble_db")] public float TrebleDb;
             [JsonProperty("auto_import")] public bool AutoImport = true;
             [JsonProperty("use_barros")] public bool UseBarros = true;
+        }
+
+        [Serializable]
+        private sealed class MediaNamedPlaylistState
+        {
+            [JsonProperty("name")] public string Name = "Startup Mix";
+            [JsonProperty("queue")] public List<string> Queue = new List<string>();
         }
     }
 }

@@ -31,12 +31,13 @@ namespace Barros.PizzaCreator.AI
             Post<TranscriptionRequest, TranscriptionResponse>("/transcribe", request, callback);
         }
 
-        public void Speak(string agent, string message, string voice, Action<SpeechResponse> callback)
+        public void Speak(string agent, string message, string voice, float rate, Action<SpeechResponse> callback)
         {
             SpeechRequest request = new SpeechRequest();
             request.Agent = agent;
             request.Message = message;
             request.Voice = voice;
+            request.Rate = rate;
             Post<SpeechRequest, SpeechResponse>("/speak", request, callback);
         }
 

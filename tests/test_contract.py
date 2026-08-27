@@ -131,14 +131,45 @@ class ProofContractTests(unittest.TestCase):
             "UseBarros = barrosReplacesStock",
         ):
             self.assertIn(term, deck)
-        self.assertIn("SAVE QUEUE", panel)
-        self.assertIn("LOAD SAVED", panel)
+        self.assertIn("SAVE PLAYLISTS", panel)
+        self.assertIn("RELOAD SAVED", panel)
         self.assertIn("Auto import", panel)
         self.assertIn("REPORT", panel)
-        self.assertIn("new WaitForSecondsRealtime(1f)", panel)
+        self.assertIn("new WaitForSecondsRealtime(pause)", panel)
         self.assertIn("pausedBeforeSpeech = paused", deck)
         self.assertIn("paused = true", deck)
         self.assertIn("do you want to save it to the recipe book now?", panel)
+
+    def test_v15_library_roundtable_and_microphone_controls_are_scalable(self):
+        deck = (ROOT / "plugin-src" / "MediaDeck.cs").read_text(encoding="utf-8")
+        panel = (ROOT / "plugin-src" / "PanelRenderer.cs").read_text(encoding="utf-8")
+        client = (ROOT / "plugin-src" / "BackendClient.cs").read_text(encoding="utf-8")
+        for term in (
+            "SearchOption.AllDirectories",
+            "MediaNamedPlaylistState",
+            "ActivePlaylistName",
+            "CreatePlaylist",
+            "DuplicatePlaylist",
+            "RenamePlaylist",
+            "DeletePlaylist",
+            "AddVisible",
+            "RemoveVisible",
+        ):
+            self.assertIn(term, deck)
+        for term in (
+            "VisibleMediaTracks",
+            "BeginScrollView",
+            "MediaFilters",
+            "MediaSorts",
+            "QueueAgentRoundtable",
+            "agentSpeechQueue",
+            "agentSpeechGeneration",
+            "CurrentMicrophoneLevel",
+            "SelectedMicrophoneDevice",
+            "microphoneGain",
+        ):
+            self.assertIn(term, panel)
+        self.assertIn("request.Rate = rate", client)
 
     def test_interactive_provider_requests_are_bounded_and_have_local_fallback(self):
         orchestrator = (ROOT / "backend" / "barros_ai" / "orchestrator.py").read_text(encoding="utf-8")

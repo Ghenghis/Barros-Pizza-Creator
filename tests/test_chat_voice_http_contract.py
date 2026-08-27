@@ -89,7 +89,7 @@ class CreatorChatVoiceHTTPTests(unittest.TestCase):
             base = f"http://127.0.0.1:{server.server_address[1]}"
             request = urllib.request.Request(
                 base + "/speak",
-                data=json.dumps({"agent": "Flavor Chef", "message": "Use more basil."}).encode("utf-8"),
+                data=json.dumps({"agent": "Flavor Chef", "message": "Use more basil.", "rate": 1.1}).encode("utf-8"),
                 headers={"Content-Type": "application/json"},
                 method="POST",
             )

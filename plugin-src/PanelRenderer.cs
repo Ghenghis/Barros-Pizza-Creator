@@ -73,10 +73,28 @@ namespace Barros.PizzaCreator.AI
         private AudioSource agentAudioSource;
         private AudioClip agentSpeechClip;
         private Coroutine agentSpeechRoutine;
+        private readonly List<AgentSpeechTurn> agentSpeechQueue = new List<AgentSpeechTurn>();
+        private string currentSpeakingAgent = "";
+        private bool agentSpeechFocusHeld;
+        private bool agentSpeechHasPlayed;
+        private int agentSpeechGeneration;
+        private float agentVoiceVolume = 0.9f;
+        private float agentSpeechRate = 1f;
+        private float agentSpeechGap = 0.45f;
         private MediaDeck mediaDeck;
         private bool musicImportBusy;
         private float nextMusicInboxCheck;
         private long lastMusicInboxRevision;
+        private Vector2 mediaLibraryScroll;
+        private string mediaSearch = "";
+        private int mediaFilterMode;
+        private int mediaSortMode;
+        private string playlistNameDraft = "New Mix";
+        private string playlistDeleteArmed = "";
+        private int selectedMicrophone;
+        private string selectedMicrophoneName = "";
+        private bool microphoneMuted;
+        private float microphoneGain = 1f;
         private readonly Dictionary<string, int> agentVoiceIndexes = new Dictionary<string, int>();
         private readonly List<AiRecipe> designCheckpoints = new List<AiRecipe>();
         private bool checkpointCompare;
@@ -108,6 +126,9 @@ namespace Barros.PizzaCreator.AI
             "Emily · IE · F", "Connor · IE · M", "Molly · NZ · F", "Mitchell · NZ · M",
             "Leah · ZA · F", "Luke · ZA · M", "Luna · SG · F", "Wayne · SG · M"
         };
+
+        private static readonly string[] MediaFilters = { "ALL", "IN QUEUE", "OUT", "AUDIO", "VIDEO" };
+        private static readonly string[] MediaSorts = { "A–Z", "NEWEST", "FOLDER", "QUEUE" };
 
         private static readonly string[] GuidedQuestions =
         {
@@ -172,6 +193,8 @@ namespace Barros.PizzaCreator.AI
             agentAudioSource = GetComponent<AudioSource>();
             if (agentAudioSource == null) agentAudioSource = gameObject.AddComponent<AudioSource>();
             agentAudioSource.playOnAwake = false;
+            agentAudioSource.volume = agentVoiceVolume;
+            RefreshMicrophones();
             GameObject mediaObject = new GameObject("Barros Media Deck");
             // Keep music active when the user switches away from the AI tab.
             // The sibling still dies cleanly with the owning Pizza Creator canvas.
@@ -211,6 +234,12 @@ namespace Barros.PizzaCreator.AI
                 evidence.Record("ui.stock_header_restored", originalHeader);
                 evidence.Capture("ui-stock-header");
             }
+        }
+
+        private void OnDestroy()
+        {
+            if (recording) CancelVoiceRecording();
+            StopAgentSpeech();
         }
 
         private void Update()
@@ -609,6 +638,8 @@ namespace Barros.PizzaCreator.AI
             GUILayout.EndVertical();
             if (recipes.Count > 0)
             {
+                if (GUILayout.Button(agentSpeechBusy ? "ROUNDTABLE · " + currentSpeakingAgent + " · " + agentSpeechQueue.Count + " WAITING" : "PLAY AGENT ROUNDTABLE", activeButtonStyle, GUILayout.Height(39f)))
+                    QueueAgentRoundtable();
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button("Balanced", buttonStyle, GUILayout.Height(35f))) ApplyCrewPreset("balanced");
                 if (GUILayout.Button("Max flavor", activeButtonStyle, GUILayout.Height(35f))) ApplyCrewPreset("flavor");
@@ -639,6 +670,16 @@ namespace Barros.PizzaCreator.AI
             if (GUILayout.Button("STOP", buttonStyle, GUILayout.Width(72f), GUILayout.Height(32f))) StopAgentSpeech();
             GUILayout.EndHorizontal();
             GUILayout.Label("24 selectable English Azure voices: 12 feminine and 12 masculine across US, UK, AU, CA, IN, IE, NZ, ZA and SG. Speech starts muted and never reads links, code or file paths.", smallStyle);
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Voice", smallStyle, GUILayout.Width(52f));
+            agentVoiceVolume = GUILayout.HorizontalSlider(agentVoiceVolume, 0f, 1f, GUILayout.Width(130f));
+            if (agentAudioSource != null) agentAudioSource.volume = agentVoiceVolume;
+            if (GUILayout.Button("Rate " + agentSpeechRate.ToString("0.0") + "×", buttonStyle, GUILayout.Width(92f), GUILayout.Height(29f)))
+                agentSpeechRate = agentSpeechRate >= 1.1f ? 0.9f : agentSpeechRate + 0.1f;
+            if (GUILayout.Button("Gap " + agentSpeechGap.ToString("0.00") + "s", buttonStyle, GUILayout.Width(94f), GUILayout.Height(29f)))
+                agentSpeechGap = agentSpeechGap >= 0.75f ? 0.25f : agentSpeechGap + 0.25f;
+            GUILayout.EndHorizontal();
+            if (agentSpeechBusy) GUILayout.Label("Now speaking: " + currentSpeakingAgent + " · " + agentSpeechQueue.Count + " voice turn" + (agentSpeechQueue.Count == 1 ? "" : "s") + " queued · music stays paused until everyone finishes.", speakerStyle);
             GUILayout.EndVertical();
             GUILayout.Space(6f);
         }
@@ -652,8 +693,8 @@ namespace Barros.PizzaCreator.AI
             if (GUILayout.Button(AgentVoiceLabel(name), buttonStyle, GUILayout.Width(132f), GUILayout.Height(29f))) CycleAgentVoice(name);
             if (GUILayout.Button("ASK", buttonStyle, GUILayout.Width(58f), GUILayout.Height(29f))) FocusAgent(name);
             bool previousEnabled = GUI.enabled;
-            GUI.enabled = previousEnabled && hasFeedback && !agentSpeechBusy;
-            if (GUILayout.Button("SPEAK", buttonStyle, GUILayout.Width(68f), GUILayout.Height(29f))) SpeakAgent(name, detail);
+            GUI.enabled = previousEnabled && hasFeedback;
+            if (GUILayout.Button(agentSpeechBusy ? "QUEUE" : "SPEAK", buttonStyle, GUILayout.Width(68f), GUILayout.Height(29f))) SpeakAgent(name, detail);
             GUI.enabled = previousEnabled;
             GUILayout.EndHorizontal();
             GUILayout.Label(detail, smallStyle);
@@ -670,14 +711,36 @@ namespace Barros.PizzaCreator.AI
             GUILayout.FlexibleSpace();
             GUILayout.Label(recording ? "● Listening" : (microphoneAvailable ? "Ready" : "No mic"), recording || !microphoneAvailable ? speakerStyle : smallStyle, GUILayout.Width(110f));
             GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Input", smallStyle, GUILayout.Width(48f));
+            string deviceLabel = microphoneAvailable ? SelectedMicrophoneLabel() : "No Windows microphone";
+            GUI.enabled = !recording;
+            if (GUILayout.Button(deviceLabel, buttonStyle, GUILayout.Height(31f))) CycleMicrophone();
+            if (GUILayout.Button("REFRESH", buttonStyle, GUILayout.Width(82f), GUILayout.Height(31f))) RefreshMicrophones();
+            GUI.enabled = true;
+            if (GUILayout.Button(microphoneMuted ? "MUTED" : "LIVE", microphoneMuted ? buttonStyle : activeButtonStyle, GUILayout.Width(72f), GUILayout.Height(31f)))
+            {
+                microphoneMuted = !microphoneMuted;
+                if (microphoneMuted && recording) CancelVoiceRecording();
+                status = microphoneMuted ? "Microphone muted." : "Microphone ready when a Windows input is connected.";
+            }
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Input gain", smallStyle, GUILayout.Width(78f));
+            microphoneGain = GUILayout.HorizontalSlider(microphoneGain, 0.5f, 2f, GUILayout.Width(330f));
+            GUILayout.Label(microphoneGain.ToString("0.0") + "×", smallStyle, GUILayout.Width(54f));
+            GUILayout.EndHorizontal();
             Rect waveRect = GUILayoutUtility.GetRect(560f, 112f, GUILayout.ExpandWidth(true));
             DrawWaveform(waveRect);
-            string micLabel = recording ? "STOP & TRANSCRIBE" : (microphoneAvailable ? "START LISTENING" : "RETRY MICROPHONE");
+            string micLabel = recording ? "STOP & TRANSCRIBE" : (microphoneMuted ? "MICROPHONE MUTED" : (microphoneAvailable ? "START LISTENING" : "RETRY MICROPHONE"));
+            GUI.enabled = recording || !microphoneMuted;
             if (GUILayout.Button(micLabel, recording ? activeButtonStyle : primaryButtonStyle, GUILayout.Height(52f)))
             {
                 if (recording) StopVoiceAndTranscribe(); else StartVoice();
             }
+            GUI.enabled = true;
             GUILayout.Label("Tell me what kind of pizza you want", subtitleStyle);
+            GUILayout.Label("Windows-ready controls remember the selected input. Connect the microphone, press Refresh, choose it, then confirm the live meter moves before transcription.", smallStyle);
             GUILayout.EndVertical();
             GUILayout.Space(6f);
             if (!string.IsNullOrEmpty(transcript))
@@ -737,7 +800,7 @@ namespace Barros.PizzaCreator.AI
             GUILayout.Label(mediaDeck.CurrentTitle, speakerStyle);
             if (mediaDeck.BarrosReplacesStock && mediaDeck.CurrentIndex >= 0)
                 GUILayout.Label("Now playing · file " + (mediaDeck.CurrentIndex + 1) + " of " + mediaDeck.Tracks.Count + "   |   Up next · " + mediaDeck.NextTitle, smallStyle);
-            GUILayout.Label("Startup queue · " + mediaDeck.PlaylistCount + " of " + mediaDeck.Tracks.Count + " library files", smallStyle);
+            GUILayout.Label(mediaDeck.ActivePlaylistName + " · " + mediaDeck.PlaylistCount + " of " + mediaDeck.Tracks.Count + " library files · " + mediaDeck.NamedPlaylistCount + " saved mix" + (mediaDeck.NamedPlaylistCount == 1 ? "" : "es"), smallStyle);
             GUILayout.Label(mediaDeck.Status, smallStyle);
             GUILayout.Label("Drop MP3, WAV, or OGG into the folder. Import + Refresh creates playable OGG copies; MP4 lyric videos also appear here.", smallStyle);
 
@@ -771,9 +834,28 @@ namespace Barros.PizzaCreator.AI
             mediaDeck.BassDb = DrawEqSlider("Bass", mediaDeck.BassDb);
             mediaDeck.MidDb = DrawEqSlider("Mid", mediaDeck.MidDb);
             mediaDeck.TrebleDb = DrawEqSlider("Treble", mediaDeck.TrebleDb);
+            GUILayout.Label("Named playlists · the active mix becomes the startup queue", subtitleStyle);
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("SAVE QUEUE", activeButtonStyle, GUILayout.Height(32f))) mediaDeck.SavePlaylist();
-            if (GUILayout.Button("LOAD SAVED", buttonStyle, GUILayout.Height(32f))) mediaDeck.LoadPlaylist();
+            if (GUILayout.Button("◀", buttonStyle, GUILayout.Width(46f), GUILayout.Height(32f))) { mediaDeck.CyclePlaylist(-1); playlistDeleteArmed = ""; }
+            GUILayout.Label(mediaDeck.ActivePlaylistName, speakerStyle, GUILayout.Width(310f));
+            if (GUILayout.Button("▶", buttonStyle, GUILayout.Width(46f), GUILayout.Height(32f))) { mediaDeck.CyclePlaylist(1); playlistDeleteArmed = ""; }
+            GUILayout.Label(mediaDeck.PlaylistCount + " songs", smallStyle);
+            GUILayout.EndHorizontal();
+            playlistNameDraft = GUILayout.TextField(playlistNameDraft, inputStyle, GUILayout.Height(34f));
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("NEW", buttonStyle, GUILayout.Height(31f))) { mediaDeck.CreatePlaylist(playlistNameDraft); playlistNameDraft = ""; playlistDeleteArmed = ""; }
+            if (GUILayout.Button("DUPLICATE", buttonStyle, GUILayout.Height(31f))) { mediaDeck.DuplicatePlaylist(playlistNameDraft); playlistNameDraft = ""; playlistDeleteArmed = ""; }
+            if (GUILayout.Button("RENAME", buttonStyle, GUILayout.Height(31f))) { mediaDeck.RenamePlaylist(playlistNameDraft); playlistNameDraft = ""; playlistDeleteArmed = ""; }
+            string deleteLabel = playlistDeleteArmed == mediaDeck.ActivePlaylistName ? "CONFIRM REMOVE" : "REMOVE MIX";
+            if (GUILayout.Button(deleteLabel, buttonStyle, GUILayout.Height(31f)))
+            {
+                if (playlistDeleteArmed == mediaDeck.ActivePlaylistName) { mediaDeck.DeletePlaylist(); playlistDeleteArmed = ""; }
+                else { playlistDeleteArmed = mediaDeck.ActivePlaylistName; status = "Press Confirm remove to remove the playlist. Music files will not be deleted."; }
+            }
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("SAVE PLAYLISTS", activeButtonStyle, GUILayout.Height(32f))) mediaDeck.SavePlaylist();
+            if (GUILayout.Button("RELOAD SAVED", buttonStyle, GUILayout.Height(32f))) mediaDeck.LoadPlaylist();
             if (GUILayout.Button("SELECT ALL", buttonStyle, GUILayout.Height(32f))) mediaDeck.SelectAll();
             if (GUILayout.Button("CLEAR", buttonStyle, GUILayout.Width(86f), GUILayout.Height(32f))) mediaDeck.ClearPlaylist();
             GUILayout.EndHorizontal();
@@ -781,24 +863,83 @@ namespace Barros.PizzaCreator.AI
             GUILayout.Space(7f);
 
             GUILayout.BeginVertical(cardStyle);
-            GUILayout.Label("Music library · choose the startup queue and order", subtitleStyle);
-            for (int i = 0; i < mediaDeck.Tracks.Count; i++)
+            GUILayout.Label("Music library · search, organize, and build the active mix", subtitleStyle);
+            GUILayout.BeginHorizontal();
+            mediaSearch = GUILayout.TextField(mediaSearch, inputStyle, GUILayout.Height(34f));
+            if (GUILayout.Button(MediaFilters[mediaFilterMode], buttonStyle, GUILayout.Width(98f), GUILayout.Height(34f))) mediaFilterMode = (mediaFilterMode + 1) % MediaFilters.Length;
+            if (GUILayout.Button(MediaSorts[mediaSortMode], buttonStyle, GUILayout.Width(82f), GUILayout.Height(34f))) mediaSortMode = (mediaSortMode + 1) % MediaSorts.Length;
+            GUILayout.EndHorizontal();
+            List<int> visibleTracks = VisibleMediaTracks();
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(visibleTracks.Count + " shown · " + mediaDeck.Tracks.Count + " total · folders and duplicate filenames supported", smallStyle);
+            GUILayout.FlexibleSpace();
+            if (GUILayout.Button("ADD", buttonStyle, GUILayout.Width(64f), GUILayout.Height(29f))) mediaDeck.AddVisible(visibleTracks);
+            if (GUILayout.Button("REMOVE", buttonStyle, GUILayout.Width(78f), GUILayout.Height(29f))) mediaDeck.RemoveVisible(visibleTracks);
+            GUILayout.EndHorizontal();
+            mediaLibraryScroll = GUILayout.BeginScrollView(mediaLibraryScroll, panelStyle, GUILayout.Height(310f));
+            for (int visible = 0; visible < visibleTracks.Count; visible++)
             {
+                int i = visibleTracks[visible];
                 MediaTrack track = mediaDeck.Tracks[i];
                 int queuePosition = mediaDeck.QueuePosition(i);
-                string label = (i + 1) + ". " + track.Title + (track.IsVideo ? "  [VIDEO]" : "");
+                string label = track.Title + "  [" + track.Extension + "]\n" + track.Folder;
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button(label, mediaDeck.BarrosReplacesStock && i == mediaDeck.CurrentIndex ? activeButtonStyle : buttonStyle, GUILayout.Height(34f))) mediaDeck.Select(i);
-                if (GUILayout.Button(queuePosition >= 0 ? "IN · " + (queuePosition + 1) : "OUT", queuePosition >= 0 ? activeButtonStyle : buttonStyle, GUILayout.Width(72f), GUILayout.Height(34f))) mediaDeck.ToggleQueued(i);
+                if (GUILayout.Button(label, mediaDeck.BarrosReplacesStock && i == mediaDeck.CurrentIndex ? activeButtonStyle : buttonStyle, GUILayout.Height(48f))) mediaDeck.Select(i);
+                if (GUILayout.Button(queuePosition >= 0 ? "IN · " + (queuePosition + 1) : "OUT", queuePosition >= 0 ? activeButtonStyle : buttonStyle, GUILayout.Width(72f), GUILayout.Height(48f))) mediaDeck.ToggleQueued(i);
                 GUI.enabled = queuePosition > 0;
-                if (GUILayout.Button("↑", buttonStyle, GUILayout.Width(38f), GUILayout.Height(34f))) mediaDeck.MoveQueued(i, -1);
+                if (GUILayout.Button("↑", buttonStyle, GUILayout.Width(38f), GUILayout.Height(48f))) mediaDeck.MoveQueued(i, -1);
                 GUI.enabled = queuePosition >= 0 && queuePosition < mediaDeck.PlaylistCount - 1;
-                if (GUILayout.Button("↓", buttonStyle, GUILayout.Width(38f), GUILayout.Height(34f))) mediaDeck.MoveQueued(i, 1);
+                if (GUILayout.Button("↓", buttonStyle, GUILayout.Width(38f), GUILayout.Height(48f))) mediaDeck.MoveQueued(i, 1);
                 GUI.enabled = true;
                 GUILayout.EndHorizontal();
             }
             if (mediaDeck.Tracks.Count == 0) GUILayout.Label("Add project-owned files to BarrosAI/assets/music and press Refresh.", bodyStyle);
+            else if (visibleTracks.Count == 0) GUILayout.Label("No songs match this search and filter. Clear the search or cycle the filter.", bodyStyle);
+            GUILayout.EndScrollView();
             GUILayout.EndVertical();
+        }
+
+        private List<int> VisibleMediaTracks()
+        {
+            List<int> result = new List<int>();
+            if (mediaDeck == null) return result;
+            string query = (mediaSearch ?? "").Trim();
+            for (int i = 0; i < mediaDeck.Tracks.Count; i++)
+            {
+                MediaTrack track = mediaDeck.Tracks[i];
+                bool queued = mediaDeck.IsQueued(i);
+                if (mediaFilterMode == 1 && !queued) continue;
+                if (mediaFilterMode == 2 && queued) continue;
+                if (mediaFilterMode == 3 && track.IsVideo) continue;
+                if (mediaFilterMode == 4 && !track.IsVideo) continue;
+                if (!string.IsNullOrEmpty(query)
+                    && track.Title.IndexOf(query, StringComparison.OrdinalIgnoreCase) < 0
+                    && track.Key.IndexOf(query, StringComparison.OrdinalIgnoreCase) < 0
+                    && track.Folder.IndexOf(query, StringComparison.OrdinalIgnoreCase) < 0) continue;
+                result.Add(i);
+            }
+            result.Sort(delegate(int left, int right)
+            {
+                MediaTrack a = mediaDeck.Tracks[left];
+                MediaTrack b = mediaDeck.Tracks[right];
+                if (mediaSortMode == 1) return b.ModifiedUtcTicks.CompareTo(a.ModifiedUtcTicks);
+                if (mediaSortMode == 2)
+                {
+                    int folder = string.Compare(a.Folder, b.Folder, StringComparison.OrdinalIgnoreCase);
+                    return folder != 0 ? folder : string.Compare(a.Title, b.Title, StringComparison.OrdinalIgnoreCase);
+                }
+                if (mediaSortMode == 3)
+                {
+                    int aPosition = mediaDeck.QueuePosition(left);
+                    int bPosition = mediaDeck.QueuePosition(right);
+                    if (aPosition < 0) aPosition = int.MaxValue;
+                    if (bPosition < 0) bPosition = int.MaxValue;
+                    int queue = aPosition.CompareTo(bPosition);
+                    return queue != 0 ? queue : string.Compare(a.Title, b.Title, StringComparison.OrdinalIgnoreCase);
+                }
+                return string.Compare(a.Title, b.Title, StringComparison.OrdinalIgnoreCase);
+            });
+            return result;
         }
 
         private void RefreshMusicLibrary()
@@ -855,9 +996,10 @@ namespace Barros.PizzaCreator.AI
         {
             GUI.Box(rect, GUIContent.none, panelStyle);
             float phase = Time.realtimeSinceStartup * (recording ? 6f : 1.2f);
+            float liveLevel = recording ? CurrentMicrophoneLevel() : 0f;
             for (int i = 0; i < 35; i++)
             {
-                float value = recording ? Mathf.Abs(Mathf.Sin(phase + i * 0.7f) * Mathf.Cos(i * 0.31f)) : 0.15f;
+                float value = recording ? Mathf.Clamp01(liveLevel * (0.72f + 0.28f * Mathf.Abs(Mathf.Sin(phase + i * 0.7f)))) : 0.15f;
                 float height = 12f + value * (rect.height - 24f);
                 GUI.color = recording ? red : new Color(0.55f, 0.32f, 0.29f, 1f);
                 GUI.DrawTexture(new Rect(rect.x + 10f + i * ((rect.width - 20f) / 35f), rect.center.y - height * 0.5f, 3f, height), whiteTexture);
@@ -1258,6 +1400,9 @@ namespace Barros.PizzaCreator.AI
                 }
                 agents.Clear();
                 if (response.Agents != null) agents.AddRange(response.Agents);
+                if (endpoint == "/crew")
+                    for (int i = 0; i < agents.Count; i++)
+                        conversation.Add(new ConversationLine(agents[i].Agent, agents[i].Message));
                 consensus = response.Consensus;
                 selectedRecipe = 0;
                 attachments.Clear();
@@ -1271,7 +1416,7 @@ namespace Barros.PizzaCreator.AI
                 }
                 guidedBuildPending = false;
                 if (endpoint == "/crew" && !agentVoicesMuted && ttsConfigured && agents.Count > 0)
-                    SpeakAgent(agents[0].Agent, agents[0].Message);
+                    QueueAgentRoundtable();
             });
         }
 
@@ -1326,61 +1471,103 @@ namespace Barros.PizzaCreator.AI
                 status = "Agent voices are muted. Turn them on at the top of Design Crew.";
                 return;
             }
-            StopAgentSpeech();
-            agentSpeechBusy = true;
-            status = "Preparing " + agent + " voice…";
-            backend.Speak(agent, message, AgentVoiceName(agent), delegate(SpeechResponse response)
+            agentSpeechQueue.Add(new AgentSpeechTurn(agent, message, AgentVoiceName(agent)));
+            status = agentSpeechBusy ? agent + " added to the voice queue." : "Preparing " + agent + " voice…";
+            if (!agentSpeechBusy) BeginNextAgentSpeech();
+        }
+
+        private void QueueAgentRoundtable()
+        {
+            if (!ttsConfigured) { status = "Azure agent voices need setup before the roundtable can speak."; return; }
+            if (agentVoicesMuted) { status = "Agent voices are muted. Turn them on to play the roundtable."; return; }
+            if (agents.Count == 0) { status = "Ask the Design Crew first, then play their roundtable."; return; }
+            for (int i = 0; i < agents.Count; i++)
+                agentSpeechQueue.Add(new AgentSpeechTurn(agents[i].Agent, agents[i].Message, AgentVoiceName(agents[i].Agent)));
+            status = "Queued all " + agents.Count + " agents. They will speak one at a time without overlap.";
+            if (!agentSpeechBusy) BeginNextAgentSpeech();
+        }
+
+        private void BeginNextAgentSpeech()
+        {
+            if (agentSpeechQueue.Count == 0)
             {
+                agentSpeechBusy = false;
+                currentSpeakingAgent = "";
+                if (agentSpeechFocusHeld && mediaDeck != null) mediaDeck.EndSpeechFocus();
+                agentSpeechFocusHeld = false;
+                agentSpeechHasPlayed = false;
+                status = "Agent roundtable finished. Background music resumed if it was playing.";
+                return;
+            }
+            agentSpeechBusy = true;
+            if (!agentSpeechFocusHeld)
+            {
+                if (mediaDeck != null) mediaDeck.BeginSpeechFocus();
+                agentSpeechFocusHeld = true;
+            }
+            AgentSpeechTurn turn = agentSpeechQueue[0];
+            agentSpeechQueue.RemoveAt(0);
+            currentSpeakingAgent = turn.Agent;
+            status = "Preparing " + turn.Agent + " · " + agentSpeechQueue.Count + " waiting…";
+            int generation = agentSpeechGeneration;
+            backend.Speak(turn.Agent, turn.Message, turn.Voice, agentSpeechRate, delegate(SpeechResponse response)
+            {
+                if (generation != agentSpeechGeneration || !agentSpeechBusy) return;
                 if (response == null || !response.Ok || string.IsNullOrEmpty(response.AudioBase64))
                 {
-                    agentSpeechBusy = false;
                     status = response == null ? "No speech response." : response.Error;
+                    BeginNextAgentSpeech();
                     return;
                 }
                 try
                 {
                     byte[] wav = Convert.FromBase64String(response.AudioBase64);
-                    agentSpeechClip = WavDecoder.Decode(wav, "Barros-" + agent.Replace(" ", "-"));
+                    agentSpeechClip = WavDecoder.Decode(wav, "Barros-" + turn.Agent.Replace(" ", "-"));
                     agentAudioSource.clip = agentSpeechClip;
-                    agentSpeechRoutine = StartCoroutine(PlayAgentSpeechWithMusicFocus(agent, response.Label, response.Voice, wav.Length));
+                    agentAudioSource.volume = agentVoiceVolume;
+                    agentSpeechRoutine = StartCoroutine(PlayAgentSpeechTurn(turn.Agent, response.Label, response.Voice, wav.Length));
                 }
-                catch (Exception exception) { agentSpeechBusy = false; status = "Agent voice playback failed: " + exception.Message; }
+                catch (Exception exception) { status = "Agent voice playback failed: " + exception.Message; BeginNextAgentSpeech(); }
             });
         }
 
-        private IEnumerator PlayAgentSpeechWithMusicFocus(string agent, string label, string voice, int wavBytes)
+        private IEnumerator PlayAgentSpeechTurn(string agent, string label, string voice, int wavBytes)
         {
-            if (mediaDeck != null) mediaDeck.BeginSpeechFocus();
-            status = "Music paused · " + agent + " speaks in one second…";
-            yield return new WaitForSecondsRealtime(1f);
+            float pause = agentSpeechHasPlayed ? agentSpeechGap : 1f;
+            status = "Music paused · " + agent + " speaks in " + pause.ToString("0.00") + " seconds…";
+            yield return new WaitForSecondsRealtime(pause);
             if (agentAudioSource == null || agentSpeechClip == null)
             {
-                if (mediaDeck != null) mediaDeck.EndSpeechFocus();
-                agentSpeechBusy = false;
                 agentSpeechRoutine = null;
+                BeginNextAgentSpeech();
                 yield break;
             }
             agentAudioSource.Play();
-            status = agent + " speaking with " + label + ".";
-            if (evidence != null) evidence.Record("voice.agent.played", "agent=" + agent + "; voice=" + voice + "; wav_bytes=" + wavBytes + "; music_focus=1s");
+            status = agent + " speaking with " + label + " · " + agentSpeechQueue.Count + " waiting.";
+            if (evidence != null) evidence.Record("voice.agent.played", "agent=" + agent + "; voice=" + voice + "; wav_bytes=" + wavBytes + "; rate=" + agentSpeechRate + "; queued=" + agentSpeechQueue.Count);
             while (agentAudioSource != null && agentAudioSource.isPlaying) yield return null;
             if (agentSpeechClip != null) Destroy(agentSpeechClip);
             agentSpeechClip = null;
-            if (mediaDeck != null) mediaDeck.EndSpeechFocus();
-            agentSpeechBusy = false;
+            agentSpeechHasPlayed = true;
             agentSpeechRoutine = null;
-            status = agent + " finished speaking. Background music resumed if it was playing.";
+            BeginNextAgentSpeech();
         }
 
         private void StopAgentSpeech()
         {
+            agentSpeechGeneration++;
+            agentSpeechQueue.Clear();
             if (agentSpeechRoutine != null) StopCoroutine(agentSpeechRoutine);
             agentSpeechRoutine = null;
             if (agentAudioSource != null) agentAudioSource.Stop();
             if (agentSpeechClip != null) Destroy(agentSpeechClip);
             agentSpeechClip = null;
             agentSpeechBusy = false;
-            if (mediaDeck != null) mediaDeck.EndSpeechFocus();
+            currentSpeakingAgent = "";
+            if (agentSpeechFocusHeld && mediaDeck != null) mediaDeck.EndSpeechFocus();
+            agentSpeechFocusHeld = false;
+            agentSpeechHasPlayed = false;
+            status = "Agent voice queue stopped.";
         }
 
         private void Recalculate(AiRecipe recipe)
@@ -1522,6 +1709,13 @@ namespace Barros.PizzaCreator.AI
         private void StartVoice()
         {
             pendingVoiceError = "";
+            RefreshMicrophones();
+            if (microphoneMuted)
+            {
+                pendingVoiceError = "The microphone is muted. Press Muted to enable it.";
+                status = pendingVoiceError;
+                return;
+            }
             if (!HasMicrophone())
             {
                 pendingVoiceError = "No Windows recording device is active. Connect or enable a microphone, then press Retry microphone.";
@@ -1531,11 +1725,12 @@ namespace Barros.PizzaCreator.AI
             }
             try
             {
-                voiceClip = Microphone.Start(null, false, 30, 16000);
+                string device = SelectedMicrophoneDevice();
+                voiceClip = Microphone.Start(device, false, 30, 16000);
                 recording = voiceClip != null;
                 recordingStarted = Time.realtimeSinceStartup;
                 status = recording ? "Listening… click Stop when finished." : "Could not start the microphone.";
-                if (evidence != null) evidence.Record(recording ? "voice.capture.started" : "voice.capture.failed", "devices=" + Microphone.devices.Length + "; rate=16000");
+                if (evidence != null) evidence.Record(recording ? "voice.capture.started" : "voice.capture.failed", "device=" + device + "; devices=" + Microphone.devices.Length + "; rate=16000; gain=" + microphoneGain);
                 mode = DesignerMode.Voice;
                 if (gameHeader != null && headerBanner == null) gameHeader.text = HeaderForMode();
             }
@@ -1553,15 +1748,93 @@ namespace Barros.PizzaCreator.AI
             catch { return false; }
         }
 
+        private void RefreshMicrophones()
+        {
+            try
+            {
+                string[] devices = Microphone.devices;
+                if (devices == null || devices.Length == 0)
+                {
+                    selectedMicrophone = 0;
+                    selectedMicrophoneName = "";
+                    return;
+                }
+                int existing = -1;
+                for (int i = 0; i < devices.Length; i++)
+                    if (string.Equals(devices[i], selectedMicrophoneName, StringComparison.OrdinalIgnoreCase)) { existing = i; break; }
+                selectedMicrophone = existing >= 0 ? existing : Mathf.Clamp(selectedMicrophone, 0, devices.Length - 1);
+                selectedMicrophoneName = devices[selectedMicrophone];
+                if (!recording) status = devices.Length + " microphone input" + (devices.Length == 1 ? "" : "s") + " found · " + selectedMicrophoneName + " selected.";
+            }
+            catch (Exception exception) { pendingVoiceError = "Microphone refresh failed: " + exception.Message; }
+        }
+
+        private void CycleMicrophone()
+        {
+            RefreshMicrophones();
+            string[] devices = Microphone.devices;
+            if (devices == null || devices.Length == 0) { status = "No Windows recording device is active."; return; }
+            selectedMicrophone = (selectedMicrophone + 1) % devices.Length;
+            selectedMicrophoneName = devices[selectedMicrophone];
+            status = "Microphone selected: " + selectedMicrophoneName + ".";
+        }
+
+        private string SelectedMicrophoneDevice()
+        {
+            string[] devices = Microphone.devices;
+            if (devices == null || devices.Length == 0) return null;
+            selectedMicrophone = Mathf.Clamp(selectedMicrophone, 0, devices.Length - 1);
+            selectedMicrophoneName = devices[selectedMicrophone];
+            return selectedMicrophoneName;
+        }
+
+        private string SelectedMicrophoneLabel()
+        {
+            string value = SelectedMicrophoneDevice();
+            if (string.IsNullOrEmpty(value)) return "Windows default input";
+            return value.Length > 34 ? value.Substring(0, 31) + "…" : value;
+        }
+
+        private float CurrentMicrophoneLevel()
+        {
+            if (!recording || voiceClip == null) return 0f;
+            try
+            {
+                string device = SelectedMicrophoneDevice();
+                int position = Microphone.GetPosition(device);
+                if (position < 2) return 0f;
+                int frames = Mathf.Min(128, position);
+                float[] samples = new float[frames * Mathf.Max(1, voiceClip.channels)];
+                if (!voiceClip.GetData(samples, Mathf.Max(0, position - frames))) return 0f;
+                float peak = 0f;
+                for (int i = 0; i < samples.Length; i++) peak = Mathf.Max(peak, Mathf.Abs(samples[i] * microphoneGain));
+                return Mathf.Clamp01(peak * 3f);
+            }
+            catch { return 0f; }
+        }
+
+        private void CancelVoiceRecording()
+        {
+            if (!recording) return;
+            try { Microphone.End(SelectedMicrophoneDevice()); }
+            catch { }
+            recording = false;
+            if (voiceClip != null) Destroy(voiceClip);
+            voiceClip = null;
+            status = "Microphone recording cancelled.";
+        }
+
         private void StopVoiceAndTranscribe()
         {
             if (!recording || voiceClip == null) return;
             recording = false;
-            int position = Mathf.Max(1, Microphone.GetPosition(null));
-            Microphone.End(null);
+            string device = SelectedMicrophoneDevice();
+            int position = Mathf.Max(1, Microphone.GetPosition(device));
+            Microphone.End(device);
             AudioClip trimmed = AudioClip.Create("BarrosVoice", position, voiceClip.channels, voiceClip.frequency, false);
             float[] samples = new float[position * voiceClip.channels];
             voiceClip.GetData(samples, 0);
+            for (int i = 0; i < samples.Length; i++) samples[i] = Mathf.Clamp(samples[i] * microphoneGain, -1f, 1f);
             trimmed.SetData(samples, 0);
             byte[] wav = WavEncoder.Encode(trimmed);
             if (evidence != null) evidence.Record("voice.capture.success", "samples=" + samples.Length + "; wav_bytes=" + wav.Length + "; rate=" + voiceClip.frequency);
@@ -1744,6 +2017,20 @@ namespace Barros.PizzaCreator.AI
             texture.Apply();
             texture.hideFlags = HideFlags.HideAndDontSave;
             return texture;
+        }
+
+        private sealed class AgentSpeechTurn
+        {
+            public readonly string Agent;
+            public readonly string Message;
+            public readonly string Voice;
+
+            public AgentSpeechTurn(string agent, string message, string voice)
+            {
+                Agent = agent ?? "Agent";
+                Message = message ?? "";
+                Voice = voice ?? "";
+            }
         }
     }
 }

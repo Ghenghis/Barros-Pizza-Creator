@@ -187,6 +187,7 @@ namespace Barros.PizzaCreator.AI
         [JsonProperty("agent")] public string Agent = "";
         [JsonProperty("message")] public string Message = "";
         [JsonProperty("voice")] public string Voice = "";
+        [JsonProperty("rate")] public float Rate = 1f;
     }
 
     [Serializable]

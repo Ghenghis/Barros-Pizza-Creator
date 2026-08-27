@@ -129,7 +129,7 @@ class AzureSpeechService:
         }
 
     def synthesize(
-        self, agent: str, message: str, requested_voice: str = ""
+        self, agent: str, message: str, requested_voice: str = "", rate: float = 1.0
     ) -> tuple[bytes, AgentVoice, str]:
         if not self.configured:
             raise ProviderError(
@@ -140,10 +140,12 @@ class AzureSpeechService:
         clean = safe_speech_text(message)
         if not clean:
             raise ProviderError("There is no safe agent feedback to speak.")
+        safe_rate = max(0.8, min(1.2, float(rate)))
+        rate_percent = int(round((safe_rate - 1.0) * 100.0))
         ssml = (
             "<speak version='1.0' xml:lang='%s'>"
-            "<voice name='%s'>%s</voice></speak>"
-            % (profile.locale, profile.voice, escape(clean, quote=False))
+            "<voice name='%s'><prosody rate='%+d%%'>%s</prosody></voice></speak>"
+            % (profile.locale, profile.voice, rate_percent, escape(clean, quote=False))
         )
         request = urllib.request.Request(
             self.endpoint,
@@ -152,7 +154,7 @@ class AzureSpeechService:
                 "Ocp-Apim-Subscription-Key": self.settings.resolved_tts_key(),
                 "Content-Type": "application/ssml+xml; charset=utf-8",
                 "X-Microsoft-OutputFormat": "riff-24khz-16bit-mono-pcm",
-                "User-Agent": "BarrosPizzaCreator/1.4",
+                "User-Agent": "BarrosPizzaCreator/1.5",
             },
             method="POST",
         )

@@ -9,7 +9,7 @@
     "snapshot_rule": "Visual claims require retained screenshots from the actual running Workbench, Studio or game. CI offscreen renders are useful preflight evidence but do not replace live-game proof."
   },
   "release_versions": {
-    "creator": "1.4.0-rc1",
+    "creator": "1.5.0",
     "workbench": "2.3.0-rc1",
     "studio": "1.2.0-rc1"
   },

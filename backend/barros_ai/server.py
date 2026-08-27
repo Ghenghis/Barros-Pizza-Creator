@@ -134,7 +134,7 @@ class App:
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "BarrosPizzaAI/1.4"
+    server_version = "BarrosPizzaAI/1.5"
 
     @property
     def app(self) -> App:
@@ -203,7 +203,7 @@ class Handler(BaseHTTPRequestHandler):
                 {
                     "ok": True,
                     "name": "Barro's AI Pizza Designer",
-                    "version": "1.4.0-rc1",
+                    "version": "1.5.0",
                     "provider": self.app.settings.provider,
                     "online": self.app.provider.online,
                     "image_parser": "png+jpeg+webp-v1",
@@ -298,6 +298,7 @@ class Handler(BaseHTTPRequestHandler):
                     str(payload.get("agent", "")),
                     str(payload.get("message", "")),
                     str(payload.get("voice", "")),
+                    float(payload.get("rate", 1.0)),
                 )
                 self._json(
                     HTTPStatus.OK,

@@ -8,11 +8,13 @@ import shutil
 import subprocess
 import uuid
 from datetime import datetime, timezone
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 
 IMPORT_EXTENSIONS = {".mp3", ".wav", ".flac", ".m4a", ".aac", ".wma", ".aiff", ".aif", ".opus", ".oga", ".ogg"}
+PLAY_EXTENSIONS = {".ogg", ".mp3", ".wav", ".mp4"}
+RESERVED_MUSIC_FOLDERS = {"imports", ".playback-cache", "tools"}
 MAX_IMPORT_BYTES = 500 * 1024 * 1024
 NO_WINDOW_FLAGS = getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
 GAME_SAMPLE_RATE = "48000"
@@ -39,6 +41,29 @@ class MusicLibrary:
             if candidate and Path(candidate).is_file():
                 return str(Path(candidate).resolve())
         return ""
+
+    def _tracks(self) -> list[Path]:
+        tracks: list[Path] = []
+        for path in self.root.rglob("*"):
+            if not path.is_file() or path.suffix.casefold() not in PLAY_EXTENSIONS:
+                continue
+            relative = path.relative_to(self.root)
+            if relative.parts and relative.parts[0].casefold() in RESERVED_MUSIC_FOLDERS:
+                continue
+            if path.suffix.casefold() == ".mp3" and path.with_suffix(".ogg").is_file():
+                continue
+            tracks.append(path)
+        return sorted(tracks, key=lambda path: path.relative_to(self.root).as_posix().casefold())
+
+    def _imports(self) -> list[Path]:
+        return sorted(
+            (
+                path
+                for path in self.inbox.rglob("*")
+                if path.is_file() and path.suffix.casefold() in IMPORT_EXTENSIONS
+            ),
+            key=lambda path: path.relative_to(self.inbox).as_posix().casefold(),
+        )
 
     @staticmethod
     def _sha256(path: Path) -> str:
@@ -89,13 +114,8 @@ class MusicLibrary:
     def status(self) -> dict[str, Any]:
         self.root.mkdir(parents=True, exist_ok=True)
         self.inbox.mkdir(parents=True, exist_ok=True)
-        tracks = sorted(path for path in self.root.iterdir() if path.is_file() and path.suffix.casefold() in {".ogg", ".mp3", ".wav", ".mp4"})
-        tracks = [
-            path
-            for path in tracks
-            if not (path.suffix.casefold() == ".mp3" and path.with_suffix(".ogg").is_file())
-        ]
-        imports = sorted(path for path in self.inbox.iterdir() if path.is_file() and path.suffix.casefold() in IMPORT_EXTENSIONS)
+        tracks = self._tracks()
+        imports = self._imports()
         return {
             "converter_available": bool(self._ffmpeg()),
             "track_count": len(tracks),
@@ -108,10 +128,17 @@ class MusicLibrary:
         }
 
     def resolve_track(self, encoded_name: str) -> Path | None:
-        name = Path(encoded_name).name
-        if not name or name != encoded_name or Path(name).suffix.casefold() not in {".ogg", ".mp3", ".wav", ".mp4"}:
+        normalized = str(encoded_name or "").replace("\\", "/").strip("/")
+        relative = PurePosixPath(normalized)
+        if (
+            not normalized
+            or relative.is_absolute()
+            or any(part in {"", ".", ".."} for part in relative.parts)
+            or relative.parts[0].casefold() in RESERVED_MUSIC_FOLDERS
+            or relative.suffix.casefold() not in PLAY_EXTENSIONS
+        ):
             return None
-        candidate = (self.root / name).resolve()
+        candidate = (self.root.joinpath(*relative.parts)).resolve()
         try:
             candidate.relative_to(self.root.resolve())
         except ValueError:
@@ -126,7 +153,9 @@ class MusicLibrary:
             raise RuntimeError("Compressed playback needs FFmpeg. Set BARROS_FFMPEG_PATH or install FFmpeg on PATH.")
         cache = self.root / ".playback-cache"
         cache.mkdir(parents=True, exist_ok=True)
-        destination = cache / (track.stem + ".wav")
+        relative_key = track.relative_to(self.root).as_posix().casefold().encode("utf-8")
+        cache_key = hashlib.sha256(relative_key).hexdigest()[:12]
+        destination = cache / (cache_key + "-" + track.stem + ".wav")
         if destination.is_file() and destination.stat().st_size > 1024 and destination.stat().st_mtime_ns >= track.stat().st_mtime_ns:
             return destination
         temporary = cache / (track.stem + "." + uuid.uuid4().hex + ".partial.wav")
@@ -184,22 +213,24 @@ class MusicLibrary:
         skipped = 0
         failed: list[dict[str, str]] = []
         records: list[dict[str, Any]] = []
-        for source in sorted(self.inbox.iterdir(), key=lambda path: path.name.casefold()):
+        for source in self._imports():
             extension = source.suffix.casefold()
-            if not source.is_file() or extension not in IMPORT_EXTENSIONS:
-                continue
+            relative_source = source.relative_to(self.inbox)
+            source_label = relative_source.as_posix()
             if source.stat().st_size > MAX_IMPORT_BYTES:
-                failed.append({"file": source.name, "error": "File exceeds the 500 MB import limit."})
-                records.append({"source": source.name, "state": "failed", "detail": "File exceeds the 500 MB import limit."})
+                failed.append({"file": source_label, "error": "File exceeds the 500 MB import limit."})
+                records.append({"source": source_label, "state": "failed", "detail": "File exceeds the 500 MB import limit."})
                 continue
-            destination = self.root / (source.stem + ".ogg")
+            destination = (self.root / relative_source).with_suffix(".ogg")
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination_label = destination.relative_to(self.root).as_posix()
             if destination.is_file() and destination.stat().st_size > 0 and destination.stat().st_mtime_ns >= source.stat().st_mtime_ns:
                 skipped += 1
                 records.append(
                     {
-                        "source": source.name,
+                        "source": source_label,
                         "source_sha256": self._sha256(source),
-                        "output": destination.name,
+                        "output": destination_label,
                         "output_sha256": self._sha256(destination),
                         "state": "skipped_current",
                     }
@@ -255,17 +286,17 @@ class MusicLibrary:
                 else:
                     skipped += 1
                     detail = "No FFmpeg converter was found; the Media Deck can still try direct playback."
-                    failed.append({"file": source.name, "error": detail})
-                    records.append({"source": source.name, "state": "failed", "detail": detail})
+                    failed.append({"file": source_label, "error": detail})
+                    records.append({"source": source_label, "state": "failed", "detail": detail})
                     continue
                 if not temporary.is_file() or temporary.stat().st_size < 1024:
                     raise RuntimeError("The converted OGG file was empty.")
                 os.replace(temporary, destination)
                 records.append(
                     {
-                        "source": source.name,
+                        "source": source_label,
                         "source_sha256": self._sha256(source),
-                        "output": destination.name,
+                        "output": destination_label,
                         "output_sha256": self._sha256(destination),
                         "output_bytes": destination.stat().st_size,
                         "state": "converted_and_decode_validated" if ffmpeg else "copied_without_converter",
@@ -275,8 +306,8 @@ class MusicLibrary:
             except (OSError, subprocess.SubprocessError, RuntimeError) as exc:
                 if temporary.exists():
                     temporary.unlink()
-                failed.append({"file": source.name, "error": str(exc)[:500]})
-                records.append({"source": source.name, "state": "failed", "detail": str(exc)[:500]})
+                failed.append({"file": source_label, "error": str(exc)[:500]})
+                records.append({"source": source_label, "state": "failed", "detail": str(exc)[:500]})
         final = self.status()
         report_path = self.root / "conversion-report.json"
         report_temporary = self.root / ("conversion-report." + uuid.uuid4().hex + ".partial.json")

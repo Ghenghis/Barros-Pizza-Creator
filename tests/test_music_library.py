@@ -76,6 +76,37 @@ class MusicLibraryTests(unittest.TestCase):
             self.assertIsNone(music.resolve_track("../Safe Song.ogg"))
             self.assertIsNone(music.resolve_track("settings.json"))
 
+    def test_nested_albums_are_counted_resolved_and_imported_in_place(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            music = MusicLibrary(Path(folder) / "music")
+            music.status()
+            album = music.root / "Barros Album One"
+            album.mkdir()
+            track = album / "Opening Theme.ogg"
+            track.write_bytes(b"OggS" + b"x" * 2048)
+            nested_import = music.inbox / "Live Sessions" / "Closing Theme.ogg"
+            nested_import.parent.mkdir(parents=True)
+            nested_import.write_bytes(b"OggS" + b"z" * 4096)
+
+            self.assertEqual(1, music.status()["track_count"])
+            self.assertEqual(track.resolve(), music.resolve_track("Barros Album One/Opening Theme.ogg"))
+            with patch.dict(os.environ, {"BARROS_FFMPEG_PATH": ""}), patch("shutil.which", return_value=None):
+                result = music.refresh()
+            self.assertTrue(result["ok"])
+            self.assertTrue((music.root / "Live Sessions" / "Closing Theme.ogg").is_file())
+            self.assertEqual(2, result["track_count"])
+
+    def test_reserved_folders_never_appear_as_library_tracks(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            music = MusicLibrary(Path(folder) / "music")
+            music.status()
+            for name in ("imports", ".playback-cache", "tools"):
+                target = music.root / name / "Hidden.ogg"
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(b"OggS" + b"x" * 2048)
+            self.assertEqual(0, music.status()["track_count"])
+            self.assertIsNone(music.resolve_track("imports/Hidden.ogg"))
+
     def test_wav_playback_needs_no_converter(self) -> None:
         with tempfile.TemporaryDirectory() as folder:
             music = MusicLibrary(Path(folder) / "music")

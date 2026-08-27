@@ -245,7 +245,7 @@ class AgentVoiceTests(unittest.TestCase):
 
         with patch("urllib.request.urlopen", fake_open):
             audio, profile, spoken = service.synthesize(
-                "Cost Manager", "Keep the ingredient cost under control."
+                "Cost Manager", "Keep the ingredient cost under control.", rate=1.1
             )
         request = observed["request"]
         self.assertTrue(service.configured)
@@ -254,6 +254,7 @@ class AgentVoiceTests(unittest.TestCase):
             request.full_url,
         )
         self.assertIn(b"en-AU-DarrenNeural", request.data)
+        self.assertIn(b"<prosody rate='+10%'>", request.data)
         self.assertEqual("riff-24khz-16bit-mono-pcm", request.get_header("X-microsoft-outputformat"))
         self.assertEqual("Darren · Australia", profile.label)
         self.assertEqual("Keep the ingredient cost under control.", spoken)
