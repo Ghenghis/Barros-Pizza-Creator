@@ -163,7 +163,10 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802
         path = urlparse(self.path).path
         if path == "/health":
-            stt_configured = bool(self.app.provider.online or self.app.settings.stt_endpoint)
+            # A text provider being online does not prove that it implements
+            # OpenAI's audio-transcription route. Require an explicit endpoint
+            # so health never reports Chef Voice ready on a text-only gateway.
+            stt_configured = bool(self.app.settings.stt_endpoint)
             self._json(
                 HTTPStatus.OK,
                 {
@@ -244,8 +247,8 @@ class Handler(BaseHTTPRequestHandler):
                 encoded = str(payload.get("audio_base64", ""))
                 if not encoded:
                     raise ValueError("audio_base64 is required.")
-                if not self.app.provider.online and not self.app.settings.stt_endpoint:
-                    raise ProviderError("Voice transcription needs an OpenAI-compatible or configured STT endpoint.")
+                if not self.app.settings.stt_endpoint:
+                    raise ProviderError("Voice transcription needs a dedicated STT endpoint in settings.json.")
                 text = self.app.provider.transcribe(base64.b64decode(encoded), str(payload.get("filename", "voice.wav")))
                 self._json(HTTPStatus.OK, {"ok": True, "text": text})
                 return
