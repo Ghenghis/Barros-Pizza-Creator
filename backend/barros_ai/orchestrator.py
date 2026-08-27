@@ -9,6 +9,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import asdict
 from typing import Any
 
+from .ingredient_intelligence import ingredient_profile, ingredient_set_cohesion, suggest_pairings
+from .inspiration import InspirationLibrary
 from .models import AgentOpinion, Recipe, RecipeIngredient, RecipeScores
 from .providers import ProviderClient, ProviderError, extract_json
 from .solver import CatalogIndex, repair_recipe
@@ -107,6 +109,7 @@ def _catalog_for_prompt(catalog: CatalogIndex) -> list[dict[str, Any]]:
                 "id": item.id,
                 "family": item.type_id,
                 "craziness": round(item.craziness, 3),
+                "profile": ingredient_profile(item),
                 "sizes": [{"size": size.size, "grams": size.grams} for size in item.sizes],
             }
         )
@@ -158,7 +161,8 @@ def _offline_recipe(
     theme = _pick_theme(prompt, rng, variant)
     excluded = _excluded_families(prompt)
     explicit = _requested_ingredients(prompt, catalog)
-    requested = explicit + list(theme["ingredients"])
+    intelligent_pairings = suggest_pairings(explicit, catalog.ingredients, limit=4) if explicit else []
+    requested = explicit + intelligent_pairings + list(theme["ingredients"])
     unique: list[str] = []
     for ingredient_id in requested:
         item, _ = catalog.resolve(ingredient_id)
@@ -232,13 +236,15 @@ def _estimate(recipe: Recipe, catalog: CatalogIndex) -> None:
         craziness += item.craziness
     count = max(1, len(recipe.ingredients))
     family_balance = min(1.0, len(families) / 5.0)
+    resolved_ingredients = [item for source in recipe.ingredients if (item := catalog.resolve(source.id)[0])]
+    cohesion = ingredient_set_cohesion(resolved_ingredients)
     variety_penalty = max(0.0, (count - 9) * 2.5)
-    taste = 66 + family_balance * 25 - variety_penalty + min(5, count * 0.5)
+    taste = 58 + family_balance * 20 + cohesion * 20 - variety_penalty + min(4, count * 0.4)
     novelty = 52 + min(38, craziness / count * 28 + max(0, count - 4) * 3)
     originality = 50 + min(42, len({item.distribution for item in recipe.ingredients}) * 5 + craziness / count * 24)
     price = estimated_cost * (1.0 + recipe.profit_factor)
     profit = 100.0 * ((price - estimated_cost) / price) if price > 0 else 0.0
-    popularity = 0.64 * taste + 0.36 * max(20, 100 - estimated_cost * 3.5)
+    popularity = 0.64 * taste + 0.26 * max(20, 100 - estimated_cost * 3.5) + cohesion * 10
     recipe.scores = RecipeScores(
         taste=round(max(0, min(100, taste)), 1),
         cost=round(estimated_cost, 2),
@@ -246,7 +252,7 @@ def _estimate(recipe: Recipe, catalog: CatalogIndex) -> None:
         popularity=round(max(0, min(100, popularity)), 1),
         novelty=round(max(0, min(100, novelty)), 1),
         originality=round(max(0, min(100, originality)), 1),
-        source="backend-estimate; game recalculates taste/cost/popularity",
+        source="backend-estimate+ingredient-intelligence-v1; game recalculates taste/cost/popularity",
     )
 
 
@@ -346,8 +352,9 @@ def _enforce_request_constraints(
 
 
 class PizzaOrchestrator:
-    def __init__(self, provider: ProviderClient):
+    def __init__(self, provider: ProviderClient, inspiration: InspirationLibrary | None = None):
         self.provider = provider
+        self.inspiration = inspiration
 
     def compose(self, payload: dict[str, Any], count: int = 1) -> dict[str, Any]:
         prompt = str(payload.get("prompt", "") or "Surprise me with a memorable pizza.").strip()
@@ -361,13 +368,20 @@ class PizzaOrchestrator:
             raise ValueError("The game ingredient catalog was empty.")
         count = max(1, min(int(payload.get("count", count) or count), 3))
         seed = _seed(planning_prompt, payload.get("seed"))
+        attachments = list(payload.get("attachments") or [])
+        inspiration_used: list[dict[str, Any]] = []
+        if bool(payload.get("use_inspiration_library")) and self.inspiration is not None:
+            library_attachments, inspiration_used = self.inspiration.attachments_for_prompt(planning_prompt)
+            attachments.extend(library_attachments)
         recipes: list[Recipe]
         warning = ""
+        provider_completed_with_inspiration = False
         if self.provider.online:
             try:
                 recipes = self._online_compose(
-                    planning_prompt, constraints, catalog, count, seed, payload.get("attachments") or []
+                    planning_prompt, constraints, catalog, count, seed, attachments
                 )
+                provider_completed_with_inspiration = bool(inspiration_used)
             except (ProviderError, ValueError, KeyError, TypeError) as exc:
                 warning = "Online provider failed; used the built-in designer: %s" % exc
                 recipes = [_offline_recipe(planning_prompt, catalog, seed, i, constraints) for i in range(count)]
@@ -378,12 +392,22 @@ class PizzaOrchestrator:
             _estimate(recipe, catalog)
             if warning:
                 recipe.warnings.append(warning)
+        message = "I designed %d game-valid pizza%s." % (len(recipes), "" if len(recipes) == 1 else "s")
+        if provider_completed_with_inspiration:
+            message += " I sent %d local inspiration image%s with the completed provider request." % (
+                len(inspiration_used), "" if len(inspiration_used) == 1 else "s"
+            )
+        elif inspiration_used:
+            message += " I selected local inspiration, but visual analysis needs an online vision provider."
         return {
             "ok": True,
-            "message": "I designed %d game-valid pizza%s." % (len(recipes), "" if len(recipes) == 1 else "s"),
+            "message": message,
             "provider": self.provider.settings.provider,
             "recipes": [recipe.to_dict() for recipe in recipes],
             "warnings": [warning] if warning else [],
+            "inspiration": inspiration_used,
+            "inspiration_sent_to_provider": provider_completed_with_inspiration,
+            "inspiration_analyzed": None if provider_completed_with_inspiration else False,
         }
 
     def _online_compose(
@@ -398,6 +422,7 @@ class PizzaOrchestrator:
         system = (
             "You design recipes for the standalone Pizza Connection 3 Pizza Creator. "
             "Use ONLY catalog IDs. Sauce and dough are already present and are not ingredients. "
+            "Use each catalog item's compact flavor, dietary and allergen profile to prefer coherent pairings. "
             "Amounts are grams, and size must be Large, Medium, or Small. Return strict JSON only: "
             '{"recipes":[{"name":"...","summary":"...","shape":"Round|Square|Star|Triangle",'
             '"profit_factor":0.6,"ingredients":[{"id":"exact ID","size":"Medium",'

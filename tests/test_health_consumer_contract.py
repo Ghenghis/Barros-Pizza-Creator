@@ -49,7 +49,7 @@ def test_health_matches_workbench_and_studio_consumer_contract() -> None:
     health = _health({"provider": "offline"})
 
     assert health["ok"] is True
-    assert health["version"] == "1.1.0-rc1"
+    assert health["version"] == "1.2.0-rc1"
     assert health["provider"] == "offline"
     assert health["online"] is False
     assert REQUIRED_CAPABILITIES.issubset(health["capabilities"])

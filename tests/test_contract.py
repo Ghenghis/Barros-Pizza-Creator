@@ -101,6 +101,7 @@ class ProofContractTests(unittest.TestCase):
         release_builder = (ROOT / "tools" / "build_release.py").read_text(encoding="utf-8")
         self.assertIn("ALLOWED_ARTIFACTS", release_builder)
         self.assertIn("artifacts/Barros.PizzaCreator.AI.dll", release_builder)
+        self.assertIn('(\"backend\", \"data\", \"inspiration\")', release_builder)
 
         manifest_paths = {
             line.split("  ", 1)[1]

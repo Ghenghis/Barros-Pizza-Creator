@@ -59,6 +59,7 @@ namespace Barros.PizzaCreator.AI
         private string transcript = "";
         private string pendingVoiceError = "";
         private bool layoutEvidenceRecorded;
+        private bool useInspirationLibrary;
 
         private GUIStyle panelStyle;
         private GUIStyle cardStyle;
@@ -577,8 +578,15 @@ namespace Barros.PizzaCreator.AI
             if (GUI.Button(new Rect(rect.x + 176f, rect.y + 119f, 93f, 39f), "History", showHistory ? activeButtonStyle : buttonStyle)) showHistory = !showHistory;
             if (GUI.Button(new Rect(rect.x + 275f, rect.y + 119f, 91f, 39f), shape, buttonStyle)) CycleShape();
             if (GUI.Button(new Rect(rect.x + 372f, rect.y + 119f, 88f, 39f), heat, buttonStyle)) CycleHeat();
-            string attachmentText = attachments.Count == 0 ? "No files" : attachments.Count + " attached";
-            GUI.Label(new Rect(rect.x + 467f, rect.y + 126f, 132f, 28f), attachmentText, smallStyle);
+            string ideasLabel = "Ideas " + (useInspirationLibrary ? "ON" : "OFF");
+            if (attachments.Count > 0) ideasLabel += " · " + attachments.Count + " file" + (attachments.Count == 1 ? "" : "s");
+            if (GUI.Button(new Rect(rect.x + 467f, rect.y + 119f, 132f, 39f), ideasLabel, useInspirationLibrary ? activeButtonStyle : buttonStyle))
+            {
+                useInspirationLibrary = !useInspirationLibrary;
+                status = useInspirationLibrary
+                    ? "Local inspiration is on. Up to three indexed designs may guide the next request."
+                    : "Local inspiration is off. Only manually attached files will be used.";
+            }
         }
 
         private void Submit(string endpoint, int count)
@@ -609,9 +617,12 @@ namespace Barros.PizzaCreator.AI
             request.Constraints.PriceCeiling = priceCeiling;
             request.Constraints.ProfitFactor = profitFactor;
             request.Attachments.AddRange(attachments);
+            request.UseInspirationLibrary = useInspirationLibrary;
             conversation.Add(new ConversationLine("You", effective));
             busy = true;
-            status = endpoint == "/crew" ? "The four agents are debating…" : "Designing and validating against the live catalog…";
+            status = endpoint == "/crew"
+                ? "The four agents are debating…"
+                : (useInspirationLibrary ? "Designing with the local inspiration library…" : "Designing and validating against the live catalog…");
             backend.Compose(endpoint, request, delegate(AiResponse response)
             {
                 busy = false;

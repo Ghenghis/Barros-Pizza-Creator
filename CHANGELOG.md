@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.2.0-rc1 — 2026-08-27
+
+- Added ingredient intelligence for all 87 exact game ingredients: readable names, compact flavor profiles, dietary tags, allergen flags and curated pairing strengths.
+- Improved offline and online recipe composition so explicitly requested ingredients attract coherent complements instead of relying only on a fixed theme list.
+- Added pairing cohesion to backend taste/popularity estimates while keeping the game's native scoring authoritative after preview/apply.
+- Added a local-only Inspiration Library for up to 500 validated JPG, PNG or WebP pizza designs with SHA-256 deduplication and bounded three-image selection per AI request.
+- Added an in-game `Ideas ON/OFF` control. Library images are sent only when the user enables it for a request.
+- Added a Windows folder-picker importer and excluded the private inspiration image directory from Git and release ZIPs.
+- Preserved the native-tab clearance repair verified at 1920×1080 in the real Steam game.
+
 ## 1.1.0-rc1 — 2026-08-25
 
 - Hardened visual attachments with decoded magic-byte parsing for PNG, JPEG and WebP instead of trusting file extensions.

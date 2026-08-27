@@ -1,11 +1,11 @@
 {
   "schema_version": "1.0",
   "artifact": "Barros.PizzaCreator.AI.dll",
-  "artifact_bytes": 70656,
-  "artifact_sha256": "773af8dd9d0e4cd30537a113bfb07ab2b9448c2f618e179a8fb5014dac29887a",
-  "built_utc": "2026-08-27T12:18:41Z",
-  "source_parent_commit": "6f2639381394b3551fe811c6ed219e8f0006c6db",
-  "source_tree_sha256": "430fca97dcd691c5abfd063a4f42297c742180ecf375ed1abf78735bfba0a0fd",
+  "artifact_bytes": 71168,
+  "artifact_sha256": "e29f62d202ce4fb4037945da0b490e46dc4c657dabc42a65fcbcf6dfce2483ae",
+  "built_utc": "2026-08-27T12:38:18Z",
+  "source_parent_commit": "da9349a629926d8794f7c7b3d3dac66b284bb5a7",
+  "source_tree_sha256": "5cf3523d8ce28fffb3de8a152f46f068a705551e8e4c40b195e593d31a9f821b",
   "compiler": "Microsoft Visual C# Compiler 4.8.9032.0",
   "compiler_host": ".NET Framework 4.8.9032.0 on Windows 11 x64",
   "output_kind": "PE32 AnyCPU .NET/Mono library",
@@ -42,13 +42,13 @@
   "source_files_sha256": {
     "AssemblyInfo.cs": "3a817d064faa76a907a424ca77b157d967eefe7cd1dfcfaa57c8aff8c6317f48",
     "BackendClient.cs": "6d26ae4dd0a65a71a5387cd90e352f3484e0e4323b5029a4af0751ada7b7f44a",
-    "BarrosAiPlugin.cs": "79ee1dc80876ac4edaa06f585cce455e015cc29d89a08b1f826131ebe3766a76",
-    "EvidenceRecorder.cs": "9c555edb549a366a1030629175ba4ddcd1add1af48f0212f8d87f9370e15eff0",
+    "BarrosAiPlugin.cs": "9d2f7bac14a4c9b182ee60f4514e134b5f8f2e453494ceeb8ac6e587f4ea1e32",
+    "EvidenceRecorder.cs": "0d52fa72328c89d1ef1946f8aec4c453fcc8a2de74f1699b50ee88fe03c53f50",
     "FileDialog.cs": "f6fe47361f5da0e1ffbce60449416f897564e92281ed90ed6ed9d48f43bf3f34",
     "GameBridge.cs": "a8b0b7204aa6819c0e60e4e498b1fd7792bc187b0f684a9a20f8fe16bad97659",
     "MainThreadDispatcher.cs": "2789e3d9ee8a8d7526052505ea3f6f21f7be22a13e06a5646e7ed5740974b03f",
-    "Models.cs": "25f3c63e09316ce77b84a4425155c4c82392aa3f3b1bf19a2829dfd3a1b81fc2",
-    "PanelRenderer.cs": "51124d8c956b18d57813b20a8b918f5d23c597e8060d2b80fa6626b8e66790d3",
+    "Models.cs": "f2e3819fc105143c8a9b0dd034db6c6add3fad93afeb72b8e15cf57b8bdaad5c",
+    "PanelRenderer.cs": "0029bdd535cf5be11ab6da1cb91f2e02ac856ed5e9e9d55bbe086e309be849c7",
     "RuntimeTabInstaller.cs": "948c88af4c9c03deceb8f645798784f584236dc46fe7ad72afd1e28a6f2bbd49",
     "WavEncoder.cs": "7de6cfa1287a00979f512e4f16cb13863315e0aa7dc3fb47d78a862c1468356c"
   },
@@ -56,7 +56,7 @@
     "compile_exit_code": 0,
     "compiler_errors": 0,
     "absolute_build_path_embedded": false,
-    "backend_and_contract_tests": "66 tests passed on Windows 11"
+    "backend_and_contract_tests": "71 tests passed on Windows 11"
   },
-  "boundary": "This proves compilation against the exact supplied Windows game assemblies. Retained runtime evidence separately proves live tab loading, MiniMax responses, native preview, restore and apply; microphone/STT remains blocked by Windows hardware and missing dedicated STT endpoint."
+  "boundary": "This proves v1.2 compilation and 71 static tests against the exact supplied Windows game assemblies. A separate real-game smoke run proves the v1.2 loader, fitted UI, Inspiration Library toggle, and healthy empty-library endpoint. Earlier retained runtime evidence proves the v1.1 base workflow. No Facebook/export images were supplied, so bulk import and online visual use remain not run. Microphone/STT remains blocked by Windows hardware and a missing dedicated STT endpoint."
 }

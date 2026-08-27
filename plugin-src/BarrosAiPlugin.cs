@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace Barros.PizzaCreator.AI
 {
-    [BepInPlugin("com.barros.pizzacreator.ai", "Barro's AI Pizza Designer", "1.1.0")]
+    [BepInPlugin("com.barros.pizzacreator.ai", "Barro's AI Pizza Designer", "1.2.0")]
     [BepInProcess("Pizza Connection 3 - Pizza Creator.exe")]
     public sealed class BarrosAiPlugin : BaseUnityPlugin
     {
@@ -33,7 +33,7 @@ namespace Barros.PizzaCreator.AI
             game = new GameBridge(evidence);
             backend = new BackendClient(backendUrl.Value, dispatcher);
             if (autoStartBackend.Value) StartBackend();
-            Logger.LogInfo("Barro's AI Pizza Designer 1.1.0-rc1 loaded. Waiting for Pizza Creator services.");
+            Logger.LogInfo("Barro's AI Pizza Designer 1.2.0-rc1 loaded. Waiting for Pizza Creator services.");
         }
 
         private void Update()
