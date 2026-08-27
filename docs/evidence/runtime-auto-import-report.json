@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0",
+  "generated_utc": "2026-08-27T15:17:12.882195+00:00",
+  "quality_profile": "48 kHz stereo · Vorbis q8 · -14 LUFS · -1 dBTP",
+  "audio_only": true,
+  "decode_validation": true,
+  "counts": {
+    "converted": 1,
+    "copied": 0,
+    "skipped": 0,
+    "failed": 0
+  },
+  "files": [
+    {
+      "source": "Runtime Import Proof.mp3",
+      "source_sha256": "2012dcbde45fac9cf131191ce6975efdf468d89c4a273013a8c848bba1bc4854",
+      "output": "Runtime Import Proof.ogg",
+      "output_sha256": "0af733a81f8d9152148337ab124f85882503525e0cc415d48eeee3eb1557e560",
+      "output_bytes": 831293,
+      "state": "converted_and_decode_validated",
+      "measured_lufs": -12.8,
+      "measured_peak_dbfs": -0.8
+    }
+  ]
+}

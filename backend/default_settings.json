@@ -4,9 +4,16 @@
   "model": "local-model",
   "api_key": "",
   "api_key_env": "OPENAI_API_KEY",
+  "api_key_file": "",
   "env_file": "G:\\private\\.env.openai",
   "timeout_seconds": 90,
   "retries": 2,
   "stt_endpoint": "",
-  "stt_model": "whisper-1"
+  "stt_model": "whisper-1",
+  "tts_provider": "disabled",
+  "tts_endpoint": "",
+  "tts_region": "westus",
+  "tts_key": "",
+  "tts_key_env": "AZURE_SPEECH_KEY",
+  "tts_key_file": ""
 }

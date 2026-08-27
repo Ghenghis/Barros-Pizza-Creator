@@ -28,7 +28,7 @@ class EcosystemReleaseContractTests(unittest.TestCase):
         self.assertEqual("barros-pc3-ecosystem-release-v2", payload["contract_id"])
         self.assertEqual(
             {
-                "creator": "1.1.0-rc1",
+                "creator": "1.5.0",
                 "workbench": "2.3.0-rc1",
                 "studio": "1.2.0-rc1",
             },

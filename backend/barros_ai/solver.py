@@ -5,6 +5,7 @@ import re
 from collections.abc import Iterable
 
 from .models import (
+    ArtworkPlacement,
     CatalogIngredient,
     Recipe,
     RecipeIngredient,
@@ -185,5 +186,49 @@ def repair_recipe(recipe: Recipe, catalog: CatalogIndex) -> Recipe:
                 seen.add(item.id.casefold())
 
     recipe.ingredients = repaired
-    return recipe
 
+    if recipe.placements:
+        allowed = {item.id.casefold(): item for item in recipe.ingredients}
+        validated: list[ArtworkPlacement] = []
+        for source in recipe.placements[:180]:
+            item, _ = catalog.resolve(source.ingredient_id)
+            if not item or item.id.casefold() not in allowed:
+                continue
+            x = max(-0.92, min(0.92, float(source.x)))
+            y = max(-0.92, min(0.92, float(source.y)))
+            radius = math.hypot(x, y)
+            if radius > 0.92:
+                scale = 0.92 / radius
+                x *= scale
+                y *= scale
+            validated.append(
+                ArtworkPlacement(
+                    ingredient_id=item.id,
+                    size=normalize_size(source.size),
+                    x=round(x, 4),
+                    y=round(y, 4),
+                    rotation=round(float(source.rotation) % 360.0, 2),
+                    layer=max(0, min(int(source.layer), 12)),
+                    role=str(source.role)[:24].lower(),
+                )
+            )
+        recipe.placements = validated
+        placement_counts: dict[tuple[str, str], int] = {}
+        for placement in validated:
+            key = (placement.ingredient_id.casefold(), placement.size)
+            placement_counts[key] = placement_counts.get(key, 0) + 1
+        for ingredient in recipe.ingredients:
+            matching = [
+                (size_name, count)
+                for (ingredient_id, size_name), count in placement_counts.items()
+                if ingredient_id == ingredient.id.casefold()
+            ]
+            if matching:
+                size_name, count = max(matching, key=lambda value: value[1])
+                ingredient.size = size_name
+                catalog_item, _ = catalog.resolve(ingredient.id)
+                if catalog_item:
+                    ingredient.target_grams = round(catalog_item.size(size_name).grams * count, 2)
+        if recipe.artwork.enabled:
+            recipe.artwork.piece_count = len(validated)
+    return recipe

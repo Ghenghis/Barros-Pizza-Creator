@@ -1,6 +1,6 @@
 # Barro's music conversion pipeline
 
-The supplied music directory is expected at `S:\Unity_Games\PC3 - Pizza Creator\Barros_Music`. Audio files were not mounted in the portable analysis workspace, so no track is claimed as converted and no placeholder music is shipped.
+Five project-owner-supplied songs are included as verified game-ready OGG files. The standalone converter can also process the owner's larger source library from `S:\Unity_Games\PC3 - Pizza Creator\Barros_Music`, while the in-game import inbox accepts new files without rebuilding the plugin.
 
 ## One-click conversion
 
@@ -13,18 +13,19 @@ Equivalent explicit command:
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\Convert-BarrosMusic.ps1 `
   -SourceDirectory "S:\Unity_Games\PC3 - Pizza Creator\Barros_Music" `
-  -Quality 5 -SampleRate 44100 -Channels 2
+  -Quality 8 -SampleRate 48000 -Channels 2 `
+  -LoudnessTarget -14 -TruePeak -1
 ```
 
-The converter recursively accepts WAV, MP3, FLAC, M4A, AAC, WMA, AIFF, Opus and OGA. Existing `.ogg` files are left alone unless `-IncludeExistingOgg` is supplied. It preserves the relative directory structure and metadata, encodes Ogg Vorbis through `libvorbis`, decodes each new file back to a null sink to detect corruption, and records source/output SHA-256 values. It writes through a temporary file so a failed encode cannot masquerade as a completed track.
+The converter recursively accepts WAV, MP3, FLAC, M4A, AAC, WMA, AIFF, Opus and OGA. Existing `.ogg` files are left alone unless `-IncludeExistingOgg` is supplied. It preserves the relative directory structure, selects only the first audio stream, repairs timestamp continuity, removes cover-art/video/subtitle/data streams and source metadata, applies a consistent -14 LUFS / -1 dBTP safety profile, and encodes 48 kHz stereo Ogg Vorbis through `libvorbis` quality 8. It then decodes each new file back to a null sink to detect corruption and records source/output SHA-256 values. It writes through a temporary file so a failed encode cannot masquerade as a completed track.
 
-FFmpeg documents `libvorbis` quality as VBR values from `-1` through `10`, with higher values producing higher quality. RC1 uses `5` as a balanced archival/game setting. Unity 2017.3 exposes Ogg Vorbis as `AudioType.OGGVORBIS` and can construct an `AudioClip` through `UnityWebRequestMultimedia.GetAudioClip`.
+FFmpeg documents `libvorbis` quality as VBR values from `-1` through `10`, with higher values producing higher quality. This release uses `8` to reduce additional loss when an owner-supplied MP3 is transcoded. Loudness leveling cannot restore detail absent from a source file; it keeps songs consistently strong while true-peak protection prevents digital clipping. The original owner-supplied file remains in the import inbox.
 
-## Deliberate release boundary
+## Runtime behavior
 
-Conversion is complete tooling; automatic in-game background-music replacement is not part of the RC1 runtime contract. Adding playback safely requires one live decision: which stock mixer group and volume setting the Creator scene should use. That must be observed in the target runtime rather than guessed. Until then, converted files remain user-owned staging assets and are not copied elsewhere automatically.
+The Media Deck downloads a decoded 48 kHz stereo WAV from the local helper, creates a non-streaming in-memory Unity clip, prepares the waveform while playback is stopped, and then hands it to Pizza Creator's one native music source. That makes Barro's and Stock mutually exclusive: choosing a Barro's track replaces stock music; choosing Stock stops and releases the custom clip before restoring the preloaded Creator soundtrack. New files placed in the import inbox are converted to audio-only OGG on Refresh when FFmpeg is available. The saved play queue controls startup inclusion and order without deleting library files. Agent speech pauses the active soundtrack one second before voice playback and resumes it only after speech ends.
 
-Only distribute tracks for which you have the necessary rights. The project does not bundle FFmpeg or any music.
+Only distribute tracks for which you have the necessary rights. The release bundles the five explicitly owner-supplied songs, but it does not redistribute FFmpeg or any unrelated music.
 
 Primary references:
 

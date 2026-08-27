@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build and verify the deterministic Barro's Pizza Creator RC1 release ZIP."""
+"""Build and verify the deterministic Barro's Pizza Creator 1.5 release ZIP."""
 
 from __future__ import annotations
 
@@ -11,8 +11,8 @@ import zipfile
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_ZIP = ROOT / "releases" / "Barros_Pizza_Creator_AI_Designer_v1.1.0-rc1.zip"
-ARCHIVE_ROOT = "Barros_Pizza_Creator_AI_Designer_v1.1.0-rc1"
+DEFAULT_ZIP = ROOT / "releases" / "Barros_Pizza_Creator_AI_Designer_v1.5.0.zip"
+ARCHIVE_ROOT = "Barros_Pizza_Creator_AI_Designer_v1.5.0"
 FIXED_ZIP_TIME = (2026, 8, 24, 0, 0, 0)
 EXCLUDED_ROOTS = {".git", "evidence", "releases"}
 EXCLUDED_NAMES = {"MANIFEST.sha256", "RELEASE_CHECKSUMS.sha256"}
@@ -50,6 +50,10 @@ def package_files(root: Path) -> list[Path]:
         if relative.parts[0] in EXCLUDED_ROOTS:
             continue
         if relative.parts[0] == "artifacts" and relative not in ALLOWED_ARTIFACTS:
+            continue
+        if relative.parts[:3] == ("backend", "data", "inspiration"):
+            continue
+        if relative.parts[:2] == ("assets", "music") and path.suffix.lower() == ".mp3":
             continue
         if path.name in EXCLUDED_NAMES or any(part in EXCLUDED_PARTS for part in relative.parts):
             continue

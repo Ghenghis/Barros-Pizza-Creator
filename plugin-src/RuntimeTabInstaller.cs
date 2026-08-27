@@ -40,12 +40,17 @@ namespace Barros.PizzaCreator.AI
             {
                 tabBar = creator.tabbar;
                 Tab source = creator.recipeTab;
-                GameObject tabObject = new GameObject("tab_barros_ai_designer", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+                GameObject tabObject = UnityEngine.Object.Instantiate(source.gameObject);
+                tabObject.name = "tab_barros_ai_designer";
                 RectTransform tabRect = tabObject.GetComponent<RectTransform>();
                 tabRect.SetParent(source.transform.parent, false);
                 CopyRect(source.GetComponent<RectTransform>(), tabRect);
                 tabRect.SetAsLastSibling();
                 PlaceAfterExistingTabs(source, tabRect);
+                Tab clonedTab = tabObject.GetComponent<Tab>();
+                if (clonedTab == null) throw new InvalidOperationException("The native recipe tab clone did not contain a Tab component.");
+                if (clonedTab.colorizeElement != null) clonedTab.colorizeElement.gameObject.SetActive(false);
+                if (clonedTab.border != null) clonedTab.border.SetActive(false);
                 Image sourceImage = source.GetComponent<Image>();
                 Image background = tabObject.GetComponent<Image>();
                 if (sourceImage != null)
@@ -86,9 +91,12 @@ namespace Barros.PizzaCreator.AI
                 contentRect.SetAsLastSibling();
                 Image blocker = content.GetComponent<Image>();
                 blocker.color = new Color(0f, 0f, 0f, 0.005f);
-                blocker.raycastTarget = false;
+                // The IMGUI panel sits over the native Pizza Creator canvas. This
+                // transparent image must consume pointer events or a Media/Chat
+                // button can also press a hidden stock control underneath it.
+                blocker.raycastTarget = true;
 
-                aiTab = tabObject.AddComponent<Tab>();
+                aiTab = clonedTab;
                 aiTab.content = content;
                 aiTab.border = borderObject;
                 aiTab.colorizeElement = icon;

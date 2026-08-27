@@ -31,12 +31,28 @@ namespace Barros.PizzaCreator.AI
             Post<TranscriptionRequest, TranscriptionResponse>("/transcribe", request, callback);
         }
 
-        public void Health(Action<bool, string> callback)
+        public void Speak(string agent, string message, string voice, float rate, Action<SpeechResponse> callback)
+        {
+            SpeechRequest request = new SpeechRequest();
+            request.Agent = agent;
+            request.Message = message;
+            request.Voice = voice;
+            request.Rate = rate;
+            Post<SpeechRequest, SpeechResponse>("/speak", request, callback);
+        }
+
+        public void RefreshMusic(Action<MusicImportResponse> callback)
+        {
+            Post<object, MusicImportResponse>("/music/refresh", new object(), callback);
+        }
+
+        public void Health(Action<bool, string, bool> callback)
         {
             ThreadPool.QueueUserWorkItem(delegate
             {
                 bool ok = false;
                 string message = "Offline";
+                bool ttsConfigured = false;
                 try
                 {
                     HttpWebRequest request = (HttpWebRequest)WebRequest.Create(baseUrl + "/health");
@@ -46,15 +62,18 @@ namespace Barros.PizzaCreator.AI
                     using (StreamReader reader = new StreamReader(response.GetResponseStream()))
                     {
                         string body = reader.ReadToEnd();
-                        AiResponse parsed = JsonConvert.DeserializeObject<AiResponse>(body);
+                        JObject root = JObject.Parse(body);
                         ok = response.StatusCode == HttpStatusCode.OK;
-                        message = parsed != null && !string.IsNullOrEmpty(parsed.Provider) ? parsed.Provider : "Ready";
+                        message = root["provider"] != null ? root["provider"].ToString() : "Ready";
+                        JObject tts = root["tts"] as JObject;
+                        ttsConfigured = tts != null && tts["configured"] != null && tts["configured"].Value<bool>();
                     }
                 }
                 catch (Exception exception) { message = exception.Message; }
                 bool result = ok;
                 string detail = message;
-                dispatcher.Enqueue(delegate { callback(result, detail); });
+                bool speechReady = ttsConfigured;
+                dispatcher.Enqueue(delegate { callback(result, detail, speechReady); });
             });
         }
 
@@ -106,8 +125,11 @@ namespace Barros.PizzaCreator.AI
                     HttpWebRequest request = (HttpWebRequest)WebRequest.Create(baseUrl + endpoint);
                     request.Method = "POST";
                     request.ContentType = "application/json; charset=utf-8";
-                    request.Timeout = 120000;
-                    request.ReadWriteTimeout = 120000;
+                    // The backend itself has a 20-second provider attempt and a
+                    // local fallback. Keep the game responsive even if a stale
+                    // sidecar or gateway never completes the request.
+                    request.Timeout = 45000;
+                    request.ReadWriteTimeout = 45000;
                     request.ContentLength = data.Length;
                     using (Stream stream = request.GetRequestStream()) stream.Write(data, 0, data.Length);
                     using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())

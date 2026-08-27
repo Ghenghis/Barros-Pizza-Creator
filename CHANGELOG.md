@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.5.0 — 2026-08-27
+
+- Rebuilt the Media Deck for large owner libraries: nested album folders, duplicate-safe relative track IDs, a dedicated scroll area, search, queue/audio/video filters, A–Z/newest/folder/queue sorting and bulk add/remove.
+- Added multiple named playlists with create, duplicate, rename, protected removal, previous/next selection and automatic migration from the v1 single startup queue.
+- Made the import inbox recursive so owner-created album folders remain organized after lossless source intake and normalized 48 kHz OGG conversion.
+- Added a sequential agent roundtable. Crew turns enter one queue, never overlap or cut each other off, and hold one music-focus window until the final voice finishes.
+- Added agent voice volume, 0.9–1.1× speech rate and inter-speaker gap controls while retaining the balanced 24-voice English Azure roster and muted-by-default privacy boundary.
+- Added Windows microphone device selection, refresh, mute, input gain and a real live input meter. Hardware capture still requires the user to connect and select a working microphone.
+- Preserved Stock/Barro's one-source audio exclusivity, rounded panel styling, exact Creator 0.11.272 ABI lock and non-destructive game boundaries.
+
+## 1.2.0-rc1 — 2026-08-27
+
+- Added ingredient intelligence for all 87 exact game ingredients: readable names, compact flavor profiles, dietary tags, allergen flags and curated pairing strengths.
+- Improved offline and online recipe composition so explicitly requested ingredients attract coherent complements instead of relying only on a fixed theme list.
+- Added pairing cohesion to backend taste/popularity estimates while keeping the game's native scoring authoritative after preview/apply.
+- Added a local-only Inspiration Library for up to 500 validated JPG, PNG or WebP pizza designs with SHA-256 deduplication and bounded three-image selection per AI request.
+- Added an in-game `Ideas ON/OFF` control. Library images are sent only when the user enables it for a request.
+- Added a Windows folder-picker importer and excluded the private inspiration image directory from Git and release ZIPs.
+- Preserved the native-tab clearance repair verified at 1920×1080 in the real Steam game.
+
 ## 1.1.0-rc1 — 2026-08-25
 
 - Hardened visual attachments with decoded magic-byte parsing for PNG, JPEG and WebP instead of trusting file extensions.

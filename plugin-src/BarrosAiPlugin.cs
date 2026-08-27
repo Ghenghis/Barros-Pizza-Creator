@@ -7,13 +7,14 @@ using UnityEngine;
 
 namespace Barros.PizzaCreator.AI
 {
-    [BepInPlugin("com.barros.pizzacreator.ai", "Barro's AI Pizza Designer", "1.0.0-rc1")]
+    [BepInPlugin("com.barros.pizzacreator.ai", "Barro's AI Pizza Designer", "1.5.0")]
     [BepInProcess("Pizza Connection 3 - Pizza Creator.exe")]
     public sealed class BarrosAiPlugin : BaseUnityPlugin
     {
         private ConfigEntry<string> backendUrl;
         private ConfigEntry<bool> autoStartBackend;
         private ConfigEntry<string> pythonOverride;
+        private ConfigEntry<string> ffmpegOverride;
         private MainThreadDispatcher dispatcher;
         private GameBridge game;
         private BackendClient backend;
@@ -28,12 +29,13 @@ namespace Barros.PizzaCreator.AI
             backendUrl = Config.Bind("Backend", "Url", "http://127.0.0.1:48173", "Local AI sidecar URL.");
             autoStartBackend = Config.Bind("Backend", "AutoStart", true, "Start the bundled local sidecar with the game.");
             pythonOverride = Config.Bind("Backend", "PythonExecutable", "", "Optional full path to pythonw.exe.");
+            ffmpegOverride = Config.Bind("Media", "FfmpegExecutable", "", "Optional full path to ffmpeg.exe for automatic OGG import and playback cache decoding.");
             dispatcher = gameObject.AddComponent<MainThreadDispatcher>();
             evidence = new EvidenceRecorder(Logger);
             game = new GameBridge(evidence);
             backend = new BackendClient(backendUrl.Value, dispatcher);
             if (autoStartBackend.Value) StartBackend();
-            Logger.LogInfo("Barro's AI Pizza Designer 1.0.0-rc1 loaded. Waiting for Pizza Creator services.");
+            Logger.LogInfo("Barro's AI Pizza Designer 1.5.0 loaded. Waiting for Pizza Creator services.");
         }
 
         private void Update()
@@ -95,6 +97,8 @@ namespace Barros.PizzaCreator.AI
                 info.UseShellExecute = false;
                 info.CreateNoWindow = true;
                 info.WindowStyle = ProcessWindowStyle.Hidden;
+                string ffmpeg = ResolveFfmpeg(ffmpegOverride.Value);
+                if (!string.IsNullOrEmpty(ffmpeg)) info.EnvironmentVariables["BARROS_FFMPEG_PATH"] = ffmpeg;
                 backendProcess = Process.Start(info);
                 Logger.LogInfo("Started local AI backend process.");
             }
@@ -107,6 +111,31 @@ namespace Barros.PizzaCreator.AI
         private static string Quote(string value)
         {
             return "\"" + value.Replace("\"", "\\\"") + "\"";
+        }
+
+        private static string ResolveFfmpeg(string configured)
+        {
+            if (!string.IsNullOrEmpty(configured) && File.Exists(configured)) return Path.GetFullPath(configured);
+            string pathValue = Environment.GetEnvironmentVariable("PATH") ?? "";
+            string[] pathParts = pathValue.Split(Path.PathSeparator);
+            for (int i = 0; i < pathParts.Length; i++)
+            {
+                try
+                {
+                    string candidate = Path.Combine(pathParts[i].Trim(), "ffmpeg.exe");
+                    if (File.Exists(candidate)) return candidate;
+                }
+                catch { }
+            }
+            string local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            string[] known =
+            {
+                Path.Combine(local, "Cypress", "Cache", "13.17.0", "Cypress", "resources", "app", "node_modules", "@ffmpeg-installer", "win32-x64", "ffmpeg.exe"),
+                Path.Combine(local, "Temp", "ffmpeg-tmp", "package", "ffmpeg.exe"),
+                Path.Combine(local, "Temp", "first-install-tree", "bin", "ffmpeg.exe")
+            };
+            for (int i = 0; i < known.Length; i++) if (File.Exists(known[i])) return known[i];
+            return "";
         }
 
         private void OnApplicationQuit()

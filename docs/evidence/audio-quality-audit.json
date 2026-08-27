@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.0",
+  "generated_utc": "2026-08-27T15:11:11.538185+00:00",
+  "profile": "48 kHz stereo \u00b7 Ogg Vorbis q8 \u00b7 target -14 LUFS \u00b7 peak protected",
+  "track_count": 5,
+  "passed": true,
+  "files": [
+    {
+      "file": "01-Lets-Go-to-Barros-84.ogg",
+      "bytes": 4891638,
+      "sha256": "adb34e6493633c82655fab0ed2359b65bbbb7defff5e73fb119533b72380545a",
+      "stream_count": 1,
+      "audio_stream_count": 1,
+      "codec": "vorbis",
+      "sample_rate_hz": 48000,
+      "channels": "stereo",
+      "measured_lufs": -13.5,
+      "measured_peak_dbfs": -0.8,
+      "decode_valid": true,
+      "pass": true
+    },
+    {
+      "file": "02-Twelve-Slices-of-Christmas.ogg",
+      "bytes": 6402408,
+      "sha256": "d7301ff069eab1fc6ccf0370626364a0cd16f03ec427074cc0606e7c4b019f19",
+      "stream_count": 1,
+      "audio_stream_count": 1,
+      "codec": "vorbis",
+      "sample_rate_hz": 48000,
+      "channels": "stereo",
+      "measured_lufs": -12.9,
+      "measured_peak_dbfs": -0.9,
+      "decode_valid": true,
+      "pass": true
+    },
+    {
+      "file": "03-Barros-Calling-Casa-Grande.ogg",
+      "bytes": 14002220,
+      "sha256": "64f808b80514f6e07d36de17be0a35e5080f783631233838061f80d56b01ea4d",
+      "stream_count": 1,
+      "audio_stream_count": 1,
+      "codec": "vorbis",
+      "sample_rate_hz": 48000,
+      "channels": "stereo",
+      "measured_lufs": -13.7,
+      "measured_peak_dbfs": -0.8,
+      "decode_valid": true,
+      "pass": true
+    },
+    {
+      "file": "04-Barros-Calling-Red-White-Mashup.ogg",
+      "bytes": 831293,
+      "sha256": "0cc2043e67c738b210b8b798a9150719b7e554f0693b6d1e5d613b9d7cfb3602",
+      "stream_count": 1,
+      "audio_stream_count": 1,
+      "codec": "vorbis",
+      "sample_rate_hz": 48000,
+      "channels": "stereo",
+      "measured_lufs": -12.8,
+      "measured_peak_dbfs": -0.8,
+      "decode_valid": true,
+      "pass": true
+    },
+    {
+      "file": "05-Red-White-Barros-Calling-Mashup.ogg",
+      "bytes": 10376594,
+      "sha256": "03b078808bfae79bb59de740aa21a3291c243e9022ea07313b660136f777a733",
+      "stream_count": 1,
+      "audio_stream_count": 1,
+      "codec": "vorbis",
+      "sample_rate_hz": 48000,
+      "channels": "stereo",
+      "measured_lufs": -13.7,
+      "measured_peak_dbfs": -0.9,
+      "decode_valid": true,
+      "pass": true
+    }
+  ]
+}

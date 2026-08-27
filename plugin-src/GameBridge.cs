@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Text;
+using Service.Audio;
 using Service.Database;
 using Service.PizzaCreator;
 using UnityEngine;
@@ -12,13 +14,14 @@ namespace Barros.PizzaCreator.AI
     {
         private IPizzaCreatorService pizzaCreator;
         private IDatabaseService database;
+        private IAudioService audio;
         private PizzaModel restorePoint;
         private PizzaModel savedPoint;
         private AiRecipe lastRecipe;
         private PizzaModel lastCandidate;
         private readonly EvidenceRecorder evidence;
 
-        public bool Ready { get { return pizzaCreator != null && database != null; } }
+        public bool Ready { get { return pizzaCreator != null && database != null && audio != null; } }
 
         public GameBridge(EvidenceRecorder recorder)
         {
@@ -26,10 +29,59 @@ namespace Barros.PizzaCreator.AI
         }
 
         [Inject]
-        private void Initialize(IPizzaCreatorService pizzaCreatorService, IDatabaseService databaseService)
+        private void Initialize(IPizzaCreatorService pizzaCreatorService, IDatabaseService databaseService, IAudioService audioService)
         {
             pizzaCreator = pizzaCreatorService;
             database = databaseService;
+            audio = audioService;
+        }
+
+        public AudioSource GetMusicSource()
+        {
+            if (audio == null) return null;
+            try
+            {
+                FieldInfo field = audio.GetType().GetField("musicSource", BindingFlags.Instance | BindingFlags.NonPublic);
+                return field == null ? null : field.GetValue(audio) as AudioSource;
+            }
+            catch { return null; }
+        }
+
+        public void StartBarrosMusic(AudioClip clip, float volume)
+        {
+            if (audio == null || clip == null) return;
+            audio.StartMusic(clip, 0.25f, 1f, Mathf.Clamp01(volume), false);
+            evidence.Record("media.stock_replaced", "track=" + clip.name);
+        }
+
+        public void PlayStockCreatorMusic()
+        {
+            if (audio == null) return;
+            audio.StartPreloadedMusic("PizzaCreator\\PizzaCreator", 0.25f, 1f, 1f, true);
+            evidence.Record("media.stock_restored", "PizzaCreator\\PizzaCreator");
+        }
+
+        public void PauseMusic() { if (audio != null) audio.PauseMusic(); }
+        public void ResumeMusic() { if (audio != null) audio.ResumeMusic(); }
+        public void StopMusic() { if (audio != null) audio.StopMusic(0f); }
+        public void SetMusicVolume(float volume) { if (audio != null) audio.SetMusicVolume(Mathf.Clamp01(volume)); }
+
+        public void SetMusicTone(float bassDb, float midDb, float trebleDb)
+        {
+            if (audio == null) return;
+            // Use the game's native mixer effects rather than an audio-thread
+            // callback in the mod. Cutoffs handle low/high cuts and the strongest
+            // requested band receives the parametric focus.
+            float highpass = bassDb < 0f ? Mathf.Lerp(10f, 760f, -bassDb / 12f) : 10f;
+            float lowpass = trebleDb < 0f ? Mathf.Lerp(22000f, 3200f, -trebleDb / 12f) : 22000f;
+            audio.SetMusicHighpass(highpass);
+            audio.SetMusicLowpass(lowpass);
+            float dominant = bassDb;
+            float frequency = 125f;
+            float octave = 1.35f;
+            if (Mathf.Abs(midDb) > Mathf.Abs(dominant)) { dominant = midDb; frequency = 1000f; octave = 2f; }
+            if (Mathf.Abs(trebleDb) > Mathf.Abs(dominant)) { dominant = trebleDb; frequency = 7500f; octave = 1.35f; }
+            audio.SetMusicParamEQ(frequency, octave, Mathf.Pow(10f, Mathf.Clamp(dominant, -12f, 12f) / 20f));
         }
 
         public List<AiCatalogIngredient> BuildCatalog()
@@ -110,7 +162,7 @@ namespace Barros.PizzaCreator.AI
             CaptureRestorePoint();
             if (recipe != lastRecipe || lastCandidate == null) Prepare(recipe);
             pizzaCreator.LoadPizzaFromModel(lastCandidate);
-            evidence.Record("action.preview.success", DescribeCandidate(lastCandidate));
+            evidence.Record("action.preview.success", DescribeCandidate(lastCandidate) + DescribeArtwork(recipe));
         }
 
         public void Apply(AiRecipe recipe)
@@ -119,7 +171,7 @@ namespace Barros.PizzaCreator.AI
             if (recipe != lastRecipe || lastCandidate == null) Prepare(recipe);
             pizzaCreator.LoadPizzaFromModel(lastCandidate);
             restorePoint = null;
-            evidence.Record("action.apply.success", DescribeCandidate(lastCandidate));
+            evidence.Record("action.apply.success", DescribeCandidate(lastCandidate) + DescribeArtwork(recipe));
         }
 
         public bool Restore()
@@ -180,6 +232,14 @@ namespace Barros.PizzaCreator.AI
             return "id=" + model.ID + "; placements=" + model.ingredients.Count + "; dough=" + model.doughPositions.Count + "; profit_factor=" + model.ProfitFactor.ToString("0.000");
         }
 
+        private static string DescribeArtwork(AiRecipe recipe)
+        {
+            if (recipe == null || recipe.Artwork == null || !recipe.Artwork.Enabled) return "";
+            return "; artwork=" + recipe.Artwork.Template + "; subject=" + recipe.Artwork.Subject
+                + "; detail=" + recipe.Artwork.Detail + "; planned=" + recipe.Artwork.PieceCount
+                + "; algorithm=" + recipe.Artwork.Algorithm;
+        }
+
         private static string ModelSignature(PizzaModel model)
         {
             if (model == null) return "null";
@@ -229,22 +289,50 @@ namespace Barros.PizzaCreator.AI
             System.Random random = new System.Random(recipe.Seed == 0 ? StableSeed(recipe.Name) : recipe.Seed);
             int globalIndex = 0;
             const int maximumPlacements = 180;
-            for (int ingredientIndex = 0; ingredientIndex < recipe.Ingredients.Count; ingredientIndex++)
+            if (recipe.Placements != null && recipe.Placements.Count > 0)
             {
-                AiRecipeIngredient request = recipe.Ingredients[ingredientIndex];
-                IngredientModel.IngredientSize size = ParseSize(request.Size);
-                IngredientModel ingredient = database.GetIngredientByID(request.Id, size);
-                if (ingredient == null || ingredient.Amount <= 0f) continue;
-                int count = Mathf.Clamp(Mathf.RoundToInt(request.TargetGrams / ingredient.Amount), 1, 40);
-                for (int piece = 0; piece < count && globalIndex < maximumPlacements; piece++)
+                List<AiArtworkPlacement> planned = new List<AiArtworkPlacement>(recipe.Placements);
+                planned.Sort(delegate(AiArtworkPlacement left, AiArtworkPlacement right)
                 {
+                    int layer = left.Layer.CompareTo(right.Layer);
+                    if (layer != 0) return layer;
+                    int vertical = left.Y.CompareTo(right.Y);
+                    return vertical != 0 ? vertical : left.X.CompareTo(right.X);
+                });
+                for (int index = 0; index < planned.Count && globalIndex < maximumPlacements; index++)
+                {
+                    AiArtworkPlacement request = planned[index];
+                    IngredientModel.IngredientSize size = ParseSize(request.Size);
+                    IngredientModel ingredient = database.GetIngredientByID(request.IngredientId, size);
+                    if (ingredient == null || ingredient.Amount <= 0f) continue;
                     PizzaModel.IngredientContainerModel placed = new PizzaModel.IngredientContainerModel();
                     placed.Bind();
                     placed.Ingredient = ingredient;
-                    placed.Position = PositionFor(request.Distribution, piece, count, globalIndex, random, recipe.Shape);
-                    placed.Rotation = new Vector3(0f, (float)(random.NextDouble() * 360.0), 0f);
+                    placed.Position = PositionForArtwork(request, globalIndex, recipe.Shape);
+                    placed.Rotation = new Vector3(0f, Mathf.Repeat(request.Rotation, 360f), 0f);
                     model.ingredients.Add(placed);
                     globalIndex++;
+                }
+            }
+            else
+            {
+                for (int ingredientIndex = 0; ingredientIndex < recipe.Ingredients.Count; ingredientIndex++)
+                {
+                    AiRecipeIngredient request = recipe.Ingredients[ingredientIndex];
+                    IngredientModel.IngredientSize size = ParseSize(request.Size);
+                    IngredientModel ingredient = database.GetIngredientByID(request.Id, size);
+                    if (ingredient == null || ingredient.Amount <= 0f) continue;
+                    int count = Mathf.Clamp(Mathf.RoundToInt(request.TargetGrams / ingredient.Amount), 1, 40);
+                    for (int piece = 0; piece < count && globalIndex < maximumPlacements; piece++)
+                    {
+                        PizzaModel.IngredientContainerModel placed = new PizzaModel.IngredientContainerModel();
+                        placed.Bind();
+                        placed.Ingredient = ingredient;
+                        placed.Position = PositionFor(request.Distribution, piece, count, globalIndex, random, recipe.Shape);
+                        placed.Rotation = new Vector3(0f, (float)(random.NextDouble() * 360.0), 0f);
+                        model.ingredients.Add(placed);
+                        globalIndex++;
+                    }
                 }
             }
             model.CalculateCosts();
@@ -287,7 +375,10 @@ namespace Barros.PizzaCreator.AI
         private static Vector3 PositionFor(string distribution, int index, int count, int global, System.Random random, string shape)
         {
             string mode = (distribution ?? "even").ToLowerInvariant();
-            double angle = (index * 2.399963229728653 + random.NextDouble() * 0.35);
+            // Use the pizza-wide placement index so every ingredient family
+            // continues the same golden-angle spread. Restarting from the
+            // per-ingredient index clustered each new topping on one side.
+            double angle = (global * 2.399963229728653 + random.NextDouble() * 0.35);
             double radius;
             if (mode == "center") radius = Math.Sqrt(random.NextDouble()) * 1.15;
             else if (mode == "ring") radius = 1.35 + random.NextDouble() * 0.55;
@@ -303,6 +394,40 @@ namespace Barros.PizzaCreator.AI
                 localZ = Mathf.Clamp(localZ * 1.08f, -2.15f, 2.15f);
             }
             return new Vector3(-3f + localX, 1f + global * 0.01f, localZ);
+        }
+
+        private static Vector3 PositionForArtwork(AiArtworkPlacement placement, int global, string shape)
+        {
+            float normalizedX = Mathf.Clamp(placement.X, -0.92f, 0.92f);
+            float normalizedZ = Mathf.Clamp(placement.Y, -0.92f, 0.92f);
+            float radius = Mathf.Sqrt(normalizedX * normalizedX + normalizedZ * normalizedZ);
+            if (string.Equals(shape, "Triangle", StringComparison.OrdinalIgnoreCase))
+            {
+                float halfWidth = Mathf.Max(0.08f, (0.94f - normalizedZ) * 0.53f);
+                normalizedX = Mathf.Clamp(normalizedX, -halfWidth, halfWidth);
+                normalizedZ = Mathf.Clamp(normalizedZ, -0.84f, 0.86f);
+            }
+            else if (string.Equals(shape, "Star", StringComparison.OrdinalIgnoreCase) && radius > 0.001f)
+            {
+                float angle = Mathf.Atan2(normalizedZ, normalizedX);
+                float starLimit = 0.54f + 0.34f * (0.5f + 0.5f * Mathf.Cos(angle * 5f));
+                if (radius > starLimit)
+                {
+                    float scale = starLimit / radius;
+                    normalizedX *= scale;
+                    normalizedZ *= scale;
+                }
+            }
+            else if (!string.Equals(shape, "Square", StringComparison.OrdinalIgnoreCase) && radius > 0.92f)
+            {
+                float scale = 0.92f / radius;
+                normalizedX *= scale;
+                normalizedZ *= scale;
+            }
+            float localX = normalizedX * 2.22f;
+            float localZ = normalizedZ * 2.22f;
+            float localY = 1f + Mathf.Clamp(placement.Layer, 0, 12) * 0.018f + global * 0.0008f;
+            return new Vector3(-3f + localX, localY, localZ);
         }
 
         private void ScoreWithGame(PizzaModel model, AiRecipe recipe)
@@ -347,6 +472,11 @@ namespace Barros.PizzaCreator.AI
             float averageCrazy = recipe.Ingredients.Count > 0 ? craziness / recipe.Ingredients.Count : 0f;
             recipe.Scores.Novelty = Mathf.Clamp(45f + averageCrazy * 35f + recipe.Ingredients.Count * 3f, 0f, 100f);
             recipe.Scores.Originality = Mathf.Clamp(48f + averageCrazy * 30f + placementVariety, 0f, 100f);
+            if (recipe.Placements != null && recipe.Placements.Count > 0)
+            {
+                recipe.Scores.Novelty = Mathf.Max(recipe.Scores.Novelty, 92f);
+                recipe.Scores.Originality = Mathf.Max(recipe.Scores.Originality, 96f);
+            }
             recipe.Scores.Source = "Pizza Connection 3 native citizen ratings + deterministic novelty/originality";
         }
     }

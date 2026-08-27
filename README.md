@@ -1,17 +1,22 @@
-# Pizza Connection 3 / Barro's Pizza — Barro's Pizza Creator 1.1 RC
+# Pizza Connection 3 / Barro's Pizza — Barro's Pizza Creator 1.5
 
-Version **1.1.0-rc1** is the in-game AI design layer for the exact standalone Windows x64 **Pizza Connection 3 - Pizza Creator 0.11.272** binary profile.
+Version **1.5.0** is the in-game AI design layer for the exact standalone Windows x64 **Pizza Connection 3 - Pizza Creator 0.11.272** binary profile.
 
 The ecosystem-facing brand is **Pizza Connection 3 / Barro's Pizza**. The technical Creator target remains the original standalone executable/data/assembly identity because changing those names would invalidate reverse-engineering and proof contracts.
 
 ## What Creator adds
 
+The v1.5 final adds a rounded five-tab workspace, guided 6/8/12/18-step pizza sessions, a non-overlapping multi-agent voice roundtable, Windows microphone controls, Symmetry Studio, Ingredient Audition, safe design checkpoints/branches, Contrast Coach, reproducible Pizza DNA, and a large-library Barro's Media Deck. Five owner-supplied songs are packaged as Unity-friendly OGG files; the recursive music inbox keeps album folders organized while converting MP3/WAV and other common audio to OGG through FFmpeg without restarting the game.
+
 It adds one real fifth tab to the existing Bakehouse panel and keeps recipe design inside that space:
 
-- **Chat** — Build with me, Surprise me, Improve this, conversation history, validated attachments and live recipe cards.
+- **Chat + Pizza Art Studio** — compact two-row actions, seven picture templates, Draft/Standard/High detail, Precision/Organic placement, Classic/Vegan palettes, deterministic Remix and live recipe cards.
 - **AI Lab** — three game-valid alternatives with native Preview and Use actions.
-- **Design Crew** — Flavor Chef, Cost Manager, Customer Scout and Creative Director with independent opinions and consensus.
-- **Chef Voice** — Windows microphone capture and OpenAI-compatible/Whisper transcription.
+- **Design Crew** — Flavor Chef, Cost Manager, Customer Scout and Creative Director with independent or focused reviews, consensus, optional per-agent Azure voices, a sequential roundtable, voice rate/gap/volume controls, Stop and a master mute.
+- **Chef Voice** — Windows device selection, refresh, mute, gain, live input meter, microphone capture and OpenAI-compatible/Whisper transcription.
+- **Barro's Media Deck** — nested albums, multiple named playlists, search/filter/sort, bulk organization, current/up-next display, waveform/seek, shuffle/repeat, volume and three-band tone, recursive MP3/WAV-to-OGG inbox import, and a one-source Stock/Barro's switch that prevents overlapping soundtracks.
+- **Ingredient intelligence** — flavor tags, dietary/allergen awareness, curated pairing strengths and cohesion-aware recipe estimates for every exact game ingredient.
+- **Inspiration Library** — opt-in use of up to three locally indexed pizza-design images per request from a private library of as many as 500 files.
 
 The UI follows the locked four-mode Barro's references while using the game's parchment/maroon/wood language. It does **not** replace `Assembly-CSharp.dll`, rewrite saves or fake mouse input.
 
@@ -56,7 +61,7 @@ Run `CONFIGURE_AI_PROVIDER.bat` for model/voice provider setup. Offline recipe d
 
 ## Visual attachments and JPEG parsing
 
-Creator 1.1 validates image bytes before provider orchestration. It does not trust a `.jpg`, `.png` or `.webp` extension by itself.
+Creator 1.5 validates image bytes before provider orchestration. It does not trust a `.jpg`, `.png` or `.webp` extension by itself.
 
 ```mermaid
 flowchart LR
@@ -87,9 +92,25 @@ Current visual limits:
 
 Text attachments (JSON/TXT/Markdown and related bounded text input) stay separate from binary visual parsing.
 
+## Local Inspiration Library
+
+Run `IMPORT_Barros_Inspiration.ps1` and choose a folder containing pizza-design JPG, PNG or WebP files. The Windows helper finds the installed Steam Barro's backend when available, validates real image bytes, rejects malformed or spoofed files, deduplicates by SHA-256 and indexes at most 500 images. The in-game **Ideas OFF/ON** button controls whether up to three relevant local designs accompany the next AI request.
+
+The library lives under `backend/data/inspiration`, is ignored by Git and is explicitly excluded from release ZIPs. Images remain local reference material; every import records `user-owned`, `permission-granted` or `reference-only` rights. Only import images you are allowed to retain and use. A Facebook archive or album download can be imported after it is obtained through an authorized account or export flow.
+
 ## Using Chat
 
-Choose Build with me, Surprise me or Improve this. Describe the pizza and optionally attach a validated visual or bounded text note. A vision-capable provider receives image attachments only after parser validation. The final recipe is repaired against the real game catalog before Unity receives it.
+Choose Build with me, Pizza art, Surprise me or Improve this. Describe the pizza and optionally attach a validated visual or bounded text note. A vision-capable provider receives image attachments only after parser validation. The final recipe is repaired against the real game catalog before Unity receives it.
+
+## Pizza Art Studio
+
+Pizza Art turns a picture concept into exact native ingredient placements instead of asking the stock random distributor to approximate a picture. The included templates are Santa, Face, Heart, Christmas Tree, Smiley, Snowman and Star. High detail uses 176 pieces, leaving four places below the hard 180-placement safety limit. Standard and Draft deliberately use fewer real pieces.
+
+Every exact game ingredient has compact visual metadata: approximate color, geometry, footprint and useful orientation. The compiler maps artwork roles to installed ingredients, protects small facial/outline accents during downsampling, clips coordinates to the selected dough shape, orders semantic layers and then lets the real game render the resulting 3D toppings. The same seed reproduces the same plan; Remix changes it deterministically.
+
+An online vision model can return a bounded color-role `pixel_map` for a custom picture. The local compiler still validates and converts the map; the model never sends arbitrary game object names or coordinates directly to Unity.
+
+![High-detail Santa placement-plan preview](docs/images/v13-santa-art-preview.png)
 
 ## AI Lab
 
@@ -97,7 +118,9 @@ Set heat/shape, describe the goal and choose **Generate 3**. Each candidate carr
 
 ## Design Crew
 
-The four personas review a validated draft. One model/persona failure cannot cancel the other opinions. Offline mode uses deterministic specialist logic.
+The four personas review a validated draft. **Ask** runs one focused persona review; **Ask all four agents** runs the full crew. One model/persona failure cannot cancel the other opinions. Offline mode uses deterministic specialist logic.
+
+Optional Azure agent speech uses a distinct voice per persona: Maisie (en-GB), Darren (en-AU), Ryan (en-GB) and Carly (en-AU). Speech starts muted, exposes Speak/Stop and master mute controls, and filters links, code blocks and file paths before synthesis. Configure it through `CONFIGURE_AI_PROVIDER.bat`; credentials stay in the named environment or `.env` reference. Health reports configuration separately from reachability and does not claim speech works until a real request succeeds.
 
 ## Chef Voice
 
@@ -136,6 +159,7 @@ Default: `http://127.0.0.1:48173`.
 | POST | `/lab` | three alternatives |
 | POST | `/crew` | design-crew review |
 | POST | `/transcribe` | STT |
+| POST | `/speak` | optional Azure design-agent speech |
 | POST | `/reload` | reload provider settings |
 | POST | `/shutdown` | controlled sidecar shutdown |
 
@@ -157,7 +181,7 @@ Creator is one part of the larger Pizza Connection 3 / Barro's Pizza workflow:
 
 ```mermaid
 flowchart LR
-    W[Workbench v2.3\nimage creation + agents + ecosystem audit] --> C[Creator 1.1\nrecipe/game semantics]
+    W[Workbench v2.3\nimage creation + agents + ecosystem audit] --> C[Creator 1.5\nrecipe/game semantics + media]
     W --> H[build-tagged exact PNG/JPEG/WebP handoff]
     H --> S[Studio v1.2\nreverse engineering + validation + proof]
     C --> CP[Creator 0.11.272 retained proof]
@@ -224,15 +248,9 @@ After interruption, read the recovery checkpoint, run static/tests/doctor first,
 
 ## Current proof boundary
 
-The code/CI/tooling integration is substantially ahead of the live proof ledger, but the ecosystem is **not truthfully 100% complete** until the named runtime gates are retained. Important remaining live evidence includes:
+The v1.5 exact-assembly artifact passed **107/107 tests** and the final Windows run verified the searchable large-library UI, a `Christmas` 1-of-5 search result, named-playlist controls, a real four-agent text response, microphone readiness, five-song playback and Stock/Barro's exclusivity. The earlier v1.4 proof retains the 603.534-second stability soak. See `docs/V1_5_RUNTIME_PROOF_2026-08-27.md`, `docs/V1_4_RUNTIME_PROOF_2026-08-27.md` and `docs/evidence/`.
 
-- actual Creator BepInEx/fifth-tab render;
-- live preview/restore/apply and save/reload;
-- live microphone/STT;
-- four live Creator mode screenshots;
-- live Workbench v2.3 and Studio v1.2 screenshots/audit outputs;
-- at least one full image generation -> Studio validation -> runtime apply screenshot -> restore/commit chain;
-- GitLab mirror SHA parity verification.
+Remaining boundaries are explicit: native Save/reload was not exercised; Windows exposed no microphone; Azure speech was not configured or audibly tested; subjective speaker-output smoothness still needs the user's listening confirmation; the Inspiration Library is empty; and broader Workbench/Studio/GitLab mirror parity is outside this Creator-only change.
 
 ## Documentation
 
@@ -241,6 +259,9 @@ The code/CI/tooling integration is substantially ahead of the live proof ledger,
 - `docs/ECOSYSTEM_V2_ARCHITECTURE.md`
 - `docs/ENGINEERING_PLAYBOOK.md`
 - `docs/PROJECT_STATUS.md`
+- `docs/V1_5_RUNTIME_PROOF_2026-08-27.md`
+- `docs/V1_4_RUNTIME_PROOF_2026-08-27.md`
+- `docs/V1_3_RUNTIME_PROOF_2026-08-27.md`
 - `docs/PROOF_CONTRACT.md`
 - `docs/UPSTREAM_AUDIT.md`
 - `docs/ARCHITECTURE.md`
