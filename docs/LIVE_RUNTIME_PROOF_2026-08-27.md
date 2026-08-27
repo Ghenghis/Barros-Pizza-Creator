@@ -6,7 +6,7 @@ The repaired build was installed and exercised only in this isolated working cop
 
 `work/game-copy/Pizza Connection 3 - Pizza Creator`
 
-The Steam installation and unrelated PC2/PC3 projects were not modified. Native Save/reload was not exercised because the game may store it in shared Windows user-profile data outside the isolated folder.
+The Steam installation and unrelated game projects were not modified. Native Save/reload was not exercised because the game may store it in shared Windows user-profile data outside the isolated folder.
 
 ## Observed result matrix
 
