@@ -28,7 +28,7 @@
       "name": "Pizza Creator RC1 inherited proof",
       "source_contract": "contracts/rc1.acceptance.json",
       "gates": [
-        {"id": "E0-001", "requirement": "All 24 RC1 release-required gates PASS on the creator-0.11.272 exact-assembly profile", "release_required": true, "evidence": "contracts/rc1.acceptance.json plus latest evidence/runs bundle"}
+        {"id": "E0-001", "requirement": "All 25 Creator release-required gates PASS on the creator-0.11.272 exact-assembly profile", "release_required": true, "evidence": "contracts/rc1.acceptance.json plus latest evidence/runs bundle"}
       ]
     },
     {

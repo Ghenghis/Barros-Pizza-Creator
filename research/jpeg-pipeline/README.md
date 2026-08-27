@@ -1,5 +1,7 @@
 # PC3 Pizza Creator Native JPEG Research Pipeline
 
+> **Reduced scope as of 2026-08-27.** The static exporter is proven and there is no embedded editable-recipe codec to recover. Use this pipeline only for live pixel, framing, placement, occlusion, repeatability, and encoder-output confirmation.
+
 **Scope:** PC3 Pizza Creator only  
 **Creator owner/executor:** Claude  
 **Studio stimulus producer/observer:** ChatGPT-owned Runtime Proof Studio  

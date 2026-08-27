@@ -1,7 +1,10 @@
 Pizza Connection 3 / Barro's Pizza — Barro's Pizza Creator
-Version: 1.1.0-rc1
+Version: 1.2.0-rc2
+Build state: source-local-compile-required until exact Windows artifact provenance is regenerated
 Runtime profile: creator-0.11.272
 Target: Pizza Connection 3 - Pizza Creator 0.11.272 / Windows x64 / Unity 2017.3.1p4
 Default game root: S:\Unity_Games\PC3 - Pizza Creator
 Attachment parser: magic-byte PNG/JPEG/WebP validation
-Ecosystem: Workbench 2.2 RC + Runtime Proof Studio 1.1 RC
+Native export: stock ScreenCapture JPG, 1280x720, quality 90
+Editable source: native UserData/Recipes JSON; JPG carries no recipe payload
+Ecosystem: Workbench 2.3 RC + Runtime Proof Studio 1.2 RC

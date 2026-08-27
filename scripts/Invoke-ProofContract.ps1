@@ -32,6 +32,19 @@ function Get-Sha256([string]$Path) {
     return (Get-FileHash -Algorithm SHA256 -LiteralPath $Path).Hash.ToLowerInvariant()
 }
 
+function Test-SourceProvenance([object]$Provenance) {
+    $sourceRoot = Join-Path $PackageRoot "plugin-src"
+    if ($null -eq $Provenance.source_files_sha256 -or -not (Test-Path -LiteralPath $sourceRoot -PathType Container)) { return $false }
+    $files = @(Get-ChildItem -LiteralPath $sourceRoot -Filter "*.cs" -File | Sort-Object Name)
+    $expected = @($Provenance.source_files_sha256.PSObject.Properties)
+    if ($files.Count -ne $expected.Count) { return $false }
+    foreach ($file in $files) {
+        $property = $Provenance.source_files_sha256.PSObject.Properties[$file.Name]
+        if ($null -eq $property -or (Get-Sha256 $file.FullName) -ne ([string]$property.Value).ToLowerInvariant()) { return $false }
+    }
+    return $true
+}
+
 function Add-GateResult([string]$Id, [string]$State, [string]$Detail, [string[]]$Evidence = @()) {
     if (-not $gateIndex.ContainsKey($Id)) { throw "Unknown contract gate: $Id" }
     if (@("not_run", "pass", "fail", "blocked") -notcontains $State) { throw "Invalid gate state: $State" }
@@ -64,7 +77,7 @@ function Invoke-StaticGates {
         "README.md", "INSTALL_Barros_AI_Designer.ps1", "DIAGNOSE_Barros_AI.ps1",
         "plugin-src\BarrosAiPlugin.cs", "plugin-src\GameBridge.cs", "plugin-src\PanelRenderer.cs", "plugin-src\EvidenceRecorder.cs",
         "backend\main.py", "backend\catalog.bootstrap.json", "assets\barros-pizza-creator-header.png",
-        "contracts\rc1.acceptance.json", "artifacts\Barros.PizzaCreator.AI.dll", "artifacts\build-provenance.json",
+        "contracts\rc1.acceptance.json", "artifacts\README.md", "tools\artifact_provenance.py",
         "docs\ENGINEERING_PLAYBOOK.md", "docs\PROJECT_STATUS.md", "scripts\Convert-BarrosMusic.ps1", "CONVERT_BARROS_MUSIC.bat",
         "tools\build_release.py"
     )
@@ -166,19 +179,22 @@ function Invoke-BuildGates {
         $provenance = Get-Content -LiteralPath (Join-Path $PackageRoot "artifacts\build-provenance.json") -Raw | ConvertFrom-Json
         $prebuilt = Join-Path $PackageRoot ("artifacts\" + $provenance.artifact)
         $prebuiltHash = Get-Sha256 $prebuilt
-        if ($prebuiltHash -eq $provenance.artifact_sha256 -and $assemblyHash -eq $provenance.target.assembly_csharp_sha256) {
+        if ($prebuiltHash -eq $provenance.artifact_sha256 -and
+            $assemblyHash -eq $provenance.target.assembly_csharp_sha256 -and
+            $firstpassHash -eq $provenance.target.assembly_csharp_firstpass_sha256 -and
+            (Test-SourceProvenance $provenance)) {
             $prebuiltValid = $true
             Add-GateResult "BLD-103" "pass" "Certified plugin and provenance hashes agree: $prebuiltHash" @($prebuilt, (Join-Path $PackageRoot "artifacts\build-provenance.json"))
             Add-GateResult "BLD-102" "pass" "Certified Roslyn compile completed with zero errors against these exact assembly hashes." @($prebuilt, (Join-Path $PackageRoot "artifacts\build-provenance.json"))
         }
         else {
-            Add-GateResult "BLD-103" "fail" "Certified plugin or provenance hash mismatch."
-            Add-GateResult "BLD-102" "fail" "Exact-assembly compile provenance could not be authenticated."
+            Add-GateResult "BLD-103" "fail" "Certified plugin, target, or current-source provenance mismatch. Exact rebuild required."
+            Add-GateResult "BLD-102" "blocked" "The current source still requires an observed exact-assembly compile."
         }
     }
     catch {
         Add-GateResult "BLD-103" "fail" $_.Exception.Message
-        Add-GateResult "BLD-102" "fail" "Exact-assembly compile provenance could not be authenticated."
+        Add-GateResult "BLD-102" "blocked" "The current source still requires an observed exact-assembly compile."
     }
 
     if ($env:OS -ne "Windows_NT") {
@@ -193,6 +209,7 @@ function Invoke-BuildGates {
         $buildOutput | Set-Content -LiteralPath $compileLog -Encoding UTF8
         if ($buildExit -eq 0 -and (Test-Path -LiteralPath $compiled)) {
             $hash = Get-Sha256 $compiled
+            Add-GateResult "BLD-102" "pass" "Current plugin source compiled with zero errors against the exact installed game and Unity assemblies: $hash" @($compileLog, $compiled)
             Add-GateResult "BLD-104" "pass" "Windows compiler parity build completed against installed DLLs." @($compileLog)
         }
         else {
@@ -301,7 +318,7 @@ $resultsPath = Join-Path $runRoot "results.json"
 $document | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $resultsPath -Encoding UTF8
 
 $summary = New-Object Collections.Generic.List[string]
-$summary.Add("# Barro's RC1 proof run $runId")
+$summary.Add("# Barro's Creator proof run $runId")
 $summary.Add("")
 $summary.Add("Stage: **$Stage**  ")
 $summary.Add("PASS: **$($counts.pass)** · FAIL: **$($counts.fail)** · BLOCKED: **$($counts.blocked)** · NOT RUN: **$($counts.not_run)**")

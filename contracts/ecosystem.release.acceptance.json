@@ -9,7 +9,7 @@
     "snapshot_rule": "Visual claims require retained screenshots from the actual running Workbench, Studio or game. CI offscreen renders are useful preflight evidence but do not replace live-game proof."
   },
   "release_versions": {
-    "creator": "1.1.0-rc1",
+    "creator": "1.2.0-rc2",
     "workbench": "2.3.0-rc1",
     "studio": "1.2.0-rc1"
   },
@@ -24,7 +24,7 @@
     "image_handoff": "contracts/ecosystem.image.acceptance.json"
   },
   "gates": [
-    {"id": "REL-001", "requirement": "Creator RC1 release-required contract is complete", "state": "not_run", "release_required": true, "evidence": "contracts/rc1.acceptance.json + retained proof/latest All-stage evidence"},
+    {"id": "REL-001", "requirement": "Creator 1.2 RC2 release-required contract is complete", "state": "not_run", "release_required": true, "evidence": "contracts/rc1.acceptance.json + retained proof/latest All-stage evidence"},
     {"id": "REL-002", "requirement": "Base Creator/Workbench/Studio ecosystem acceptance contract is complete", "state": "not_run", "release_required": true, "evidence": "contracts/ecosystem.acceptance.json"},
     {"id": "REL-003", "requirement": "JPEG/PNG/image-handoff acceptance contract is complete", "state": "not_run", "release_required": true, "evidence": "contracts/ecosystem.image.acceptance.json + Workbench handoff + Studio byte validation + runtime screenshots"},
     {"id": "REL-004", "requirement": "Workbench 2.3.0-rc1 default launcher, tests, visual preflight, operator recovery and deterministic package workflows are green on reviewed source", "state": "pass", "release_required": true, "evidence": "Ghenghis/barros-workbench main 05764275a3c40c1409837e4cd1955f3467e6cc94; integration 32874410959 PASS; visual preflight 32874411148 PASS; operator recovery 32874411132 PASS; deterministic package 32874410988 PASS; PC3 scope guard 32874410987 PASS"},

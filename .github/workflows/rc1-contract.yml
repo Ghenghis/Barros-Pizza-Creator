@@ -1,4 +1,4 @@
-name: RC1 proof contract
+name: Creator proof contract
 
 on:
   push:
@@ -27,7 +27,11 @@ jobs:
           python -m json.tool contracts/ecosystem.release.acceptance.json >/dev/null
           python -m json.tool contracts/pc3-image-handoff.schema.json >/dev/null
           python -m json.tool contracts/pc3-build-compatibility.json >/dev/null
+          python -m json.tool contracts/pc3-creator-native-jpeg.contract.json >/dev/null
+          python -m json.tool contracts/jpeg-reverse-engineering.acceptance.json >/dev/null
           python -m json.tool artifacts/build-provenance.json >/dev/null
+      - name: Report certified binary/source relationship
+        run: python tools/artifact_provenance.py --json
       - name: Build and verify deterministic release twice
         shell: bash
         run: |

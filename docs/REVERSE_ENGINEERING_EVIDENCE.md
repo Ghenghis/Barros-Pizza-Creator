@@ -1,6 +1,12 @@
 # Reverse-engineering evidence and release status
 
-This file separates facts proven from the supplied Windows archive from behavior that still requires the first live Windows run.
+This file separates facts proven from the supplied Windows archive and exact decompiled assemblies from behavior that still requires a live Windows run.
+
+## 2026-08-27 exact-source reconciliation
+
+Private repository `Ghenghis/PC3_Pizza-Creator` commit `d8fdd733fa068e00048441375a69feb8fd5b5440` adds ILSpy 8.2 compilable-project output for both PC3 executables: 5,429 C# files across four assemblies, with zero reported decompilation failures or unresolved-reference noise. The standalone Creator portion is 2,091 `Assembly-CSharp` files plus 587 `Assembly-CSharp-firstpass` files. This resolves the prior missing-managed-source gate for static analysis. It does not create an original Unity project and does not replace target-machine compilation or runtime proof.
+
+The private source is evidence material. It must not be copied into this public mod repository or release ZIP.
 
 ## Supplied-build inventory
 
@@ -33,7 +39,12 @@ Exact assembly evidence:
 - Exactly 20 dough positions per shape.
 - Save/model keys `ID`, `Ingredients`, `DoughPositions` and `ProfitFactor`.
 - Placement keys `Ingredient`, `IngredientID`, `Rotation`, `Position` and `Size`.
-- Native placement coordinates use X `[-5.5,-0.5]`, Z `[-2.5,2.5]` and layered Y values near `1.0 + n×0.01`.
+- The stock `CreatePizzaForCitzenType` generator uses X `[-5.5,-0.5]`, Z `[-2.5,2.5]` and layered Y values near `1.0 + n×0.01`; manual placement uses the rendered dough hit test and a `0.001` Y increment.
+- Editable recipes are serialized JSON under `Application.persistentDataPath/UserData/Recipes`.
+- Shared JPGs are separate stock camera captures under `Application.streamingAssetsPath/Screenshots`.
+- The shared JPG path renders at 2560×1440, resizes to 1280×720, and calls `Texture2D.EncodeToJPG(90)`.
+- Application code writes the encoder bytes directly and does not insert an editable recipe or custom metadata payload.
+- No native JPG-to-`PizzaModel` importer exists; visual-image import is an AI reconstruction workflow.
 
 ## Method-level path proven from source
 
@@ -47,6 +58,8 @@ The chosen mod path does not require reconstructing every system in Pizza Connec
 | Build model | `PizzaModel`, `IngredientContainerModel`, `Bind`, `CalculateCosts` |
 | Drive 3D renderer | `IPizzaCreatorService.LoadPizzaFromModel` → native internal `PlaceIngredient` |
 | Save recipe | `SaveCurrentPizzaToRecipes` |
+| Verify persistence | `Paths.recipes` plus the written `<PizzaModel.ID>.json` |
+| Export shared JPG | `ScreenCapture.Capture` → `CaptureUtility.SaveAsJPG` |
 | Score taste/popularity | `CitizenTypeController.RatePizzaRecipe`, `RatePizzaOverallTaste`, `RatePizzaPriceTaste` |
 | Add UI surface | `PizzaCreatorTabBar`, `TabBar.RegisterTab`, `TabBar.ActivateTab` |
 
@@ -60,12 +73,15 @@ This is complete reverse-engineering coverage for the selected integration route
 | Offline composer and constraints | Complete | Automated tests cover validity, determinism, exclusions, price ceiling and improve context |
 | Provider adapters | Complete in source | OpenAI-compatible/LM Studio, Ollama and Anthropic plus provider fallback |
 | Chat / Lab / Crew / Voice UI | Complete in source | Fifth registered tab and four in-panel modes map to the supplied mockups |
-| 3D Preview / Apply / Restore / Save | Complete in source | Uses the public native service path above |
+| 3D Preview / Apply / Restore / Save | Complete in source | Uses the public native service path above and now verifies the persisted recipe JSON |
+| Stock JPG export | Complete in source for v1.2 RC2 | Reuses the scene-local `ScreenshotButton`/`ScreenCapture`, preserves the screenshot-only UI transition, verifies JPG SOI/EOI bytes, and retains the output path |
+| Automated persisted reload check | Complete in source for v1.2 RC2 | F9 reads native JSON through `ISerializerService`, rebinds `IngredientID`/size through `IDatabaseService`, requests `LoadPizzaFromModel`, waits for the event-driven load, then compares the complete model signature |
 | Native scores | Complete in source | Game citizen and cost models replace backend estimates in Unity |
 | Barro's header branding | Complete in package | 1280×143 optimized banner plus full-resolution source; runtime aspect-fit and restoration |
-| Python verification | Passed | 20 backend/contract tests, including byte-model catalog and STT request checks |
-| Exact-game C# compile | Passed | Roslyn compiled a 66,560-byte PE32 AnyCPU plugin with zero errors against the supplied Managed DLLs; SHA-256 `63e18cce15e3faede1a18f9f32ec73768a2053f89fe29a8ca95240ebabab5501` |
+| Python verification | Re-run required for v1.2 RC2 | Portable suite covers backend, contracts, attachments, JPG analysis and proof surfaces |
+| Prior RC1 exact-game C# compile | Passed | Roslyn compiled a 66,560-byte PE32 AnyCPU plugin with zero errors against the supplied Managed DLLs; SHA-256 `63e18cce15e3faede1a18f9f32ec73768a2053f89fe29a8ca95240ebabab5501` |
+| v1.2 RC2 exact-game C# compile | Pending target run | New save/export/reload code must be rebuilt against the installed Managed DLLs before promotion |
 | Windows compiler parity | Pending target run | `RUN_RC1_PROOF.bat` rebuilds against the installed DLLs with Windows `csc.exe` and retains the log |
 | Live Unity scene / mic / visual fit | Pending first Windows launch | `DIAGNOSE_Barros_AI` and the acceptance checklist capture proof |
 
-Overall status: **feature-complete release-candidate source, certified exact-assembly plugin, and installer; Windows runtime certification pending**. Windows compiler parity, BepInEx loading, tab/header geometry, Preview/Restore/Apply/Save/reload, microphone/STT, and four live comparison screenshots remain explicit gates before calling the mod fully proven.
+Overall status: **source-complete v1.2 RC2 integration with exact managed-code reconciliation; Windows build and runtime certification pending**. The prior certified RC1 binary remains valid only for its earlier source. BepInEx loading, tab/header geometry, Preview/Restore/Apply/Save, persisted JSON, automated reload, stock JPG export, microphone/STT, and retained live screenshots remain explicit gates before calling v1.2 fully proven.

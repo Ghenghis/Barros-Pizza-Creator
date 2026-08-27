@@ -1,372 +1,186 @@
-# SCOPE: PC3 PIZZA CREATOR ONLY — Native Pizza JPEG Algorithm Notebook
+# PC3 Pizza Creator native JPG and editable-recipe contract
 
-**Owner:** Claude  
-**Target:** Pizza Creator `creator-0.11.272`  
-**Independent stimulus producer/observer:** ChatGPT-owned Runtime Proof Studio  
-**Status:** **PARTIALLY CHARACTERIZED — DO NOT CALL COMPLETE**
+Scope: **Pizza Connection 3 Pizza Creator only** (`creator-0.11.272`, Windows x64, Unity `2017.3.1p4`). Earlier game versions are excluded.
 
-This is the final evidence notebook for the stock/native pizza-image pipeline. Unknowns are intentionally explicit. Do not replace `UNKNOWN` with an inference unless the classification and retained evidence are recorded.
+Status: source-proven on 2026-08-27 from private repository `Ghenghis/PC3_Pizza-Creator`, commit `d8fdd733fa068e00048441375a69feb8fd5b5440`. Live Windows output still requires runtime acceptance; the implementation path is no longer unknown.
 
-## 1. Truth classification
+## Result
 
-Every finding uses exactly one classification:
+The stock Pizza Creator has two independent outputs:
 
-- `PROVEN_FROM_SOURCE` — exact supplied/decompiled Creator source establishes the behavior/path.
-- `PROVEN_FROM_RUNTIME` — exact Creator 0.11.272 live trace/call stack/argument/render evidence establishes it.
-- `INFERRED_AND_VALIDATED` — controlled experiments mathematically support it, but direct source/runtime identity is not yet available.
-- `UNKNOWN` — unresolved.
+1. A normal JPG screenshot for sharing.
+2. A serialized `PizzaModel` JSON recipe for editing and reloading.
 
-## 2. Exact target identity
+The JPG does **not** contain the editable recipe, ingredient placements, encrypted game data, or a custom metadata payload. The game writes the bytes returned by Unity's JPG encoder directly to disk. There is no native JPG-to-`PizzaModel` importer.
 
-| Fact | Classification | Value/evidence |
-|---|---|---|
-| Creator runtime profile | PROVEN_FROM_SOURCE | `creator-0.11.272` contracts/handoff |
-| Unity version | PROVEN_FROM_SOURCE | `2017.3.1p4 x64` |
-| Assembly-CSharp SHA-256 | PROVEN_FROM_SOURCE | `ebf8698df7cb4af904c98c299994705ea529efbdf1e8ccb3e7ca8cb42a1cbc1c` |
-| Assembly-CSharp-firstpass SHA-256 | PROVEN_FROM_SOURCE | `f9cbf0951fc4d4b0788c47bbe41a3820fa333d293175bbb7cb398eb4728fd284` |
-| shared controlled stimulus schema | PROVEN_FROM_SOURCE | `contracts/creator-controlled-stimulus.schema.json`; Creator and Studio copies must remain semantically identical |
+Therefore:
 
-## 3. Input pizza model facts
+- JPG files are visual references and exports.
+- Recipe JSON is the editable source of truth.
+- Importing an arbitrary pizza photo or JPG is an AI reconstruction task, not a lossless native round trip.
+- Every AI-created pizza must retain a validated recipe/placement manifest separately from its preview or exported JPG.
 
-| Component | Classification | Current evidence |
-|---|---|---|
-| model ID/name serialized | PROVEN_FROM_SOURCE | `PizzaModel.ID` / save model keys |
-| profit factor serialized | PROVEN_FROM_SOURCE | `PizzaModel.ProfitFactor` |
-| dough positions serialized | PROVEN_FROM_SOURCE | `DoughPositions` |
-| ingredient ID serialized | PROVEN_FROM_SOURCE | `Ingredient` / `IngredientID` |
-| ingredient size serialized | PROVEN_FROM_SOURCE | `Size`; `Large=0`, `Medium=1`, `Small=2` |
-| ingredient position serialized | PROVEN_FROM_SOURCE | `Position` |
-| ingredient rotation serialized | PROVEN_FROM_SOURCE | `Rotation` |
-| placement array/order preserved in model | PROVEN_FROM_SOURCE | ordered `PizzaModel.ingredients`; image effect still UNKNOWN |
-| four shapes | PROVEN_FROM_SOURCE | Round/Square/Star/Triangle |
-| native model load drives real 3D pizza | PROVEN_FROM_SOURCE | `IPizzaCreatorService.LoadPizzaFromModel(PizzaModel)` path |
+The machine-readable form of this result is `contracts/pc3-creator-native-jpeg.contract.json`.
 
-## 4. Save trigger and call graph
+## Exact stock JPG pipeline
 
-| Question | Classification | Finding/evidence |
-|---|---|---|
-| native recipe save entry | PROVEN_FROM_SOURCE | `SaveCurrentPizzaToRecipes()` exists and is used by current bridge |
-| exact method that initiates image generation | UNKNOWN | run static tracer + ILSpy |
-| image generation synchronous with recipe save? | UNKNOWN | source/runtime trace required |
-| image generation via event subscriber? | UNKNOWN | source/runtime trace required |
-| recipe-card/thumbnail refresh involved? | UNKNOWN | source/runtime trace required |
-| exact call graph save -> render -> encode -> write | UNKNOWN | JRE-001/JRE-002 |
+| Property | Source-proven value |
+|---|---|
+| UI entry | `UserInterface.ScreenshotButton` |
+| Live model name | `Commands.GetCurrentPizzaCommand` → `PizzaModel.ID` |
+| Filename cleaning | Invalid Windows filename characters removed; trailing period removed |
+| Capture component | global `ScreenCapture` class |
+| Capture camera | serialized `ScreenCapture.captureCam` reference |
+| Source render size | 2560 × 1440 |
+| Scale | 0.5 |
+| Final texture size | 1280 × 720 |
+| Camera aspect | 16:9 |
+| Render target depth | 24 bits |
+| Readback format | `TextureFormat.RGB24` |
+| Readback | `Texture2D.ReadPixels` |
+| Resize | `CaptureUtility.Resize` via GPU render target and `Graphics.DrawTexture` |
+| Encoder | `Texture2D.EncodeToJPG` |
+| Encoder quality | 90 |
+| Output directory | `Application.streamingAssetsPath/Screenshots` |
+| Output naming | `<sanitized pizza name>_<N>.jpg` |
+| Retention | Five files per pizza name; the oldest path is reused at the limit |
+| File write | `File.WriteAllBytes` with encoder bytes |
+| Custom APP/COM insertion | None in application code |
+| Embedded recipe payload | None |
 
-Static discovery artifacts:
+The source call graph is:
 
 ```text
-research/jpeg-pipeline/static-trace/trace.json
-research/jpeg-pipeline/static-trace/candidate-methods.csv
-research/jpeg-pipeline/static-trace/hits.csv
-research/jpeg-pipeline/static-trace/probable-call-references.csv
+ScreenshotButton click
+  -> GetCurrentPizzaCommand
+  -> sanitize PizzaModel.ID
+  -> ScreenCapture.Capture(name)
+  -> CaptureUtility.Capture(camera, 2560, 1440, 0.5)
+  -> Camera.Render + ReadPixels + GPU resize
+  -> CaptureUtility.SaveAsJPG(..., quality 90, max files 5)
+  -> Texture2D.EncodeToJPG(90)
+  -> File.WriteAllBytes(.../StreamingAssets/Screenshots/name_N.jpg)
 ```
 
-Status: `UNKNOWN` until run and adjudicated in ILSpy/dnSpyEx.
+`ShareButton`, `BrowseScreenshotsButton`, and `SendByMail` reuse this screenshot path. The standalone `SocialAPIServiceImpl` methods are unimplemented and throw `NotImplementedException`; they are not needed for local JPG export.
 
-Runtime trace references:
+## Exact editable recipe pipeline
+
+The editable pizza is `PizzaModel`, not the JPG.
+
+`PizzaCreatorServiceImpl.SaveToRecipes`:
+
+1. Finds or creates the recipe model by `PizzaModel.ID`.
+2. Copies the live current pizza.
+3. Refreshes dough coordinates from live `PizzaDoughPart` objects.
+4. Temporarily removes full ingredient object references while retaining ingredient identity fields.
+5. Serializes the model through `ISerializerService.Serialize`.
+6. Writes `<PizzaModel.ID>.json` under `Application.persistentDataPath/UserData/Recipes`.
+7. Restores runtime ingredient references and publishes `SavedToRecipes`.
+
+Top-level serialized fields:
+
+- `ID`
+- `Ingredients`
+- `DoughPositions`
+- `ProfitFactor`
+- `Owner`
+- `Texture`
+
+Each ingredient placement carries:
+
+- `Ingredient`
+- `IngredientID`
+- `Rotation`
+- `Position`
+- `Size`
+
+The mod uses the native `IPizzaCreatorService.LoadPizzaFromModel(PizzaModel)` path for Preview, Apply, Restore, and the final reload step. F9 first reads the persisted recipe JSON, deserializes it with PC3's injected `ISerializerService`, binds each placement, resolves every `IngredientID`/size through `IDatabaseService`, and then calls the native loader. That loader resets the live dough, instantiates real `PlacedIngredient` prefabs at the supplied transforms, applies the name/profit factor, and publishes `PizzaLoaded`.
+
+## Native thumbnail versus shared JPG
+
+The game also has `PizzaTexture.CaptureCamera`, which reacts to `CurrentPizzaSaved` and creates a transparent sprite for the saved model. `PizzaModel` serializes that texture as PNG bytes in its `Texture` member. This thumbnail path is separate from the 1280 × 720 shared JPG path.
+
+Do not treat the PNG thumbnail, recipe JSON, and shared JPG as interchangeable artifacts.
+
+## AI integration contract
+
+The simplest reliable workflow is:
 
 ```text
-UNKNOWN
+User prompt / voice / reference images
+  -> local Workbench-compatible AI sidecar
+  -> exact 87-ingredient catalog validation
+  -> shape + ingredient-size + placement recipe
+  -> native PizzaModel
+  -> LoadPizzaFromModel preview/apply
+  -> SaveCurrentPizzaToRecipes JSON
+  -> stock ScreenCapture JPG export
+  -> collection index with recipe hash + JPG perceptual hash
 ```
 
-## 5. Controlled stimulus / observation architecture
-
-The reverse-engineering experiments intentionally use two independent workstreams:
-
-```text
-Studio canonical generator
-  -> shared controlled stimulus
-  -> Claude Creator exact-model executor
-  -> native LoadPizzaFromModel
-  -> stock native Save / reload / re-save
-  -> stock Creator UserData/JPEG
-  -> Studio controlled observer
-  -> quantitative/JPEG analysis
-```
-
-### Canonical producer
-
-Studio-owned:
-
-```text
-Ghenghis/PC3_Barros_Runtime_Proof_Studio/scripts/generate_creator_controlled_stimuli.py
-```
-
-The canonical corpus contains 60 cases covering E00–E10.
-
-### Creator executor
-
-Claude-owned implementation contract:
-
-```text
-docs/NATIVE_JPEG_EXPERIMENT_HARNESS_SPEC.md
-```
-
-The executor binds exact shared-stimulus transforms directly to real `PizzaModel` objects. It must not run the normal Barro's/golden-angle placement algorithm for controlled fixtures and must not generate/encode/rewrite the native JPEG.
-
-### Independent observer
-
-Studio-owned launcher:
-
-```text
-Ghenghis/PC3_Barros_Runtime_Proof_Studio/CAPTURE_CREATOR_CONTROLLED_JPEG_EXPERIMENT.bat
-```
-
-The observer is responsible for independently retaining/binding stock UserData/JPEG outputs and comparison evidence. Creator should not manufacture Studio's observer result.
-
-### One-variable input validator
-
-Creator utility:
-
-```text
-scripts/compare_controlled_stimuli.py
-```
-
-This distinguishes evidence-label fields (`case_id`, `notes`) from substantive model/operation changes and can fail closed on unexpected changed field families.
-
-## 6. Render scene / pizza object reconstruction
-
-| Question | Classification | Finding/evidence |
-|---|---|---|
-| saved image uses current live pizza scene | UNKNOWN | experiment/source trace |
-| saved image reconstructs hidden pizza from PizzaModel | UNKNOWN | source/runtime trace |
-| exact dough mesh/prefab used | UNKNOWN | AssetRipper/runtime |
-| exact ingredient mesh/material mapping | UNKNOWN | AssetRipper/runtime |
-| ingredient array order affects object creation | PROVEN_FROM_SOURCE for model load; image effect UNKNOWN | E05/E09 required |
-| Y depth affects visible stacking | UNKNOWN | E04/E05 + RenderDoc/source |
-| material render queues/depth tests | UNKNOWN | RenderDoc/source |
-
-## 7. Camera
-
-| Parameter | Classification | Value/evidence |
-|---|---|---|
-| camera object/class | UNKNOWN | JRE-003 |
-| dedicated image camera? | UNKNOWN | source/AssetRipper/runtime |
-| perspective vs orthographic | UNKNOWN | source + `fit_jpeg_camera_mapping.py` |
-| position | UNKNOWN | runtime/source |
-| rotation | UNKNOWN | runtime/source |
-| FOV / orthographic size | UNKNOWN | runtime/source |
-| near/far clip | UNKNOWN | runtime/source |
-| culling mask | UNKNOWN | runtime/source |
-| clear flags/background | UNKNOWN | runtime/source |
-| world X/Z -> JPEG u/v | UNKNOWN | E02/E03 affine/homography evidence |
-
-Camera-calibration evidence:
-
-```text
-UNKNOWN — collect label,x,z,u,v from canonical E02/E03 outputs and run scripts/fit_jpeg_camera_mapping.py
-```
-
-The affine/homography result is `INFERRED_AND_VALIDATED` at best until source/runtime identifies the actual Camera path.
-
-## 8. Render target and readback
-
-| Question | Classification | Finding/evidence |
-|---|---|---|
-| RenderTexture used | UNKNOWN | source/runtime/RenderDoc |
-| render target width/height | UNKNOWN | JRE-003/004 |
-| target format | UNKNOWN | runtime/RenderDoc |
-| MSAA | UNKNOWN | runtime/RenderDoc |
-| `Camera.Render()` used | UNKNOWN | source/runtime |
-| `Texture2D.ReadPixels()` used | UNKNOWN | source/runtime |
-| `Graphics.Blit()` used | UNKNOWN | source/runtime |
-| readback texture format | UNKNOWN | runtime/source |
-
-## 9. Crop / resize / orientation / colorspace
-
-| Component | Classification | Finding/evidence |
-|---|---|---|
-| source render dimensions | UNKNOWN | JRE-004 |
-| crop rectangle | UNKNOWN | source/runtime + camera mapping |
-| output JPEG dimensions | UNKNOWN | native samples |
-| resize/downsample algorithm | UNKNOWN | source + controlled geometry |
-| vertical flip | UNKNOWN | camera mapping/source |
-| alpha flattening/background | UNKNOWN | source/runtime |
-| linear/gamma/sRGB conversion | UNKNOWN | source/runtime/RenderDoc |
-| post-processing | UNKNOWN | source/RenderDoc |
-
-## 10. Ingredient transform -> image transform
-
-| Component | Classification | Finding/evidence |
-|---|---|---|
-| X effect on image u | UNKNOWN | canonical E02 |
-| Z effect on image v | UNKNOWN | canonical E03 |
-| cross-axis coupling | UNKNOWN | affine/homography fit |
-| native Y yaw -> image orientation | UNKNOWN | canonical E01 + `fit_jpeg_orientation_transfer.py` |
-| Large/Medium/Small visible footprint | UNKNOWN | canonical E07 |
-| ingredient-specific mesh footprint | UNKNOWN | AssetRipper + E07 |
-| Y layer -> occlusion | UNKNOWN | canonical E04/E05 |
-| array order -> occlusion | UNKNOWN | canonical E05/E09 |
-
-## 11. JPEG encoder
-
-Official Unity 2017.3 research boundary:
-
-- `ScreenCapture.CaptureScreenshot` writes PNG, so it cannot by itself explain a final stock JPEG.
-- `ImageConversion.EncodeToJPG` is a candidate API and supports quality 1–100; default quality is documented as 75 when omitted.
-
-These are candidate clues, not claims that PC3 uses them.
-
-| Encoder component | Classification | Finding/evidence |
-|---|---|---|
-| final JPEG API/library | UNKNOWN | JRE-002/005 |
-| explicit quality argument | UNKNOWN | source/runtime |
-| DQT fingerprint | UNKNOWN | native sample + `fingerprint_jpeg_encoder.py` |
-| standard IJG quality-family match | UNKNOWN | native sample |
-| DHT fingerprint | UNKNOWN | native sample |
-| component sampling | UNKNOWN | native sample |
-| baseline/progressive | UNKNOWN | native sample |
-| restart interval | UNKNOWN | native sample |
-| APP/COM metadata | UNKNOWN | native sample |
-| encoder configuration stable across pizzas | UNKNOWN | multi-image corpus |
-
-Forensics procedure:
-
-```text
-scripts/analyze_jpeg_experiment.py
-scripts/fingerprint_jpeg_encoder.py
-docs/JPEG_ENCODER_FORENSICS_GUIDE.md
-```
-
-A matching IJG quantization quality is a structural fingerprint, not proof of encoder implementation.
-
-## 12. Determinism
-
-| Experiment | Classification | Result/evidence |
-|---|---|---|
-| identical model repeated native saves | UNKNOWN | canonical E00 / JRE-006 |
-| same model after native reload -> same model signature | main RC1 mechanism exists; live result UNKNOWN | F9 / E10 / ACT-405 |
-| same model after native reload -> same JPEG bytes | UNKNOWN | canonical E10 / JRE-012 |
-| same model -> same decoded pixels | UNKNOWN | E00/E10 |
-| same model -> same encoder fingerprint | UNKNOWN | E00/E10 |
-| frame timing affects pixels | UNKNOWN | repeated saves/runtime trace |
-| metadata/timestamps affect bytes | UNKNOWN | repeated saves/JPEG marker diff |
-
-## 13. Controlled A/B/C/D experiment — E09
-
-Canonical Studio E09 uses one fixed model name and the same four valid ingredients.
-
-- **A `a-baseline`:** exact baseline IDs/counts/sizes/positions/rotations/order.
-- **B `b-rotation-only`:** same IDs/counts/sizes/positions/order; rotations only changed.
-- **C `c-position-only`:** same IDs/counts/sizes/rotations/order; positions only changed.
-- **D `d-order-only`:** exact baseline transforms; placement array order reversed.
-
-Before runtime interpretation, use `scripts/compare_controlled_stimuli.py` to prove the intended substantive field family is the only change.
-
-Inputs are produced by Studio's canonical generator; there is **no Creator-side E09 generator or local fixture authority**.
-
-Results:
-
-```text
-A: UNKNOWN
-B: UNKNOWN
-C: UNKNOWN
-D: UNKNOWN
-A vs B pixel/encoder analysis: UNKNOWN
-A vs C pixel/encoder analysis: UNKNOWN
-A vs D pixel/encoder analysis: UNKNOWN
-```
-
-Do not fill until stock native JPEGs and exact model-signature evidence exist and Studio has independently bound the outputs to the correct cases.
-
-## 14. Current Barro's placement algorithm — separate from stock native behavior
-
-Classification: `PROVEN_FROM_SOURCE` for the Barro's plugin implementation, **not** the stock manual/native placement algorithm.
-
-Reference:
-
-```text
-docs/CURRENT_PIZZA_PLACEMENT_ALGORITHM_REFERENCE.md
-```
-
-Current core behavior:
-
-```text
-deterministic seed
-+ golden-angle angular sequence
-+ distribution-specific radius
-+ seeded Y rotation
-+ global Y layer increment 0.01
-+ native PizzaModel
-+ native LoadPizzaFromModel renderer
-```
-
-Stock Creator placement algorithm:
-
-```text
-UNKNOWN / not equivalent merely because the renderer accepts the same transforms
-```
-
-Controlled JPEG stimuli deliberately bypass the Barro's placement generator so its algorithm cannot confound stock render/save measurements.
-
-## 15. Research-backed enhanced algorithm candidate
-
-This is not stock behavior and is not default until characterized/tested.
-
-Candidate:
-
-```text
-exact native dough domain
--> deterministic golden-angle/candidate initialization
--> variable/anisotropic Poisson separation
--> sample elimination to exact piece count
--> bounded capacity/Lloyd-style density relaxation
--> ingredient-aware deterministic orientation
--> measured native-compatible depth/layer ordering
--> explicit verified transforms
--> native PizzaModel
--> native renderer
--> native image generator when possible
-```
-
-Research basis:
-
-```text
-docs/RESEARCH_BACKED_PLACEMENT_AND_JPEG_GUIDE.md
-```
-
-## 16. Native reuse / improvement decision
-
-Do not decide until JRE-001..012 are resolved.
-
-| Option | State | Decision evidence |
-|---|---|---|
-| exact native image generator reuse | UNKNOWN | characterize call path first |
-| native renderer + controlled deterministic capture | UNKNOWN | evaluate if native image save is nondeterministic/limited |
-| independent renderer/encoder replica | LAST RESORT / NOT SELECTED | only if native reuse/capture is impossible |
-| enhanced deterministic placement | OPTIONAL CANDIDATE | compare after native behavior characterized |
-
-Final required decision classification:
-
-```text
-JRE-014: NOT_RUN
-```
-
-## 17. Completion checklist
-
-The notebook may change status to `CHARACTERIZED` only after all required gates in:
-
-```text
-contracts/jpeg-reverse-engineering.acceptance.json
-```
-
-are PASS with retained evidence.
-
-Required final source set includes:
-
-```text
-static source trace
-live save/render/JPEG trace
-Studio-bound controlled experiment corpus results
-camera mapping
-orientation mapping
-overlap/order analysis
-size/shape analysis
-native save/reload determinism
-JPEG encoder fingerprint and implementation proof
-native-reuse/improvement decision
-```
-
-Until then this heading must remain:
-
-**PARTIALLY CHARACTERIZED — DO NOT CALL COMPLETE**
+The provider may propose a design, but it never writes free-form values directly into the game. The local bridge validates:
+
+- ingredient ID exists in the exact installed database;
+- size is `Large`, `Medium`, or `Small`;
+- shape is `Round`, `Square`, `Star`, or `Triangle`;
+- name is safe for the native recipe/JPG filename paths;
+- placement count and numeric transforms are bounded;
+- save JSON exists and is non-empty after native save;
+- exported bytes are a complete JPG stream;
+- reloaded model signature matches the saved native recipe.
+
+Reference JPGs may be inspected by a vision-capable provider and compared by perceptual hash. The resulting pizza remains a new validated reconstruction. A sidecar collection record should bind:
+
+- recipe JSON path and hash;
+- exported JPG path and hash;
+- normalized perceptual hash;
+- source/reference hashes;
+- provider/model and prompt receipt;
+- runtime profile and plugin version;
+- native save/reload proof receipt.
+
+## Research retired by this source
+
+The following former unknowns are closed and must not be reopened without contradictory runtime evidence:
+
+- final JPG API/library;
+- encoder quality;
+- source and output dimensions;
+- camera render/readback path;
+- output directory and rotation limit;
+- whether recipe data is encrypted or embedded in the JPG;
+- whether a JPG alone can recreate an editable pizza;
+- whether recipe save and JPG export are the same operation.
+
+The old hidden-payload/codec hypothesis is rejected by the exact source. Existing controlled-image comparison tooling may still be used to measure camera framing, visual placement, occlusion, repeatability, or perceptual similarity, but it is not a recipe-codec recovery program.
+
+## Remaining live Windows gates
+
+Source proof does not substitute for real execution. Before promotion from RC:
+
+1. Build the plugin against the installed `Assembly-CSharp.dll`, Unity modules, Zenject, and BepInEx.
+2. Verify the fifth AI tab loads in the actual `PizzaCreator` scene.
+3. Preview and apply a recipe for all four shapes.
+4. Save and verify the persisted native recipe JSON.
+5. Use F9 to deserialize the persisted JSON through PC3's serializer, rebind its ingredients, invoke native reload, and compare the full model signature.
+6. Export through the scene-local stock `ScreenshotButton`/`ScreenCapture` pair, verify its screenshot-only UI is restored, and verify a 1280 × 720 quality-90 JPG is written.
+7. Confirm the five-file rotation behavior using six exports of one pizza name.
+8. Relaunch the Creator and load the saved recipe through the stock recipe book.
+9. Capture retained screenshots, logs, hashes, and uninstall/restore evidence through Runtime Proof Studio/HermesProof.
+
+## Source evidence
+
+| Source file | Git blob SHA |
+|---|---|
+| `pizza-creator/Assembly-CSharp/ScreenCapture.cs` | `93e87273de5cd88606eb61d583d932d6e100328c` |
+| `pizza-creator/Assembly-CSharp/Service.Serializer/ISerializerService.cs` | `7311939db803c50e23b620d9e2ffb3cf1dd89e79` |
+| `pizza-creator/Assembly-CSharp/CaptureUtility.cs` | `edf089f298c6ad231b0eab14c87aeb8a20d1e37b` |
+| `pizza-creator/Assembly-CSharp/UserInterface/ScreenshotButton.cs` | `8db11919f2d649b9c50dd4b78f6a8624ce8400b8` |
+| `pizza-creator/Assembly-CSharp/PizzaModel.cs` | `811db365510ad159f296acf7af9fbfa547bc87d8` |
+| `pizza-creator/Assembly-CSharp/Service.PizzaCreator/PizzaCreatorServiceImpl.cs` | `af08b2d0ef8e8a9926c539ddfc792ee001283426` |
+| `pizza-creator/Assembly-CSharp/Service.PizzaCreator/IPizzaCreatorService.cs` | `79729f7923c65518c577e617f45fb8c1105b63a7` |
+| `pizza-creator/Assembly-CSharp/Service.Database/IDatabaseService.cs` | `7bdc506bab7646b336d6f11779129ed1975642b7` |
+| `pizza-creator/Assembly-CSharp/Paths.cs` | `ceabf2b6b7f0241d5f4c7851d5c41258dcd3cd3d` |
+
+The private decompiled-source repository remains evidence material and must not be copied into this public release repository or packaged with the mod.

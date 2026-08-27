@@ -10,7 +10,7 @@ param(
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 $packageRoot = $PSScriptRoot
-$version = "1.1.0-rc1"
+$version = "1.2.0-rc2"
 $bepVersion = "5.4.23.5"
 $bepUrl = "https://github.com/BepInEx/BepInEx/releases/download/v5.4.23.5/BepInEx_win_x64_5.4.23.5.zip"
 $bepSha = "82F9878551030F54657792C0740D9D51A09500EEAE1FBA21106B0C441E6732C4"
@@ -44,6 +44,20 @@ function Get-VerifiedArchive([string]$provided, [string]$url, [string]$sha, [str
     return (Resolve-Path $path).Path
 }
 
+function Test-SourceProvenance([object]$provenance, [string]$sourceRoot) {
+    if ($null -eq $provenance.source_files_sha256 -or -not (Test-Path -LiteralPath $sourceRoot -PathType Container)) { return $false }
+    $files = @(Get-ChildItem -LiteralPath $sourceRoot -Filter "*.cs" -File | Sort-Object Name)
+    $expected = @($provenance.source_files_sha256.PSObject.Properties)
+    if ($files.Count -ne $expected.Count) { return $false }
+    foreach ($file in $files) {
+        $property = $provenance.source_files_sha256.PSObject.Properties[$file.Name]
+        if ($null -eq $property) { return $false }
+        $actual = (Get-FileHash -Algorithm SHA256 -LiteralPath $file.FullName).Hash
+        if ($actual -ne ([string]$property.Value).ToUpperInvariant()) { return $false }
+    }
+    return $true
+}
+
 try {
     $exeName = "Pizza Connection 3 - Pizza Creator.exe"
     if (-not (Test-Path (Join-Path $GameRoot $exeName))) {
@@ -68,7 +82,7 @@ try {
     Write-Host "Game Assembly-CSharp SHA256: $actualAssemblySha"
     Write-Host "Game Assembly-CSharp-firstpass SHA256: $actualFirstpassSha"
     if ($actualAssemblySha -ne $assemblySha -or $actualFirstpassSha -ne $firstpassSha) {
-        throw "Unsupported game build. This RC1 is locked to Pizza Creator 0.11.272. No game or plugin files were changed. Run RUN_RC1_PROOF.bat and retain its assembly-hashes.json for adapter review."
+        throw "Unsupported game build. This Creator package is locked to Pizza Creator 0.11.272. No game or plugin files were changed. Run RUN_RC1_PROOF.bat and retain its assembly-hashes.json for adapter review."
     }
     $core = Join-Path $GameRoot "BepInEx\core\BepInEx.dll"
     if (Test-Path $core) {
@@ -123,7 +137,8 @@ try {
         $provenance = Get-Content -LiteralPath $provenancePath -Raw | ConvertFrom-Json
         $prebuiltValid = ((Get-FileHash -Algorithm SHA256 -LiteralPath $artifact).Hash -eq ([string]$provenance.artifact_sha256).ToUpperInvariant()) -and
             ($actualAssemblySha -eq ([string]$provenance.target.assembly_csharp_sha256).ToUpperInvariant()) -and
-            ($actualFirstpassSha -eq ([string]$provenance.target.assembly_csharp_firstpass_sha256).ToUpperInvariant())
+            ($actualFirstpassSha -eq ([string]$provenance.target.assembly_csharp_firstpass_sha256).ToUpperInvariant()) -and
+            (Test-SourceProvenance $provenance (Join-Path $packageRoot "plugin-src"))
     }
     if ($ForceLocalCompile -or -not $prebuiltValid) {
         $buildMode = "local-windows-compile"

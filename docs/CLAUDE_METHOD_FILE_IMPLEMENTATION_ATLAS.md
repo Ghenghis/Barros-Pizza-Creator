@@ -221,7 +221,7 @@ Keep this seam. Fix model fidelity upstream rather than replacing Preview.
 
 `PanelRenderer` already calls `game.Preview(recipe)` and `game.Apply(recipe)` from live controls. Connect/fix Restore/Save controls in this same class rather than creating external tooling.
 
-## 7. CLD-302 — Save/reload proof is already mostly scaffolded
+## 7. CLD-302 — Native save/reload/export proof is implemented in v1.2 RC2
 
 Open:
 
@@ -229,7 +229,9 @@ Open:
 - `plugin-src/BarrosAiPlugin.cs`
 - `plugin-src/EvidenceRecorder.cs`
 
-`GameBridge.SaveCurrentToRecipeBook()` already uses the native `SaveCurrentPizzaToRecipes()` and checks that the recipe appears in `GetAllRecipes()`.
+`GameBridge.SaveCurrentToRecipeBook()` uses native `SaveCurrentPizzaToRecipes()`, checks the returned native recipe model, and requires a non-empty JSON file under `Paths.recipes`.
+
+`GameBridge.ExportCurrentJpeg()` resolves the one scene-local stock `ScreenshotButton`, preserves its `specialScreenshotUI` transition, invokes its referenced `ScreenCapture.Capture` method, restores prior UI state, and validates the written JPG stream. Do not replace it with an independent encoder.
 
 `GameBridge.VerifyLastSavedReload()` already builds an exact signature containing:
 
@@ -241,7 +243,7 @@ Open:
 - position
 - rotation
 
-`BarrosAiPlugin.Update()` already binds F9 to this verifier and records:
+`BarrosAiPlugin.Update()` binds F9 to `ReloadLastSaved()`. The bridge reads the persisted JSON through PC3's `ISerializerService`, resolves ingredient references through `IDatabaseService`, requests the native event-driven load, then calls the verifier and records:
 
 - `action.reload.verified`, or
 - `action.reload.failed`
@@ -250,7 +252,7 @@ and captures `reload.png` on success.
 
 ### Claude's job here
 
-Do not redesign reload verification. Ensure the saved snapshot and native reload represent the final verified model contract, then make the operator flow obvious in the UI/docs.
+Do not redesign reload/export verification. Run the exact Windows gates and retain the persisted JSON, JPG, hashes, logs, and `reload.png` evidence.
 
 ## 8. CLD-401 — Chef Voice is an integration/verification task, not a greenfield task
 

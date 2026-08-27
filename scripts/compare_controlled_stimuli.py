@@ -142,7 +142,12 @@ def is_evidence_only(path: str) -> bool:
 
 def matches_allowed(path: str, allowed: Sequence[str]) -> bool:
     normalized = normalized_path(path)
-    return any(fnmatch.fnmatchcase(normalized, pattern) for pattern in allowed)
+    # A normalized placement family contains the literal token ``[*]``.  Python's
+    # fnmatch treats square brackets as a character class, so an exact family
+    # such as ``model.placements[*].rotation.y`` otherwise fails to match itself.
+    # Preserve ordinary glob support while making the documented literal-family
+    # form reliable.
+    return any(normalized == pattern or fnmatch.fnmatchcase(normalized, pattern) for pattern in allowed)
 
 
 def compare(a: Dict[str, Any], b: Dict[str, Any], allowed: Sequence[str]) -> Dict[str, Any]:

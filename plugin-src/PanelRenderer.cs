@@ -492,6 +492,7 @@ namespace Barros.PizzaCreator.AI
                 GUILayout.EndHorizontal();
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button("Save to recipe book", buttonStyle, GUILayout.Height(38f))) SaveToBook();
+                if (GUILayout.Button("Export stock JPG", buttonStyle, GUILayout.Height(38f))) ExportJpeg();
                 if (GUILayout.Button("Start over", buttonStyle, GUILayout.Height(38f))) StartOver();
                 GUILayout.EndHorizontal();
             }
@@ -700,10 +701,20 @@ namespace Barros.PizzaCreator.AI
             try
             {
                 game.SaveCurrentToRecipeBook();
-                status = "Saved the current pizza to the recipe book.";
+                status = "Saved and verified the native recipe JSON: " + game.SavedRecipePath;
                 StartCoroutine(ReactivateAiTab());
             }
             catch (Exception exception) { status = "Save failed: " + exception.Message; }
+        }
+
+        private void ExportJpeg()
+        {
+            try
+            {
+                string path = game.ExportCurrentJpeg();
+                status = "Exported with the stock Pizza Creator JPG pipeline: " + path;
+            }
+            catch (Exception exception) { status = "JPG export failed: " + exception.Message; }
         }
 
         private IEnumerator ReactivateAiTab(string captureName = "")

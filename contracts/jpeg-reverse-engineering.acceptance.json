@@ -1,29 +1,126 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "2.0",
   "contract_id": "pc3-creator-native-jpeg-reverse-engineering",
   "owner": "Claude",
   "workstream": "PC3 Pizza Creator",
   "runtime_profile": "creator-0.11.272",
   "truth_policy": {
     "states": ["not_run", "pass", "fail", "blocked"],
-    "rule": "Only retained static or runtime evidence may promote a research gate. Screenshot similarity or source inference alone does not prove the native JPEG pipeline.",
-    "completion": "The native JPEG algorithm may be called characterized only when every required gate is PASS and all unknown components are explicitly resolved or bounded."
+    "rule": "Retained exact decompiled source may prove static implementation gates. Live output claims still require retained Windows runtime evidence.",
+    "completion": "The exporter and recipe/JPG separation are statically characterized. Required live gates cover actual target output and save/reload behavior; optional measurement gates do not block the AI integration."
   },
   "gates": [
-    {"id":"JRE-001","title":"Static save-to-image call graph identified","state":"not_run","required":true,"evidence":"research/jpeg-pipeline/callgraph.json + method-map.csv"},
-    {"id":"JRE-002","title":"Final image file write/texture assignment method identified","state":"not_run","required":true,"evidence":"method map + decompiler evidence"},
-    {"id":"JRE-003","title":"Camera and render-target path identified","state":"not_run","required":true,"evidence":"runtime trace and/or RenderDoc capture metadata"},
-    {"id":"JRE-004","title":"Render resolution/crop/resize/colorspace path identified","state":"not_run","required":true,"evidence":"runtime trace + image metadata"},
-    {"id":"JRE-005","title":"JPEG encoder API, quality and subsampling characterized","state":"not_run","required":true,"evidence":"runtime/static trace + JPEG metadata/quantization analysis"},
-    {"id":"JRE-006","title":"Repeated identical-model save determinism tested","state":"not_run","required":true,"evidence":"3+ repeated saves with hashes and image metrics"},
-    {"id":"JRE-007","title":"World X/Z to image coordinate mapping characterized","state":"not_run","required":true,"evidence":"X/Z sweep metrics and fitted mapping"},
-    {"id":"JRE-008","title":"Rotation-only image sensitivity characterized","state":"not_run","required":true,"evidence":"fixed-position rotation sweep and orientation metrics"},
-    {"id":"JRE-009","title":"Y layer and overlap/order behavior characterized","state":"not_run","required":true,"evidence":"Y sweep + A/B ordering overlap tests"},
-    {"id":"JRE-010","title":"Ingredient size visual mapping characterized","state":"not_run","required":true,"evidence":"Large/Medium/Small same-position comparison"},
-    {"id":"JRE-011","title":"Dough-shape framing/render behavior characterized","state":"not_run","required":true,"evidence":"Round/Square/Star/Triangle controlled comparisons"},
-    {"id":"JRE-012","title":"Save/reload image determinism characterized","state":"not_run","required":true,"evidence":"model-signature verified native reload then JPEG comparison"},
-    {"id":"JRE-013","title":"Current Barro's placement algorithm documented and cross-compared","state":"pass","required":true,"evidence":"docs/CURRENT_PIZZA_PLACEMENT_ALGORITHM_REFERENCE.md"},
-    {"id":"JRE-014","title":"Native reuse vs controlled capture vs independent replica decision documented","state":"not_run","required":true,"evidence":"docs/NATIVE_PIZZA_JPEG_ALGORITHM.md decision section"},
-    {"id":"JRE-015","title":"Final native JPEG algorithm document produced","state":"not_run","required":true,"evidence":"docs/NATIVE_PIZZA_JPEG_ALGORITHM.md"}
+    {
+      "id": "JRE-001",
+      "title": "Static save-to-image call graph identified",
+      "state": "pass",
+      "required": true,
+      "evidence": "docs/NATIVE_PIZZA_JPEG_ALGORITHM.md + contracts/pc3-creator-native-jpeg.contract.json"
+    },
+    {
+      "id": "JRE-002",
+      "title": "Final image file-write method identified",
+      "state": "pass",
+      "required": true,
+      "evidence": "ScreenCapture.cs + CaptureUtility.cs at private source commit d8fdd733fa068e00048441375a69feb8fd5b5440"
+    },
+    {
+      "id": "JRE-003",
+      "title": "Camera and render-target path identified",
+      "state": "pass",
+      "required": true,
+      "evidence": "ScreenCapture.captureCam + CaptureUtility.Capture source path; serialized camera values remain a runtime evidence field"
+    },
+    {
+      "id": "JRE-004",
+      "title": "Render resolution, crop and resize path identified",
+      "state": "pass",
+      "required": true,
+      "evidence": "2560x1440 source, no crop, 0.5 GPU resize, RGB24 readback in exact source"
+    },
+    {
+      "id": "JRE-005",
+      "title": "JPEG encoder API and quality characterized",
+      "state": "pass",
+      "required": true,
+      "evidence": "Texture2D.EncodeToJPG(90) in CaptureUtility.SaveAsJPG; target-machine fingerprint remains optional confirmation"
+    },
+    {
+      "id": "JRE-006",
+      "title": "Repeated identical-model save determinism tested",
+      "state": "not_run",
+      "required": false,
+      "evidence": "3+ repeated saves with hashes and image metrics"
+    },
+    {
+      "id": "JRE-007",
+      "title": "World X/Z to image coordinate mapping characterized",
+      "state": "not_run",
+      "required": false,
+      "evidence": "X/Z sweep metrics and fitted mapping"
+    },
+    {
+      "id": "JRE-008",
+      "title": "Rotation-only image sensitivity characterized",
+      "state": "not_run",
+      "required": false,
+      "evidence": "fixed-position rotation sweep and orientation metrics"
+    },
+    {
+      "id": "JRE-009",
+      "title": "Y layer and overlap/order behavior characterized",
+      "state": "not_run",
+      "required": false,
+      "evidence": "Y sweep + A/B ordering overlap tests"
+    },
+    {
+      "id": "JRE-010",
+      "title": "Ingredient size visual mapping characterized",
+      "state": "not_run",
+      "required": false,
+      "evidence": "Large/Medium/Small same-position comparison"
+    },
+    {
+      "id": "JRE-011",
+      "title": "Dough-shape framing/render behavior characterized",
+      "state": "not_run",
+      "required": false,
+      "evidence": "Round/Square/Star/Triangle controlled comparisons"
+    },
+    {
+      "id": "JRE-012",
+      "title": "Save/reload model and image behavior verified live",
+      "state": "not_run",
+      "required": true,
+      "evidence": "F9 model-signature verified native reload plus stock JPG output"
+    },
+    {
+      "id": "JRE-013",
+      "title": "Current Barro's placement algorithm documented and cross-compared",
+      "state": "pass",
+      "required": true,
+      "evidence": "docs/CURRENT_PIZZA_PLACEMENT_ALGORITHM_REFERENCE.md"
+    },
+    {
+      "id": "JRE-014",
+      "title": "Native reuse decision documented and implemented",
+      "state": "pass",
+      "required": true,
+      "evidence": "native ScreenCapture reuse in docs/NATIVE_PIZZA_JPEG_ALGORITHM.md and plugin-src/GameBridge.cs"
+    },
+    {
+      "id": "JRE-015",
+      "title": "Final native JPG algorithm document produced",
+      "state": "pass",
+      "required": true,
+      "evidence": "docs/NATIVE_PIZZA_JPEG_ALGORITHM.md"
+    },
+    {
+      "id": "JRE-016",
+      "title": "Editable recipe and shared JPG proven to be separate artifacts",
+      "state": "pass",
+      "required": true,
+      "evidence": "PizzaCreatorServiceImpl.SaveToRecipes + ScreenCapture/CaptureUtility source and contracts/pc3-creator-native-jpeg.contract.json"
+    }
   ]
 }

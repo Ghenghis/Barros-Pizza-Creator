@@ -7,7 +7,7 @@
 | Runtime tab | BepInEx plugin | Adds one registered Pizza Creator tab without replacing game assemblies |
 | Four-mode panel | Unity IMGUI anchored to the cloned content rect | Chat, Lab, Crew, Voice, history, attachments, recipe cards and actions |
 | Header brand | Runtime-loaded PNG under `BarrosAI/assets` | Aspect-fits the Barro's Pizza Creator mark while the AI tab is active |
-| Game bridge | `GameBridge.cs` | Live catalog, model binding, positions, preview/apply/restore/save and native scores |
+| Game bridge | `GameBridge.cs` | Live catalog, model binding, positions, preview/apply/restore, persisted native recipe save, stock JPG export and native scores |
 | Sidecar | `backend/` on `127.0.0.1:48173` | Provider routing, deterministic fallback, repair, orchestration and history |
 | Provider | Local or hosted | OpenAI-compatible, Ollama, Anthropic, multimodal images and STT |
 
@@ -20,6 +20,9 @@ The supplied decompiled implementation establishes the following public path:
 3. The bridge binds a new `PizzaModel`, copies `PizzaShapeData.DoughPositions`, binds each `PizzaModel.IngredientContainerModel`, and assigns its actual `IngredientModel`, world position and Y rotation.
 4. `IPizzaCreatorService.LoadPizzaFromModel(candidate)` resets dough and ingredients, starts placement, invokes the game's private placement path for every container, restores the name/profit factor and publishes `PizzaLoaded`.
 5. The plugin reactivates the AI tab after `PizzaLoaded`, because the stock `PizzaCreatorTabBar` otherwise switches to the recipe tab.
+6. Native recipe save writes the editable `PizzaModel` JSON under `Application.persistentDataPath/UserData/Recipes`; the bridge requires both the native recipe-list entry and a non-empty file.
+7. JPG export resolves the scene-local stock `ScreenshotButton`, enables its screenshot-only UI, reuses the referenced `ScreenCapture` 2560×1440 → 1280×720 quality-90 path under `StreamingAssets/Screenshots`, and restores the prior UI state. The JPG contains no editable recipe payload.
+8. F9 reads the persisted recipe JSON through PC3's `ISerializerService`, resolves each ingredient through `IDatabaseService`, loads it through `IPizzaCreatorService`, and compares the disk model with the resulting live model.
 
 The original `Assembly-CSharp.dll` is read as a compile reference and never modified.
 

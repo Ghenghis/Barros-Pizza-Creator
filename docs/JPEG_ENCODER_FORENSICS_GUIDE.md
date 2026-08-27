@@ -1,5 +1,7 @@
 # SCOPE: PC3 PIZZA CREATOR ONLY — JPEG Encoder Forensics Guide
 
+> **Historical/optional as of 2026-08-27.** Decompiled source proves `Texture2D.EncodeToJPG(90)` and direct byte writing. Fingerprinting remains useful to confirm target-machine output, not to discover an unknown codec or embedded recipe.
+
 **Owner:** Claude — PC3 Pizza Creator  
 **Runtime profile:** `creator-0.11.272`  
 **Purpose:** identify and characterize the stock Creator pizza-image JPEG encoder using file structure plus static/runtime evidence, without confusing a fingerprint match with proof of implementation identity.

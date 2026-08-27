@@ -1,5 +1,7 @@
 # SCOPE: PC3 PIZZA CREATOR ONLY — Research-Backed Placement and JPEG Reverse-Engineering Guide
 
+> **Placement research remains active; JPG-path hypotheses are superseded (2026-08-27).** Use `NATIVE_PIZZA_JPEG_ALGORITHM.md` for the proven stock exporter and recipe/JPG separation.
+
 **Owner:** Claude — PC3 Pizza Creator  
 **Repository:** `Ghenghis/Barros-Pizza-Creator`  
 **Runtime profile:** `creator-0.11.272`  

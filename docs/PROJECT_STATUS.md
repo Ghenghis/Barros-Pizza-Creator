@@ -1,5 +1,7 @@
 # RC1 factual status snapshot
 
+> Historical snapshot from 2026-08-25. For the current v1.2 source candidate, use `docs/REVERSE_ENGINEERING_EVIDENCE.md`, `contracts/rc1.acceptance.json`, and `tools/artifact_provenance.py`.
+
 Snapshot date: 2026-08-25 UTC. Authority: `contracts/rc1.acceptance.json` plus the latest retained Static and Build runs.
 
 | Area | State | Evidence boundary |

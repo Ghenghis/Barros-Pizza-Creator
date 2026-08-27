@@ -1,0 +1,106 @@
+{
+  "schema_version": "1.0",
+  "kind": "pc3-creator-native-jpeg-and-recipe-contract",
+  "runtime_profile": "creator-0.11.272",
+  "truth_status": "proven_from_decompiled_source",
+  "source_evidence": {
+    "repository": "Ghenghis/PC3_Pizza-Creator",
+    "visibility": "private",
+    "commit": "d8fdd733fa068e00048441375a69feb8fd5b5440",
+    "assembly_csharp_sha256": "ebf8698df7cb4af904c98c299994705ea529efbdf1e8ccb3e7ca8cb42a1cbc1c",
+    "files": [
+      {
+        "path": "pizza-creator/Assembly-CSharp/ScreenCapture.cs",
+        "blob_sha": "93e87273de5cd88606eb61d583d932d6e100328c"
+      },
+      {
+        "path": "pizza-creator/Assembly-CSharp/CaptureUtility.cs",
+        "blob_sha": "edf089f298c6ad231b0eab14c87aeb8a20d1e37b"
+      },
+      {
+        "path": "pizza-creator/Assembly-CSharp/UserInterface/ScreenshotButton.cs",
+        "blob_sha": "8db11919f2d649b9c50dd4b78f6a8624ce8400b8"
+      },
+      {
+        "path": "pizza-creator/Assembly-CSharp/PizzaModel.cs",
+        "blob_sha": "811db365510ad159f296acf7af9fbfa547bc87d8"
+      },
+      {
+        "path": "pizza-creator/Assembly-CSharp/Service.PizzaCreator/PizzaCreatorServiceImpl.cs",
+        "blob_sha": "af08b2d0ef8e8a9926c539ddfc792ee001283426"
+      },
+      {
+        "path": "pizza-creator/Assembly-CSharp/Service.PizzaCreator/IPizzaCreatorService.cs",
+        "blob_sha": "79729f7923c65518c577e617f45fb8c1105b63a7"
+      },
+      {
+        "path": "pizza-creator/Assembly-CSharp/Service.Database/IDatabaseService.cs",
+        "blob_sha": "7bdc506bab7646b336d6f11779129ed1975642b7"
+      },
+      {
+        "path": "pizza-creator/Assembly-CSharp/Paths.cs",
+        "blob_sha": "ceabf2b6b7f0241d5f4c7851d5c41258dcd3cd3d"
+      },
+      {
+        "path": "pizza-creator/Assembly-CSharp/Service.Serializer/ISerializerService.cs",
+        "blob_sha": "7311939db803c50e23b620d9e2ffb3cf1dd89e79"
+      }
+    ]
+  },
+  "native_jpeg_export": {
+    "entry_component": "UserInterface.ScreenshotButton",
+    "capture_component": "ScreenCapture",
+    "capture_api": "CaptureUtility.Capture",
+    "camera_render": true,
+    "source_width": 2560,
+    "source_height": 1440,
+    "resize_scale": 0.5,
+    "output_width": 1280,
+    "output_height": 720,
+    "readback_texture_format": "RGB24",
+    "render_texture_depth_bits": 24,
+    "encoder": "Texture2D.EncodeToJPG",
+    "jpeg_quality": 90,
+    "output_directory": "Application.streamingAssetsPath/Screenshots",
+    "filename_rule": "sanitized PizzaModel.ID plus _N.jpg",
+    "maximum_concurrent_files_per_name": 5,
+    "screenshot_only_ui_enabled_during_capture": true,
+    "stock_button_disables_screenshot_only_ui_after_capture": true,
+    "writes_encoder_bytes_directly": true,
+    "custom_metadata_insertion": false,
+    "custom_recipe_payload": false,
+    "native_jpeg_to_editable_pizza_importer": false
+  },
+  "editable_recipe": {
+    "entry_method": "IPizzaCreatorService.SaveCurrentPizzaToRecipes",
+    "implementation_method": "PizzaCreatorServiceImpl.SaveToRecipes",
+    "serializer": "ISerializerService.Serialize(PizzaModel)",
+    "output_directory": "Application.persistentDataPath/UserData/Recipes",
+    "filename_rule": "PizzaModel.ID plus .json",
+    "serialized_fields": [
+      "ID",
+      "Ingredients",
+      "DoughPositions",
+      "ProfitFactor",
+      "Owner",
+      "Texture"
+    ],
+    "placement_fields": [
+      "Ingredient",
+      "IngredientID",
+      "Rotation",
+      "Position",
+      "Size"
+    ],
+    "independent_from_jpeg_export": true
+  },
+  "mod_integration": {
+    "preview_and_apply": "IPizzaCreatorService.LoadPizzaFromModel(PizzaModel)",
+    "save": "IPizzaCreatorService.SaveCurrentPizzaToRecipes()",
+    "reload_proof": "read persisted JSON, ISerializerService.DeserializeToObject<PizzaModel>, bind placements, resolve IngredientID and Size through IDatabaseService, then IPizzaCreatorService.LoadPizzaFromModel",
+    "export": "stock ScreenCapture.Capture(string)",
+    "export_ui_safety": "resolve the scene-local stock ScreenshotButton, enable its specialScreenshotUI during capture, then restore the prior active state in finally",
+    "jpeg_reference_import": "AI vision may derive a new validated recipe; it is not a native lossless JPG round trip",
+    "credentials_boundary": "provider credentials remain in the local sidecar and are never stored in the game or JPG"
+  }
+}

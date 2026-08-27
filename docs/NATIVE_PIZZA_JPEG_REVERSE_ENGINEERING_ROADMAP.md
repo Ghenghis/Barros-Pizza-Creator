@@ -1,5 +1,7 @@
 # SCOPE: PC3 PIZZA CREATOR ONLY — Native Pizza JPEG Reverse-Engineering Roadmap
 
+> **Superseded for exporter/codec discovery (2026-08-27).** The exact path is source-proven in `NATIVE_PIZZA_JPEG_ALGORITHM.md`; the JPG contains no editable recipe payload. Use this roadmap only for remaining live camera, visual-placement, occlusion, and repeatability measurements.
+
 **Owner:** Claude — PC3 Pizza Creator  
 **Repository:** `Ghenghis/Barros-Pizza-Creator`  
 **Runtime profile:** `creator-0.11.272`  
