@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "contracts" / "ecosystem.release.acceptance.json"
 ALLOWED_STATES = {"not_run", "pass", "fail", "blocked"}
 EXPECTED_GATES = {f"REL-{index:03d}" for index in range(1, 9)}
-PORTABLE_CI_PASS_GATES = {"REL-004", "REL-005"}
+PORTABLE_CI_PASS_GATES = set()
 EXPECTED_REFERENCED_CONTRACTS = {
     "creator_rc1": "contracts/rc1.acceptance.json",
     "ecosystem_base": "contracts/ecosystem.acceptance.json",
@@ -28,9 +28,9 @@ class EcosystemReleaseContractTests(unittest.TestCase):
         self.assertEqual("barros-pc3-ecosystem-release-v2", payload["contract_id"])
         self.assertEqual(
             {
-                "creator": "1.2.0-rc2",
-                "workbench": "2.3.0-rc1",
-                "studio": "1.2.0-rc1",
+                "creator": "1.3.0-rc1",
+                "workbench": "2.5.0-rc1",
+                "studio": "1.4.0-rc1",
             },
             payload["release_versions"],
         )

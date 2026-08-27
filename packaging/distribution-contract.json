@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.0.0",
+  "product": "Barro's Pizza Creator AI Designer",
+  "version": "1.3.0-rc1",
+  "distributions": [
+    {
+      "id": "windows-package-manager",
+      "platform": "windows-x64",
+      "format": "inno-exe",
+      "entrypoint": "Install Barro's AI Designer shortcut",
+      "build_host": "windows",
+      "game_mutation_during_setup": false
+    },
+    {
+      "id": "windows-portable",
+      "platform": "windows-x64",
+      "format": "deterministic-zip",
+      "entrypoint": "INSTALL_Barros_AI_Designer.bat",
+      "build_host": "any",
+      "exact_creator_dll_compiled_on_target": true
+    },
+    {
+      "id": "vps-headless",
+      "platform": "linux-python3",
+      "format": "deterministic-zip",
+      "entrypoint": "barros-creator-backend",
+      "network_scope": "127.0.0.1 only; connect from Windows through an SSH local-forward"
+    },
+    {
+      "id": "source",
+      "platform": "cross-platform-source",
+      "format": "git",
+      "entrypoint": "README.md"
+    }
+  ],
+  "truth_rule": "A package artifact is not proof that the injected tab, live recipe path or restoration passed on Creator 0.11.272."
+}

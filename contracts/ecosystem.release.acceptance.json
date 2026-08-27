@@ -9,9 +9,9 @@
     "snapshot_rule": "Visual claims require retained screenshots from the actual running Workbench, Studio or game. CI offscreen renders are useful preflight evidence but do not replace live-game proof."
   },
   "release_versions": {
-    "creator": "1.2.0-rc2",
-    "workbench": "2.3.0-rc1",
-    "studio": "1.2.0-rc1"
+    "creator": "1.3.0-rc1",
+    "workbench": "2.5.0-rc1",
+    "studio": "1.4.0-rc1"
   },
   "runtime_profiles": {
     "creator": "creator-0.11.272",
@@ -24,13 +24,13 @@
     "image_handoff": "contracts/ecosystem.image.acceptance.json"
   },
   "gates": [
-    {"id": "REL-001", "requirement": "Creator 1.2 RC2 release-required contract is complete", "state": "not_run", "release_required": true, "evidence": "contracts/rc1.acceptance.json + retained proof/latest All-stage evidence"},
+    {"id": "REL-001", "requirement": "Creator 1.3 RC1 release-required contract is complete", "state": "not_run", "release_required": true, "evidence": "contracts/rc1.acceptance.json + retained proof/latest All-stage evidence"},
     {"id": "REL-002", "requirement": "Base Creator/Workbench/Studio ecosystem acceptance contract is complete", "state": "not_run", "release_required": true, "evidence": "contracts/ecosystem.acceptance.json"},
     {"id": "REL-003", "requirement": "JPEG/PNG/image-handoff acceptance contract is complete", "state": "not_run", "release_required": true, "evidence": "contracts/ecosystem.image.acceptance.json + Workbench handoff + Studio byte validation + runtime screenshots"},
-    {"id": "REL-004", "requirement": "Workbench 2.3.0-rc1 default launcher, tests, visual preflight, operator recovery and deterministic package workflows are green on reviewed source", "state": "pass", "release_required": true, "evidence": "Ghenghis/barros-workbench main 05764275a3c40c1409837e4cd1955f3467e6cc94; integration 32874410959 PASS; visual preflight 32874411148 PASS; operator recovery 32874411132 PASS; deterministic package 32874410988 PASS; PC3 scope guard 32874410987 PASS"},
-    {"id": "REL-005", "requirement": "Studio 1.2.0-rc1 default launcher, complete test suite, integrated GUI compile, MCP v1.2 and package workflows are green on reviewed source", "state": "pass", "release_required": true, "evidence": "Ghenghis/PC3_Barros_Runtime_Proof_Studio main 79dfbb906b08e38f4eb99f7ebbba17d0df83d270; package 32874679554 PASS; MCP v1.2 32874679516 PASS; integrated Studio 32874679515 PASS; legacy visual transport 32874679520 PASS; PC3 scope guard 32874679522 PASS"},
+    {"id": "REL-004", "requirement": "Workbench 2.5.0-rc1 tests, unified visual shell, branding, portable audit and Windows distributions are green on the reviewed source", "state": "not_run", "release_required": true, "evidence": "exact reviewed commit + retained portable and Windows workflow results"},
+    {"id": "REL-005", "requirement": "Studio 1.4.0-rc1 tests, visual index, full path inventory, MCP, branding audit and Windows distributions are green on the reviewed source", "state": "not_run", "release_required": true, "evidence": "exact reviewed commit + retained portable and Windows workflow results"},
     {"id": "REL-006", "requirement": "Workbench and Studio audits agree on Creator 87-item catalog, creator-0.11.272/studio-1.11.403 routing, shared contract, evidence root and handoff ledger", "state": "not_run", "release_required": true, "evidence": "retained pc3_barros_ecosystem_audit output from both applications"},
-    {"id": "REL-007", "requirement": "Live operator snapshots exist for Workbench 2.3, Studio 1.2 and all four in-game Pizza Creator modes without clipping or placeholder substitution", "state": "not_run", "release_required": true, "evidence": "retained live screenshots and comparison reports"},
+    {"id": "REL-007", "requirement": "Live operator snapshots exist for Workbench 2.5, Studio 1.4 and all four in-game Pizza Creator modes without clipping or placeholder substitution", "state": "not_run", "release_required": true, "evidence": "retained live screenshots and comparison reports"},
     {"id": "REL-008", "requirement": "GitHub main contains reviewed snapshots for all three repos and intended GitLab mirrors are confirmed at equivalent reviewed snapshots", "state": "not_run", "release_required": true, "evidence": "remote SHAs; GitLab must be independently verified"}
   ]
 }

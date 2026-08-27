@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.0-rc1 — 2026-08-27
+
+- Added plain-language hover help to the main in-game modes and actions.
+- Locked the Python sidecar to loopback; VPS use now requires an SSH local-forward.
+- Added deterministic VPS/headless packaging and Windows package-manager/portable recipes.
+- Advanced the linked release overlay to Workbench 2.5 and Studio 1.4 while resetting new-version evidence gates to `not_run`.
+- Kept exact Windows compile, installed-tab, pixel, save/reload/export and restore proof pending.
+
 ## 1.2.0-rc2 — 2026-08-27
 
 - Reconciled the mod against the exact private decompilation of Creator `Assembly-CSharp` and `Assembly-CSharp-firstpass`.

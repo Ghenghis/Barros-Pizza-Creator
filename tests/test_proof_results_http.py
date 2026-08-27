@@ -92,7 +92,7 @@ class ProofResultsHttpTests(unittest.TestCase):
         results = self._contract_results("pass")
         payload = {
             "contract_id": "barros-pc3-rc1",
-            "release": "1.2.0-rc2",
+            "release": "1.3.0-rc1",
             "run_id": "20260825T090000Z",
             "stage": "All",
             "game_root": r"S:\Unity_Games\PC3 - Pizza Creator",
@@ -116,7 +116,7 @@ class ProofResultsHttpTests(unittest.TestCase):
         results[0]["state"] = "pass"
         payload = {
             "contract_id": "barros-pc3-rc1",
-            "release": "1.2.0-rc2",
+            "release": "1.3.0-rc1",
             "run_id": "20260825T090001Z",
             "stage": "Static",
             "counts": self._counts(results),
@@ -133,7 +133,7 @@ class ProofResultsHttpTests(unittest.TestCase):
         counts["pass"] += 1
         payload = {
             "contract_id": "barros-pc3-rc1",
-            "release": "1.2.0-rc2",
+            "release": "1.3.0-rc1",
             "run_id": "20260825T090002Z",
             "stage": "All",
             "counts": counts,
@@ -149,7 +149,7 @@ class ProofResultsHttpTests(unittest.TestCase):
         removed = results.pop()
         payload = {
             "contract_id": "barros-pc3-rc1",
-            "release": "1.2.0-rc2",
+            "release": "1.3.0-rc1",
             "run_id": "20260825T090003Z",
             "stage": "All",
             "counts": self._counts(results),
@@ -167,7 +167,7 @@ class ProofResultsHttpTests(unittest.TestCase):
         target["release_required"] = False
         payload = {
             "contract_id": "barros-pc3-rc1",
-            "release": "1.2.0-rc2",
+            "release": "1.3.0-rc1",
             "run_id": "20260825T090004Z",
             "stage": "All",
             "counts": self._counts(results),
@@ -183,7 +183,7 @@ class ProofResultsHttpTests(unittest.TestCase):
         unknown_results[0]["gate_id"] = "FAKE-999"
         payload = {
             "contract_id": "barros-pc3-rc1",
-            "release": "1.2.0-rc2",
+            "release": "1.3.0-rc1",
             "run_id": "20260825T090005Z",
             "stage": "All",
             "counts": self._counts(unknown_results),
@@ -198,7 +198,7 @@ class ProofResultsHttpTests(unittest.TestCase):
         duplicate_results[1]["gate_id"] = duplicate_results[0]["gate_id"]
         payload = {
             "contract_id": "barros-pc3-rc1",
-            "release": "1.2.0-rc2",
+            "release": "1.3.0-rc1",
             "run_id": "20260825T090006Z",
             "stage": "All",
             "counts": self._counts(duplicate_results),

@@ -1,6 +1,6 @@
 # RC1 execution and proof contract
 
-`RUN_RC1_PROOF.bat` and `contracts/rc1.acceptance.json` retain their historical filenames for existing Workbench/Studio integrations. Their active release value is now `1.2.0-rc2`; the filename is not a claim that the v1.2 source has passed Windows runtime certification.
+`RUN_RC1_PROOF.bat` and `contracts/rc1.acceptance.json` retain their historical filenames for existing Workbench/Studio integrations. Their active release value is now `1.3.0-rc1`; the filename is not a claim that the v1.3 source has passed Windows runtime certification.
 
 This project is a real BepInEx/Unity integration. The four supplied images are visual reference baselines only. They never count as runtime evidence.
 
