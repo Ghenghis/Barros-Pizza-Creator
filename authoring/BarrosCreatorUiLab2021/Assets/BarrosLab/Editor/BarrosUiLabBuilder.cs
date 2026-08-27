@@ -280,6 +280,7 @@ namespace Barros.Creator.UiLab.Editor
             WriteRoundedSkin(Path.Combine(directory, "button.png"), Light, new Color(0.57f, 0.37f, 0.32f, 0.50f), 13);
             WriteRoundedSkin(Path.Combine(directory, "active.png"), Maroon, new Color(0.30f, 0.09f, 0.08f), 13);
             WriteRoundedSkin(Path.Combine(directory, "primary.png"), Red, new Color(0.43f, 0.08f, 0.08f), 13);
+            WriteConnectionPulseSheet(Path.Combine(directory, "connection-pulse.png"));
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
             foreach (string file in Directory.GetFiles(directory, "*.png"))
             {
@@ -288,7 +289,9 @@ namespace Barros.Creator.UiLab.Editor
                 if (importer == null) continue;
                 importer.textureType = TextureImporterType.Sprite;
                 importer.spriteImportMode = SpriteImportMode.Single;
-                importer.spriteBorder = new Vector4(18, 18, 18, 18);
+                importer.spriteBorder = Path.GetFileName(file) == "connection-pulse.png"
+                    ? Vector4.zero
+                    : new Vector4(18, 18, 18, 18);
                 importer.mipmapEnabled = false;
                 importer.alphaIsTransparency = true;
                 importer.SaveAndReimport();
@@ -311,6 +314,42 @@ namespace Barros.Creator.UiLab.Editor
                 Color pixel = distance > radius - 2 ? border : fill;
                 pixel.a *= alpha;
                 texture.SetPixel(x, y, pixel);
+            }
+            texture.Apply();
+            File.WriteAllBytes(path, texture.EncodeToPNG());
+            UnityEngine.Object.DestroyImmediate(texture);
+        }
+
+        private static void WriteConnectionPulseSheet(string path)
+        {
+            const int frameSize = 32;
+            const int frameCount = 8;
+            Texture2D texture = new Texture2D(frameSize * frameCount, frameSize, TextureFormat.RGBA32, false);
+            Color clear = new Color(0f, 0f, 0f, 0f);
+            Color core = new Color(0.16f, 0.58f, 0.31f, 1f);
+            Color glow = new Color(0.28f, 0.78f, 0.43f, 1f);
+            for (int frame = 0; frame < frameCount; frame++)
+            {
+                float progress = frame / (float)frameCount;
+                float ringRadius = 7f + progress * 8f;
+                float ringAlpha = 0.75f * (1f - progress);
+                for (int y = 0; y < frameSize; y++)
+                for (int x = 0; x < frameSize; x++)
+                {
+                    float distance = Vector2.Distance(new Vector2(x + 0.5f, y + 0.5f), new Vector2(16f, 16f));
+                    Color pixel = clear;
+                    if (distance <= 5.5f)
+                    {
+                        pixel = core;
+                        pixel.a = Mathf.Clamp01(1.4f - distance / 5.5f);
+                    }
+                    else if (Mathf.Abs(distance - ringRadius) <= 1.25f)
+                    {
+                        pixel = glow;
+                        pixel.a = ringAlpha * (1f - Mathf.Abs(distance - ringRadius) / 1.25f);
+                    }
+                    texture.SetPixel(frame * frameSize + x, y, pixel);
+                }
             }
             texture.Apply();
             File.WriteAllBytes(path, texture.EncodeToPNG());

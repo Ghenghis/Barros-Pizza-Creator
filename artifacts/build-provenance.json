@@ -1,11 +1,11 @@
 {
   "schema_version": "1.0",
   "artifact": "Barros.PizzaCreator.AI.dll",
-  "artifact_bytes": 157184,
-  "artifact_sha256": "520c67b88c3cd06a1bc0089efa828c04e16b5a4323edb9ef6c8e33a8a3e15895",
-  "built_utc": "2026-08-27T22:35:07Z",
-  "source_parent_commit": "9fda4c83a66543ac2b2677e235e21ddf189642b4",
-  "source_tree_sha256": "2f58c5ad6e718dc181f7dca9472817482f70c76a311a1317e35a16d3403eb38b",
+  "artifact_bytes": 157696,
+  "artifact_sha256": "0284d7d480655d407e1d64efd86ff9e6d241786c440f24ab02291e6d532a9bbf",
+  "built_utc": "2026-08-27T22:42:09Z",
+  "source_parent_commit": "33954547dceb52914fe849ff2dcacebbc7f242ba",
+  "source_tree_sha256": "14ffccf77dc5e9384635f54635a5ce3866ce9c57175c67a2b2c4e8d17cf61582",
   "compiler": "Microsoft Visual C# Compiler 4.8.9032.0",
   "compiler_host": ".NET Framework on Windows AMD64",
   "output_kind": "PE32 AnyCPU .NET/Mono library",
@@ -61,7 +61,7 @@
     "MainThreadDispatcher.cs": "2789e3d9ee8a8d7526052505ea3f6f21f7be22a13e06a5646e7ed5740974b03f",
     "MediaDeck.cs": "e7814cb6146fdfdef86694ab35b89ff51298f30e8791fa049441cacfdb3557f1",
     "Models.cs": "89f9ab64b0f5626968190ca9fa62b76c0f4e0a73a319dd95e9adadfe04c128d0",
-    "PanelRenderer.cs": "3d59da8cfde38564dff440e428abd06310cf670e4a3329e44ab4b44d333402f5",
+    "PanelRenderer.cs": "96395226cc531e02013ec744f07485ebbccfdb2e4bd8af1f36ca8c21611d8c3e",
     "RuntimeTabInstaller.cs": "26b1a030af1a7bcb2d4140c8a46d494464e5270f122af2c05b66a6c5c07d15fd",
     "WavDecoder.cs": "c81f38bec9ac2407826e20cbf6d59c496e827dbec5097fdb5be16cacbe3d03b5",
     "WavEncoder.cs": "7de6cfa1287a00979f512e4f16cb13863315e0aa7dc3fb47d78a862c1468356c"
@@ -70,7 +70,7 @@
     "compile_exit_code": 0,
     "compiler_errors": 0,
     "absolute_build_path_embedded": false,
-    "backend_and_contract_tests": "115/115 automated tests passed on 2026-08-27"
+    "backend_and_contract_tests": "116 passed in portable suite; Unity 2021 batch export passed"
   },
-  "boundary": "Creator 0.11.272 / Unity 2017.3.1p4 only; Unity 2021 authoring exports neutral PNG and JSON assets."
+  "boundary": "Exact Unity 2017 compilation and portable tests passed; live animation rendering requires separately retained game evidence."
 }

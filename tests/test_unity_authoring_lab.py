@@ -1,6 +1,7 @@
 import hashlib
 import importlib.util
 import json
+import struct
 from pathlib import Path
 
 
@@ -38,6 +39,29 @@ def test_runtime_loader_has_bounded_fallback_behavior():
     assert "5 * 1024 * 1024" in source
     assert "texture.width > 512" in source
     assert 'evidence.Record("ui.exported_theme_loaded"' in source
+
+
+def test_connection_pulse_animation_is_neutral_and_runtime_bounded():
+    theme = json.loads((EXPORT / "barros-ui-theme.json").read_text(encoding="utf-8"))
+    animation = theme["animations"][0]
+    assert animation == {
+        "name": "connection-pulse",
+        "file": "connection-pulse.png",
+        "layout": "horizontal-strip",
+        "frame_width": 32,
+        "frame_height": 32,
+        "frames": 8,
+        "fps": 8,
+    }
+    payload = (EXPORT / animation["file"]).read_bytes()
+    assert payload.startswith(b"\x89PNG\r\n\x1a\n")
+    assert struct.unpack(">II", payload[16:24]) == (256, 32)
+
+    source = (ROOT / "plugin-src" / "PanelRenderer.cs").read_text(encoding="utf-8")
+    assert 'LoadExportedSkin("connection-pulse.png")' in source
+    assert "GUI.DrawTextureWithTexCoords" in source
+    assert 'evidence.Record("ui.exported_animation_loaded"' in source
+    assert "else\n            {\n                GUI.DrawTexture" in source
 
 
 def test_release_builder_excludes_unity_editor_cache():

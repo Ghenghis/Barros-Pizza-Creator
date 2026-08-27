@@ -184,7 +184,9 @@ namespace Barros.PizzaCreator.AI
         private Texture2D greenTexture;
         private Texture2D amberTexture;
         private Texture2D whiteTexture;
+        private Texture2D connectionPulseTexture;
         private bool exportedThemeEvidenceRecorded;
+        private bool exportedAnimationEvidenceRecorded;
 
         public DesignerMode Mode { get { return mode; } }
 
@@ -375,7 +377,23 @@ namespace Barros.PizzaCreator.AI
             GUI.Box(rect, GUIContent.none, cardStyle);
             Color old = GUI.color;
             GUI.color = Color.white;
-            GUI.DrawTexture(new Rect(rect.x + 9f, rect.y + 8f, 12f, 12f), backendReady ? greenTexture : amberTexture);
+            Rect indicatorRect = new Rect(rect.x + 7f, rect.y + 5f, 18f, 18f);
+            if (backendReady && connectionPulseTexture != null)
+            {
+                const int frameCount = 8;
+                int frame = Mathf.FloorToInt(Time.realtimeSinceStartup * 8f) % frameCount;
+                GUI.DrawTextureWithTexCoords(indicatorRect, connectionPulseTexture,
+                    new Rect(frame / (float)frameCount, 0f, 1f / frameCount, 1f));
+                if (!exportedAnimationEvidenceRecorded && evidence != null)
+                {
+                    exportedAnimationEvidenceRecorded = true;
+                    evidence.Record("ui.exported_animation_loaded", "name=connection-pulse;frames=8;fps=8;target=Unity2017");
+                }
+            }
+            else
+            {
+                GUI.DrawTexture(new Rect(rect.x + 9f, rect.y + 8f, 12f, 12f), backendReady ? greenTexture : amberTexture);
+            }
             GUI.color = old;
             GUI.Label(new Rect(rect.x + 28f, rect.y + 3f, rect.width - 33f, 22f), backendLabel, smallStyle);
         }
@@ -2056,6 +2074,7 @@ namespace Barros.PizzaCreator.AI
             maroonTexture = LoadExportedSkin("active.png") ?? Rounded(maroon, new Color(0.30f, 0.09f, 0.08f, 1f), 10, 1);
             redTexture = LoadExportedSkin("primary.png") ?? Rounded(red, new Color(0.43f, 0.08f, 0.08f, 1f), 10, 1);
             lightTexture = LoadExportedSkin("button.png") ?? Rounded(parchmentLight, cardEdge, 10, 1);
+            connectionPulseTexture = LoadExportedSkin("connection-pulse.png");
             greenTexture = Solid(green);
             amberTexture = Solid(amber);
             whiteTexture = Solid(Color.white);

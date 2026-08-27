@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "authoring_editor": "2021.3.45f2",
   "target_runtime": "Unity 2017.3.1p4",
   "format": "neutral-png-json",
@@ -10,11 +10,15 @@
     "parchment": "#EFD6C7", "card": "#F7E0D1", "light": "#FDEDE3",
     "maroon": "#6E1F21", "red": "#AD292E", "ink": "#2E211F"
   },
+  "animations": [
+    { "name": "connection-pulse", "file": "connection-pulse.png", "layout": "horizontal-strip", "frame_width": 32, "frame_height": 32, "frames": 8, "fps": 8 }
+  ],
   "files": [
     { "name": "panel.png", "sha256": "2765f176d5a6a5d32330624191265051956e419660d1ccda86d69fed70c34aa1" },
     { "name": "card.png", "sha256": "bc29cb5f28e7c4e0581c9dfacfe520265dbf05ed58c761d294bb0e3f253cf915" },
     { "name": "button.png", "sha256": "268a36209fa3019a493fa976da4f6216c4801f0679e9e88fbd7203a37e119074" },
     { "name": "active.png", "sha256": "a215bcc3b4e29766c1163ec4783c59fcaaa039b25c959e2151329e51f8ed9571" },
-    { "name": "primary.png", "sha256": "f377d7c54e2b4aae83436d9a65416df14bf31e64258af00210b328295f387da5" }
+    { "name": "primary.png", "sha256": "f377d7c54e2b4aae83436d9a65416df14bf31e64258af00210b328295f387da5" },
+    { "name": "connection-pulse.png", "sha256": "13b30cb513f9d20780150a706002049d58dc8a2b58e629613a4e31e5f6b70510" }
   ]
 }

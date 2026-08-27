@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased — v1.7 development
+
+- Added the first Unity-authored 2D animation export: an eight-frame connection pulse stored as a neutral 256×32 PNG strip with reviewed JSON frame geometry and timing.
+- Added a bounded Unity 2017 runtime animator for the provider-ready badge, including a static green/amber fallback when the exported strip is absent or invalid.
+- Retained exact-game proof that Creator 0.11.272 loaded and rendered the strip at eight frames per second without covering the five original side tabs.
+- Expanded the automated suite to 116/116 and refreshed the certified DLL against the exact Unity 2017.3.1p4 game assemblies.
+
 ## 1.6.0 — 2026-08-27
 
 - Added secure Azure Speech-to-Text support with language selection, live Windows microphone capture, truthful readiness states and automatic hands-free continuation after spoken agent replies.

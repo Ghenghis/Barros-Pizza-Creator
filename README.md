@@ -26,7 +26,7 @@ The AI tab replaces the plain Bakehouse heading only while active with the bundl
 
 The repository now includes a real Unity **2021.3.45f2** project at `authoring/BarrosCreatorUiLab2021`. It provides a visible, interactive 1920×1080 design lab for new Barro's UI, artwork and animation prototypes without pretending that the compiled Steam game is an editable Unity project.
 
-The lab deliberately exports neutral **PNG + JSON** assets into `assets/ui/generated`. The Unity 2017 runtime loads the five generated rounded skins with file-size/dimension guards and automatically falls back to its built-in rounded textures if any export is absent or invalid. Unity's own documentation warns that newer AssetBundles are not forward-compatible with an older Player, so Unity 2021 AssetBundles are never sent to this 2017.3.1p4 game.
+The lab deliberately exports neutral **PNG + JSON** assets into `assets/ui/generated`. The Unity 2017 runtime loads five generated rounded skins plus an eight-frame connection-pulse strip with file-size/dimension guards. It automatically falls back to built-in rounded textures and a static connection dot if an export is absent or invalid. Unity's own documentation warns that newer AssetBundles are not forward-compatible with an older Player, so Unity 2021 AssetBundles are never sent to this 2017.3.1p4 game.
 
 Beginner workflow:
 
@@ -37,6 +37,8 @@ Beginner workflow:
 5. Reinstall the add-on and press F10 in Pizza Creator.
 
 The dark left rail in the lab is a protected stand-in for the original game's five side tabs. New panels must remain beside it. See `docs/UNITY_UI_AUTHORING_PIPELINE.md` for the complete safe asset matrix and future 3D/animation workflow.
+
+The follow-on v1.7 development checkpoint proves that this workflow also handles simple animation: Unity 2021 generates a 256×32 horizontal PNG strip and schema-v2 JSON, while the exact Unity 2017 game advances its eight frames at 8 fps. The retained runtime marker is `ui.exported_animation_loaded`; this does not claim that newer Unity animation clips or AssetBundles are compatible.
 
 ## Exact runtime profile
 

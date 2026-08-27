@@ -38,7 +38,7 @@ The user only needs to review the appearance. The repository tests, installer an
 |---|---|---|---|
 | Rounded UI panels/buttons | Unity 2021 lab | PNG + JSON | direct validated texture load |
 | Icons, portraits, pizza art | image editor/Unity 2021 | PNG/JPG | direct validated texture load |
-| Simple 2D animation | Unity 2021 | PNG sprite sheet + reviewed JSON timings | plug-in animator (next milestone) |
+| Simple 2D animation | Unity 2021 | PNG sprite sheet + reviewed JSON timings | bounded plug-in animator (connection pulse proven) |
 | Music | source WAV/MP3/OGG | normalized OGG | Media Deck |
 | Lyric video | source editor | H.264/AAC MP4 | Unity 2017 VideoPlayer |
 | Timed audio lyrics | reviewed transcript | same-name UTF-8 `.lrc` | Media Deck active-line highlighter |
@@ -55,19 +55,21 @@ For future 3D work, Unity 2021 remains the pleasant authoring and preview enviro
 ## Current validation
 
 - Unity batch marker: `BARROS_UI_LAB_OK ... size=1920x1080 tabs=5`.
-- Export marker: `BARROS_UI_EXPORT_OK ... files=5 format=png+json`.
+- Export marker: `BARROS_UI_EXPORT_OK ... files=6 format=png+json`.
 - Runtime marker: `ui.exported_theme_loaded ... target=Unity2017`.
+- Animation marker: `ui.exported_animation_loaded ... frames=8;fps=8;target=Unity2017`.
 - Live geometry: panel x=1346..1920, original tab right edge x=1340, gap=6.
-- Automated suite: 115/115.
+- Automated suite: 116/116.
 - Every exported PNG hash is checked against `barros-ui-theme.json`.
-- Missing/invalid/oversized skins use safe built-in fallbacks.
+- Missing/invalid/oversized skins use safe built-in fallbacks; a missing pulse strip uses the static connection dot.
 
 ![Unity 2021 UI Lab interaction proof](images/v16-unity-ui-lab-proof.jpg)
 
 ## Next authoring milestone
 
-1. Add an editable sprite-sheet animation example with a JSON timing exporter.
-2. Add a runtime sprite animator behind a feature flag and validate it in Unity 2017.
-3. Create the isolated Unity 2017.3.1p4 AssetBundle staging project.
-4. Export one harmless test mesh from Unity 2021, rebuild it in 2017, load it read-only, and retain the bundle/hash evidence.
-5. Only after that proof, consider new 3D ingredient meshes or animated decorative elements.
+1. Create the isolated Unity 2017.3.1p4 AssetBundle staging project.
+2. Export one harmless test mesh from Unity 2021, rebuild it in 2017, load it read-only, and retain the bundle/hash evidence.
+3. Add an animation preview/control page to the authoring lab before expanding beyond the proven connection pulse.
+4. Only after exact-2017 bundle proof, consider new 3D ingredient meshes or animated decorative elements.
+
+![Exact Unity 2017 connection-pulse proof](images/v17-live-connection-pulse-proof.jpg)

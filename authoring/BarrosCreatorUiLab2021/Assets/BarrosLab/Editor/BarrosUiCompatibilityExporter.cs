@@ -9,7 +9,7 @@ namespace Barros.Creator.UiLab.Editor
 {
     public static class BarrosUiCompatibilityExporter
     {
-        private static readonly string[] SkinFiles = { "panel.png", "card.png", "button.png", "active.png", "primary.png" };
+        private static readonly string[] SkinFiles = { "panel.png", "card.png", "button.png", "active.png", "primary.png", "connection-pulse.png" };
 
         [MenuItem("Barros/2 - Export Unity 2017-Compatible UI Pack")]
         public static void ExportCompatibilityPack()
@@ -32,7 +32,7 @@ namespace Barros.Creator.UiLab.Editor
             }
 
             string theme = "{\n" +
-                "  \"schema_version\": 1,\n" +
+                "  \"schema_version\": 2,\n" +
                 "  \"authoring_editor\": \"2021.3.45f2\",\n" +
                 "  \"target_runtime\": \"Unity 2017.3.1p4\",\n" +
                 "  \"format\": \"neutral-png-json\",\n" +
@@ -43,6 +43,9 @@ namespace Barros.Creator.UiLab.Editor
                 "    \"parchment\": \"#EFD6C7\", \"card\": \"#F7E0D1\", \"light\": \"#FDEDE3\",\n" +
                 "    \"maroon\": \"#6E1F21\", \"red\": \"#AD292E\", \"ink\": \"#2E211F\"\n" +
                 "  },\n" +
+                "  \"animations\": [\n" +
+                "    { \"name\": \"connection-pulse\", \"file\": \"connection-pulse.png\", \"layout\": \"horizontal-strip\", \"frame_width\": 32, \"frame_height\": 32, \"frames\": 8, \"fps\": 8 }\n" +
+                "  ],\n" +
                 "  \"files\": [\n" + manifestFiles + "\n  ]\n" +
                 "}\n";
             File.WriteAllText(Path.Combine(outputRoot, "barros-ui-theme.json"), theme, new UTF8Encoding(false));

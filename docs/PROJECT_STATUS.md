@@ -21,3 +21,7 @@ Snapshot date: 2026-08-27 UTC. Authority: the exact Steam loader/UI/media run, U
 | Inspiration Library | Pass, empty | Capability/limits remain available; no private images were imported. |
 
 No API key value, private source file, OCR draft, Facebook image or Unity cache is stored in the repository. The Unity lab does not reconstruct the compiled game, and no Unity 2021 AssetBundle is sent to the Unity 2017 Player.
+
+## v1.7 development continuation
+
+The stable release remains v1.6. On branch `codex/barros-v1.7-animation-lab`, the next authoring milestone is complete: Unity 2021 generated a hash-listed 256×32 connection-pulse strip and schema-v2 JSON, the plug-in compiled against the exact Creator assemblies, 116/116 tests passed, and the exact game retained `ui.exported_animation_loaded` for eight frames at 8 fps. See `docs/V1_7_ANIMATION_CHECKPOINT_2026-08-27.md`. This is an isolated development checkpoint, not a replacement v1.7 release ZIP.
