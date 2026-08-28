@@ -23,6 +23,14 @@ class MobileCompanionTests(unittest.TestCase):
         for name in ("index.html", "styles.css", "app.js", "sw.js"):
             self.assertTrue((ROOT / "web" / name).is_file(), name)
 
+    def test_mobile_microphone_encodes_azure_compatible_wav(self) -> None:
+        app = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
+        self.assertIn('function encodeWav(', app)
+        self.assertIn('writeText(0, "RIFF")', app)
+        self.assertIn('writeText(8, "WAVE")', app)
+        self.assertIn('filename: "android-voice.wav"', app)
+        self.assertNotIn('filename: "android-voice.webm"', app)
+
     def test_android_release_has_verified_link_contract(self) -> None:
         android_manifest = (ROOT / "android" / "app" / "src" / "main" / "AndroidManifest.xml").read_text(encoding="utf-8")
         self.assertIn("creator.daveai.tech", android_manifest)

@@ -240,35 +240,66 @@ function toBase64(blob) {
   });
 }
 
+function encodeWav(chunks, sampleRate) {
+  const frameCount = chunks.reduce((total, chunk) => total + chunk.length, 0);
+  const buffer = new ArrayBuffer(44 + frameCount * 2);
+  const view = new DataView(buffer);
+  const writeText = (offset, value) => [...value].forEach((character, index) => view.setUint8(offset + index, character.charCodeAt(0)));
+  writeText(0, "RIFF");
+  view.setUint32(4, 36 + frameCount * 2, true);
+  writeText(8, "WAVE"); writeText(12, "fmt ");
+  view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true);
+  view.setUint32(24, sampleRate, true); view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true); view.setUint16(34, 16, true);
+  writeText(36, "data"); view.setUint32(40, frameCount * 2, true);
+  let offset = 44;
+  chunks.forEach(chunk => chunk.forEach(sample => {
+    const bounded = Math.max(-1, Math.min(1, sample));
+    view.setInt16(offset, bounded < 0 ? bounded * 0x8000 : bounded * 0x7fff, true);
+    offset += 2;
+  }));
+  return new Blob([buffer], {type: "audio/wav"});
+}
+
 async function toggleMicrophone() {
   const button = $("#micButton");
   if (state.recorder && state.recorder.state === "recording") {
     state.recorder.stop();
     return;
   }
-  if (!navigator.mediaDevices || !window.MediaRecorder) return toast("This browser does not provide microphone recording.");
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!navigator.mediaDevices || !AudioContextClass) return toast("This browser does not provide microphone recording.");
   try {
     const stream = await navigator.mediaDevices.getUserMedia({audio: {echoCancellation: true, noiseSuppression: true}});
+    const context = new AudioContextClass();
+    const source = context.createMediaStreamSource(stream);
+    const processor = context.createScriptProcessor(4096, 1, 1);
+    const silent = context.createGain(); silent.gain.value = 0;
     state.chunks = [];
-    state.recorder = new MediaRecorder(stream);
-    state.recorder.addEventListener("dataavailable", event => event.data.size && state.chunks.push(event.data));
-    state.recorder.addEventListener("stop", async () => {
+    processor.onaudioprocess = event => state.chunks.push(new Float32Array(event.inputBuffer.getChannelData(0)));
+    source.connect(processor); processor.connect(silent); silent.connect(context.destination);
+    state.recorder = {state: "recording", stop: async () => {
+      if (!state.recorder || state.recorder.state !== "recording") return;
+      state.recorder.state = "stopped";
+      processor.disconnect(); source.disconnect(); silent.disconnect();
       button.classList.remove("recording");
       button.querySelector("strong").textContent = "Tap to talk";
       stream.getTracks().forEach(track => track.stop());
+      await context.close();
       $("#micStatus").textContent = "Transcribing…";
       try {
-        const blob = new Blob(state.chunks, {type: state.recorder.mimeType || "audio/webm"});
-        const result = await api("/transcribe", {method: "POST", body: JSON.stringify({audio_base64: await toBase64(blob), filename: "android-voice.webm"})});
+        const blob = encodeWav(state.chunks, context.sampleRate);
+        const result = await api("/transcribe", {method: "POST", body: JSON.stringify({audio_base64: await toBase64(blob), filename: "android-voice.wav"})});
         $("#designPrompt").value = result.text;
         $("#micStatus").textContent = `Heard: “${result.text}”`;
         activatePanel("design");
       } catch (error) {
         $("#micStatus").textContent = error.message;
         toast(error.message);
+      } finally {
+        state.recorder = null;
       }
-    });
-    state.recorder.start();
+    }};
     button.classList.add("recording");
     button.querySelector("strong").textContent = "Tap to stop";
     $("#micStatus").textContent = "Listening…";

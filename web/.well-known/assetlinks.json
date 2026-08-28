@@ -1,14 +1,14 @@
 [
   {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
     "target": {
       "namespace": "android_app",
       "package_name": "tech.daveai.barroscreator",
       "sha256_cert_fingerprints": [
         "FC:16:9B:54:1B:A0:E6:39:96:E3:12:21:D6:EE:83:5F:BA:C3:A3:60:69:86:4E:C2:44:2C:3E:D0:6E:8C:AC:2B"
       ]
-    },
-    "relation": [
-      "delegate_permission/common.handle_all_urls"
-    ]
+    }
   }
 ]
