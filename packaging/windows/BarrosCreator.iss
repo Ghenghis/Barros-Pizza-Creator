@@ -1,4 +1,4 @@
-#define AppVersion "1.6.0"
+#define AppVersion "1.6.1"
 #ifndef StageDir
   #error StageDir must point at the prepared offline payload.
 #endif
@@ -22,16 +22,16 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0.17763
 OutputDir={#OutputDir}
-OutputBaseFilename=Barros_Pizza_Creator_v1.6.0_Setup
+OutputBaseFilename=Barros_Pizza_Creator_v1.6.1_Setup
 Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern dynamic
 UninstallDisplayIcon={app}\Barros_Pizza_Creator_Manager.exe
-VersionInfoVersion=1.6.0.0
+VersionInfoVersion=1.6.1.0
 VersionInfoCompany=Ghenghis
 VersionInfoDescription=Barro's Pizza Creator 1.6 Windows installer
 VersionInfoProductName=Barro's Pizza Creator
-VersionInfoProductVersion=1.6.0.0
+VersionInfoProductVersion=1.6.1.0
 SetupLogging=yes
 
 [Tasks]

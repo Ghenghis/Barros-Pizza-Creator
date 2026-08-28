@@ -46,6 +46,11 @@ namespace Barros.PizzaCreator.AI
             Post<object, MusicImportResponse>("/music/refresh", new object(), callback);
         }
 
+        public void RemoteLatest(Action<AiResponse> callback)
+        {
+            Get<AiResponse>("/remote/latest", callback, 4000);
+        }
+
         public void Health(Action<bool, string, bool, bool> callback)
         {
             ThreadPool.QueueUserWorkItem(delegate
@@ -114,6 +119,27 @@ namespace Barros.PizzaCreator.AI
                 }
                 catch { }
                 dispatcher.Enqueue(delegate { callback(lines); });
+            });
+        }
+
+        private void Get<TResponse>(string endpoint, Action<TResponse> callback, int timeout)
+            where TResponse : new()
+        {
+            ThreadPool.QueueUserWorkItem(delegate
+            {
+                TResponse result = new TResponse();
+                try
+                {
+                    HttpWebRequest request = (HttpWebRequest)WebRequest.Create(baseUrl + endpoint);
+                    request.Method = "GET";
+                    request.Timeout = timeout;
+                    using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
+                    using (StreamReader reader = new StreamReader(response.GetResponseStream()))
+                        result = JsonConvert.DeserializeObject<TResponse>(reader.ReadToEnd());
+                }
+                catch (Exception exception) { ApplyError(result, exception.Message); }
+                TResponse completed = result;
+                dispatcher.Enqueue(delegate { callback(completed); });
             });
         }
 

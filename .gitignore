@@ -12,6 +12,7 @@ artifacts/*
 *.py[cod]
 backend/data/conversation_history.json
 backend/data/inspiration/
+backend/data/remote_bridge.json
 backend/settings.json
 
 # Installed runtime trees must never be committed
@@ -26,7 +27,11 @@ releases/windows/*.exe
 releases/windows/*.zip
 releases/windows/*.json
 releases/windows/*.txt
+releases/mobile/
 work/windows-installer-proof/
+work/mobile-toolchain/
+work/mobile-release-staging/
+work/mobile-ui-bridge-proof.json
 
 # Unity 2021 authoring lab: keep source/configuration, never cache/editor state.
 authoring/BarrosCreatorUiLab2021/[Ll]ibrary/

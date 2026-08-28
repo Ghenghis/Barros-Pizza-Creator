@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#651b20">
+  <meta name="description" content="Design remarkable pizzas with the Barro's AI crew and send them to Pizza Creator on Windows.">
+  <title>Barro's Pizza Creator Mobile</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <img src="/assets/icon.svg" alt="" width="46" height="46">
+        <div>
+          <span class="eyebrow">AI DESIGN CREW</span>
+          <h1>Barro’s Pizza Creator</h1>
+        </div>
+      </div>
+      <div class="top-actions">
+        <span id="statusBadge" class="status-badge offline"><i></i><span>Checking</span></span>
+        <button id="installButton" class="icon-button hidden" type="button" aria-label="Install app" title="Install app">⇩</button>
+        <button id="settingsButton" class="icon-button" type="button" aria-label="Connection settings" title="Connection settings">⚙</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div>
+          <span id="deviceLabel" class="eyebrow">MOBILE STUDIO</span>
+          <h2>Turn an idea into an ingredient masterpiece.</h2>
+          <p>Build with four AI specialists, talk naturally, and send the finished design straight to Pizza Creator on your Windows PC.</p>
+        </div>
+        <div class="hero-stats" aria-label="Current connection summary">
+          <div><strong id="providerValue">—</strong><span>Designer</span></div>
+          <div><strong id="voiceValue">—</strong><span>Voice</span></div>
+          <div><strong id="pairValue">Not paired</strong><span>Windows</span></div>
+        </div>
+      </section>
+
+      <nav class="mode-tabs" aria-label="Creator modes">
+        <button class="mode-tab active" data-panel="design" type="button"><span>✦</span>Design</button>
+        <button class="mode-tab" data-panel="crew" type="button"><span>◉</span>Crew</button>
+        <button class="mode-tab" data-panel="voice" type="button"><span>◖</span>Voice</button>
+        <button class="mode-tab" data-panel="connect" type="button"><span>↔</span>Connect</button>
+      </nav>
+
+      <section id="designPanel" class="panel active">
+        <div class="workspace-grid">
+          <article class="card prompt-card">
+            <div class="card-heading">
+              <div><span class="eyebrow">DESIGN BRIEF</span><h3>What should we create?</h3></div>
+              <button id="surpriseButton" class="text-button" type="button">Surprise me</button>
+            </div>
+            <textarea id="designPrompt" rows="5" maxlength="1600" placeholder="Create a detailed sunset pizza with a cactus silhouette, warm peppers, olives, and a bright cheese horizon…">Create a bold Arizona sunset pizza artwork with a cactus silhouette and balanced ingredient colors.</textarea>
+            <div class="chips" role="group" aria-label="Quick design ideas">
+              <button type="button" data-prompt="Create a friendly Santa Claus pizza portrait with readable facial features.">Santa portrait</button>
+              <button type="button" data-prompt="Create a colorful desert sunset with a cactus silhouette and layered horizon.">Desert sunset</button>
+              <button type="button" data-prompt="Design a high-profit family supreme with balanced flavor and broad appeal.">Family favorite</button>
+              <button type="button" data-prompt="Create an intricate geometric mandala pizza with strong color contrast.">Mandala</button>
+            </div>
+            <div class="controls-row">
+              <label>Shape<select id="shapeSelect"><option>Round</option><option>Square</option><option>Star</option><option>Triangle</option></select></label>
+              <label>Detail<select id="detailSelect"><option>High</option><option>Standard</option><option>Draft</option></select></label>
+              <label>Heat<select id="heatSelect"><option>Medium</option><option>Mild</option><option>Hot</option></select></label>
+            </div>
+            <button id="designButton" class="primary-button" type="button"><span>✦</span> Create pizza design</button>
+          </article>
+
+          <aside class="card progress-card">
+            <span class="eyebrow">LIVE WORKFLOW</span>
+            <h3>From phone to pizza</h3>
+            <ol class="workflow">
+              <li class="done"><i>1</i><div><strong>Describe</strong><span>Set the story and constraints</span></div></li>
+              <li id="workflowDesign"><i>2</i><div><strong>Design</strong><span>The crew builds and validates</span></div></li>
+              <li id="workflowPair"><i>3</i><div><strong>Send</strong><span>Secure Windows handoff</span></div></li>
+              <li><i>4</i><div><strong>Apply</strong><span>Preview on the real 3D dough</span></div></li>
+            </ol>
+          </aside>
+        </div>
+      </section>
+
+      <section id="crewPanel" class="panel">
+        <div class="section-heading"><div><span class="eyebrow">FOUR SPECIALISTS</span><h2>Design Crew roundtable</h2></div><button id="crewButton" class="primary-button compact" type="button">Ask the crew</button></div>
+        <div id="crewGrid" class="crew-grid">
+          <article class="agent-card flavor"><b>FC</b><div><h3>Flavor Chef</h3><p>Protects taste, aroma, and ingredient harmony.</p></div></article>
+          <article class="agent-card cost"><b>CM</b><div><h3>Cost Manager</h3><p>Balances portions, price, and profit.</p></div></article>
+          <article class="agent-card scout"><b>CS</b><div><h3>Customer Scout</h3><p>Tests audience appeal and clarity.</p></div></article>
+          <article class="agent-card creative"><b>CD</b><div><h3>Creative Director</h3><p>Shapes the visual idea and composition.</p></div></article>
+        </div>
+      </section>
+
+      <section id="voicePanel" class="panel">
+        <div class="voice-layout">
+          <article class="card voice-card">
+            <span class="eyebrow">HANDS-FREE CREATOR</span>
+            <h2>Talk to the pizza crew</h2>
+            <p>Press the microphone, describe your idea, then stop when finished. Music playback on Windows yields to agent speech.</p>
+            <button id="micButton" class="mic-button" type="button" aria-label="Start microphone"><span>●</span><strong>Tap to talk</strong></button>
+            <p id="micStatus" class="muted">Microphone is idle.</p>
+          </article>
+          <article class="card voice-options">
+            <div class="card-heading"><div><span class="eyebrow">AGENT VOICE</span><h3>Playback</h3></div><button id="muteButton" class="text-button" type="button">Sound on</button></div>
+            <label>Voice<select id="voiceSelect">
+              <option value="en-US-AvaNeural">Ava · US</option><option value="en-US-AndrewNeural">Andrew · US</option>
+              <option value="en-GB-SoniaNeural">Sonia · UK</option><option value="en-GB-RyanNeural">Ryan · UK</option>
+              <option value="en-AU-NatashaNeural">Natasha · AU</option><option value="en-AU-WilliamNeural">William · AU</option>
+              <option value="en-IE-EmilyNeural">Emily · Ireland</option><option value="en-NZ-MitchellNeural">Mitchell · New Zealand</option>
+            </select></label>
+            <label>Speech rate<input id="rateRange" type="range" min="0.75" max="1.25" step="0.05" value="1"><output id="rateOutput">1.00×</output></label>
+            <button id="speakButton" class="secondary-button" type="button">Play latest answer</button>
+          </article>
+        </div>
+      </section>
+
+      <section id="connectPanel" class="panel">
+        <div class="connect-grid">
+          <article class="card">
+            <span class="eyebrow">SECURE PAIRING</span><h2>Connect your Windows Creator</h2>
+            <p>Start <strong>START_WINDOWS_BRIDGE.bat</strong> beside your Windows release. Enter the six-digit code it displays.</p>
+            <label>Pairing code<input id="pairCode" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="000000"></label>
+            <label>This device<input id="deviceName" maxlength="80" value="Samsung companion"></label>
+            <button id="pairButton" class="primary-button" type="button">Pair with Windows</button>
+            <button id="unpairButton" class="text-button danger hidden" type="button">Forget this pairing</button>
+          </article>
+          <article class="card safety-card">
+            <span class="eyebrow">WHAT PAIRING DOES</span><h3>Private pull connection</h3>
+            <p>The Windows bridge reaches outward to the protected VPS. No game port is opened to the internet.</p>
+            <ul><li>One-time pairing code</li><li>Separate device and bridge secrets</li><li>Validated recipe payloads only</li><li>Preview and approval remain on Windows</li></ul>
+          </article>
+        </div>
+      </section>
+
+      <section id="resultsSection" class="results-section hidden" aria-live="polite">
+        <div class="section-heading"><div><span class="eyebrow">CREW RESULT</span><h2>Your pizza design</h2></div><span id="resultProvider" class="outline-badge"></span></div>
+        <div id="resultMessage" class="message-card"></div>
+        <div id="recipeGrid" class="recipe-grid"></div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="settingsDialog">
+    <form method="dialog">
+      <div class="dialog-heading"><div><span class="eyebrow">CONNECTION</span><h2>Creator settings</h2></div><button class="icon-button" value="cancel" aria-label="Close">×</button></div>
+      <label>API address<input id="apiInput" type="url" placeholder="https://creator.daveai.tech/api"></label>
+      <label>Access token<input id="tokenInput" type="password" autocomplete="current-password" placeholder="Private VPS access token"></label>
+      <p class="muted">The token stays in this browser profile and is never written into a pizza or shared design.</p>
+      <div class="dialog-actions"><button value="cancel" class="secondary-button">Cancel</button><button id="saveSettingsButton" value="default" class="primary-button">Save and test</button></div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status"></div>
+  <script src="/app.js" defer></script>
+</body>
+</html>

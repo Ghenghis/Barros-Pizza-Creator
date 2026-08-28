@@ -1,13 +1,13 @@
-# Barro's Pizza Creator 1.6 Windows release
+# Barro's Pizza Creator 1.6.1 Windows release
 
-Release date: 2026-08-27
+Release date: 2026-08-28
 
 ## Deliverables
 
 | File | Bytes | SHA-256 |
 |---|---:|---|
-| `Barros_Pizza_Creator_v1.6.0_Setup.exe` | 90,517,927 | `fc1af74cc8a0fdd89bd5794b2b310cadf38ac34ce38e1b4a32dc78d1d5699d94` |
-| `Barros_Pizza_Creator_v1.6.0_Portable.zip` | 88,254,229 | `211f5465a7973d16f86664a602eb9ae0dad752479975de3af4fa1d84aca74dbe` |
+| `Barros_Pizza_Creator_v1.6.1_Setup.exe` | 90,521,716 | `2e2cc9b109096b1e24f1e30cb463ef31eb23de4344a1bfd5d1163336ab647802` |
+| `Barros_Pizza_Creator_v1.6.1_Portable.zip` | 88,257,437 | `d9119243e9c06ad5d247e52ff9e346123666a892ed2b5b5878754c1d02589968` |
 
 The Setup EXE is a normal Windows installer with a modern wizard, game-folder detection, exact-build verification, Start-menu shortcuts, optional desktop shortcut, repair support and an Add/Remove Programs uninstaller. The portable ZIP contains the same offline payload plus `Barros_Pizza_Creator_Manager.exe` and `INSTALL_OFFLINE.cmd`.
 
@@ -23,10 +23,10 @@ No hardware reverse engineering is required or performed. The release targets th
 
 ## Included offline runtime
 
-- certified Barro's 1.6 plug-in for the exact game assemblies;
+- certified Barro's 1.6.1 plug-in for the exact game assemblies;
 - BepInEx 5.4.23.5 x64, verified before packaging and installation;
 - private Python 3.12.10 embedded x64 runtime with no system PATH change;
-- backend, contracts, rounded UI skin, five normalized OGG songs and four lyric videos;
+- backend, secure mobile recipe inbox, contracts, rounded UI skin, five normalized OGG songs and four lyric videos;
 - graphical manager for Verify, Install/Repair, Launch, Configure AI + Voice, Diagnostics and Remove Add-on.
 
 ## Retained proof
@@ -44,7 +44,7 @@ uninstall_preserved_original_game=PASS
 commercial_game_packaged=NO
 ```
 
-The graphical manager was opened through the normal Windows UI, detected the Steam Creator directory and reported `PASS — Verified Pizza Creator 0.11.272 / Unity 2017.3.1p4`. The complete automated source suite passes 121/121. The final live header proof also retains both end caps, remains clear of all five tabs and is centered inside the native close-button-safe area.
+The graphical manager was opened through the normal Windows UI, detected the Steam Creator directory and reported `PASS — Verified Pizza Creator 0.11.272 / Unity 2017.3.1p4`. The complete automated source suite passes 127/127. The final live header proof retains both end caps, remains clear of all five tabs and is centered inside the native close-button-safe area. The mobile bridge was also exercised end-to-end through pair, queue, local import and completed acknowledgement.
 
 ## Build and verification
 
@@ -64,4 +64,4 @@ The build refuses to continue if a commercial game executable or data directory 
 
 ## Signing boundary
 
-The community Setup and manager binaries are not Authenticode-signed because no code-signing certificate is available. Windows SmartScreen may therefore display **Unknown publisher**. Verify `Barros_Pizza_Creator_v1.6.0_WINDOWS_SHA256.txt` before running the release. This is an honest publication boundary, not an installation or runtime failure.
+The community Setup and manager binaries are not Authenticode-signed because no code-signing certificate is available. Windows SmartScreen may therefore display **Unknown publisher**. Verify `Barros_Pizza_Creator_v1.6.1_WINDOWS_SHA256.txt` before running the release. This is an honest publication boundary, not an installation or runtime failure.

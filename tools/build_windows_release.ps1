@@ -13,15 +13,15 @@ if ([string]::IsNullOrWhiteSpace($OutputDirectory)) {
     $OutputDirectory = Join-Path $repo "releases\windows"
 }
 $OutputDirectory = [IO.Path]::GetFullPath($OutputDirectory)
-$workRoot = Join-Path ([IO.Path]::GetTempPath()) "barros-pizza-creator-v1.6-windows-build"
-$portableName = "Barros_Pizza_Creator_v1.6.0_Portable"
+$workRoot = Join-Path ([IO.Path]::GetTempPath()) "barros-pizza-creator-v1.6.1-windows-build"
+$portableName = "Barros_Pizza_Creator_v1.6.1_Portable"
 $portableRoot = Join-Path $workRoot $portableName
 
 function Reset-TempDirectory([string]$Path) {
     $full = [IO.Path]::GetFullPath($Path)
     $temp = [IO.Path]::GetFullPath([IO.Path]::GetTempPath())
     if (-not $full.StartsWith($temp, [StringComparison]::OrdinalIgnoreCase) -or
-        [IO.Path]::GetFileName($full) -ne "barros-pizza-creator-v1.6-windows-build") {
+        [IO.Path]::GetFileName($full) -ne "barros-pizza-creator-v1.6.1-windows-build") {
         throw "Refusing to reset unexpected build directory: $full"
     }
     if (Test-Path -LiteralPath $full) { Remove-Item -LiteralPath $full -Recurse -Force }
@@ -42,7 +42,7 @@ function Copy-RepoFile([string]$RelativePath) {
     Copy-Item -LiteralPath $source -Destination $destination -Force
 }
 
-if (-not (Select-String -LiteralPath (Join-Path $repo "VERSION.txt") -SimpleMatch "Version: 1.6.0" -Quiet)) {
+if (-not (Select-String -LiteralPath (Join-Path $repo "VERSION.txt") -SimpleMatch "Version: 1.6.1" -Quiet)) {
     throw "Windows 1.6 packaging must run from the proven v1.6 source tree."
 }
 Assert-Hash $BepInExArchive "82F9878551030F54657792C0740D9D51A09500EEAE1FBA21106B0C441E6732C4" "BepInEx 5.4.23.5 x64"
@@ -121,19 +121,19 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 & $InnoCompiler "/DStageDir=$portableRoot" "/DOutputDir=$OutputDirectory" (Join-Path $repo "packaging\windows\BarrosCreator.iss")
 if ($LASTEXITCODE -ne 0) { throw "Inno Setup compilation failed with exit code $LASTEXITCODE." }
-$setupExe = Join-Path $OutputDirectory "Barros_Pizza_Creator_v1.6.0_Setup.exe"
+$setupExe = Join-Path $OutputDirectory "Barros_Pizza_Creator_v1.6.1_Setup.exe"
 if (-not (Test-Path -LiteralPath $setupExe)) { throw "Expected Setup EXE was not produced." }
 
 $outputs = @($setupExe, $portableZip)
 $checksumLines = foreach ($file in $outputs) {
     "{0}  {1}" -f (Get-FileHash -Algorithm SHA256 -LiteralPath $file).Hash.ToLowerInvariant(), [IO.Path]::GetFileName($file)
 }
-$checksumPath = Join-Path $OutputDirectory "Barros_Pizza_Creator_v1.6.0_WINDOWS_SHA256.txt"
+$checksumPath = Join-Path $OutputDirectory "Barros_Pizza_Creator_v1.6.1_WINDOWS_SHA256.txt"
 [IO.File]::WriteAllLines($checksumPath, $checksumLines, (New-Object Text.UTF8Encoding($false)))
 
 $report = [ordered]@{
     product = "Barro's Pizza Creator"
-    version = "1.6.0"
+    version = "1.6.1"
     built_utc = [DateTime]::UtcNow.ToString("o")
     commercial_game_included = $false
     manager_sha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $manager).Hash.ToLowerInvariant()

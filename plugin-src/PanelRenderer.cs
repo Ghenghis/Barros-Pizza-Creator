@@ -86,6 +86,8 @@ namespace Barros.PizzaCreator.AI
         private bool musicImportBusy;
         private float nextMusicInboxCheck;
         private long lastMusicInboxRevision;
+        private float nextRemoteRecipeCheck;
+        private bool remoteRecipeCheckBusy;
         private Vector2 mediaLibraryScroll;
         private string mediaSearch = "";
         private int mediaFilterMode;
@@ -267,6 +269,31 @@ namespace Barros.PizzaCreator.AI
                     lastMusicInboxRevision = revision;
                     RefreshMusicLibrary();
                 }
+            }
+            if (backendReady && !remoteRecipeCheckBusy && Time.realtimeSinceStartup >= nextRemoteRecipeCheck)
+            {
+                nextRemoteRecipeCheck = Time.realtimeSinceStartup + 3f;
+                remoteRecipeCheckBusy = true;
+                backend.RemoteLatest(delegate(AiResponse response)
+                {
+                    remoteRecipeCheckBusy = false;
+                    if (response == null || !response.Ok || response.Recipes == null || response.Recipes.Count == 0) return;
+                    recipes.Clear();
+                    for (int i = 0; i < response.Recipes.Count; i++)
+                    {
+                        try { recipes.Add(game.Prepare(response.Recipes[i])); }
+                        catch (Exception exception) { status = "Remote recipe validation failed: " + exception.Message; }
+                    }
+                    if (recipes.Count == 0) return;
+                    agents.Clear();
+                    if (response.Agents != null) agents.AddRange(response.Agents);
+                    consensus = response.Consensus;
+                    selectedRecipe = 0;
+                    mode = DesignerMode.Chat;
+                    status = "Remote design received. Preview it, apply it, then save when you approve.";
+                    conversation.Add(new ConversationLine("Android companion", "Sent “" + recipes[0].Name + "” to this Creator."));
+                    if (tabBar != null && tab != null) tabBar.ActivateTab(tab);
+                });
             }
             if (Input.GetKeyDown(KeyCode.F8) && evidence != null) evidence.Capture(ModeFileName());
         }

@@ -1,0 +1,21 @@
+{$BARROS_SITE_HOST:localhost} {
+  encode zstd gzip
+
+  @api path /api/*
+  handle @api {
+    uri strip_prefix /api
+    reverse_proxy api:48173
+  }
+
+  handle {
+    root * /srv
+    try_files {path} /index.html
+    header {
+      X-Content-Type-Options nosniff
+      Referrer-Policy strict-origin-when-cross-origin
+      Permissions-Policy "camera=(), geolocation=(), microphone=(self)"
+      Content-Security-Policy "default-src 'self'; connect-src 'self' https: http://127.0.0.1:48173; img-src 'self' data:; media-src 'self' data: blob:; style-src 'self'; script-src 'self'; worker-src 'self'; manifest-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
+    }
+    file_server
+  }
+}

@@ -7,7 +7,7 @@ param(
 $ErrorActionPreference = "Stop"
 $repo = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 if ([string]::IsNullOrWhiteSpace($ReleaseDirectory)) { $ReleaseDirectory = Join-Path $repo "releases\windows" }
-$setup = Join-Path $ReleaseDirectory "Barros_Pizza_Creator_v1.6.0_Setup.exe"
+$setup = Join-Path $ReleaseDirectory "Barros_Pizza_Creator_v1.6.1_Setup.exe"
 if (-not (Test-Path -LiteralPath $setup)) { throw "Build the Windows release first: $setup" }
 $sourceGame = (Resolve-Path $GameRoot).Path
 $testRoot = Join-Path $repo "work\windows-installer-proof"

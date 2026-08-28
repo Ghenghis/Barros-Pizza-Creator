@@ -1,11 +1,11 @@
 {
   "schema_version": "1.0",
   "artifact": "Barros.PizzaCreator.AI.dll",
-  "artifact_bytes": 157184,
-  "artifact_sha256": "c052adc8ee12a5c3a5e1c36d67b0366d22e917ce744c1664c43684b42e7d54bb",
-  "built_utc": "2026-08-28T00:22:18Z",
-  "source_parent_commit": "2070000d89646f86419bf3ca4a5a5ee49ae1deee",
-  "source_tree_sha256": "25a71c13a8d0937d412eeb7817f4627da709b1f8e149fba804235aa6ae2c8eac",
+  "artifact_bytes": 159232,
+  "artifact_sha256": "ac69107a7c2f9f8bbd46e2eab224cd2e5ae23fabd02438bd56863e95a0fe71f6",
+  "built_utc": "2026-08-28T10:25:49Z",
+  "source_parent_commit": "bac4c5f55dc65b6dd0dc0310d8666329e80bc77a",
+  "source_tree_sha256": "0ec16da4487ee70bd48fa322ae482c100bf1ce297d18c61a3cfd4c8605b8bb35",
   "compiler": "Microsoft Visual C# Compiler 4.8.9032.0",
   "compiler_host": ".NET Framework on Windows AMD64",
   "output_kind": "PE32 AnyCPU .NET/Mono library",
@@ -52,16 +52,16 @@
     "UnityEngine.UnityWebRequestAudioModule.dll": "67083951555ca6585dd70de09ec931ea1a6e8349766aa43fb7cc4c83334d4f24"
   },
   "source_files_sha256": {
-    "AssemblyInfo.cs": "3a817d064faa76a907a424ca77b157d967eefe7cd1dfcfaa57c8aff8c6317f48",
-    "BackendClient.cs": "9b403b8837ccf592b390540f3c1fa6cdeff5af8d59fdbd0dfc649b421191db25",
-    "BarrosAiPlugin.cs": "5b369849747ccf66de984052912a9c7fd28caa94114066346a291dfccec6d1a5",
+    "AssemblyInfo.cs": "4dc5fc25b2afc04d3cce2db023df553f9b3152274d78dc681cea209b24f3cb7a",
+    "BackendClient.cs": "3c4db88aee9e335f82a66aa114e8f7eef44eff06179050c053f999ff131a28d0",
+    "BarrosAiPlugin.cs": "bce1c7032971b011c3cad6fe071bf2aae046055acbae4c0f6c8f1e3e19ee9665",
     "EvidenceRecorder.cs": "64420afbeda1cd3b0d23e375adff5de2e64f48e7fe81ddb343a231c30ce13abf",
     "FileDialog.cs": "f6fe47361f5da0e1ffbce60449416f897564e92281ed90ed6ed9d48f43bf3f34",
     "GameBridge.cs": "228ddee918e51370472d7983262bb6aa9311c1729ed9f9142f8c3048a1195fa9",
     "MainThreadDispatcher.cs": "2789e3d9ee8a8d7526052505ea3f6f21f7be22a13e06a5646e7ed5740974b03f",
     "MediaDeck.cs": "e7814cb6146fdfdef86694ab35b89ff51298f30e8791fa049441cacfdb3557f1",
     "Models.cs": "89f9ab64b0f5626968190ca9fa62b76c0f4e0a73a319dd95e9adadfe04c128d0",
-    "PanelRenderer.cs": "3d59da8cfde38564dff440e428abd06310cf670e4a3329e44ab4b44d333402f5",
+    "PanelRenderer.cs": "789a080d48d394f9d3b46d74e8332ee289a926e8dc28112e781374ffe66fbcd1",
     "RuntimeTabInstaller.cs": "32d63906ca41d9efe12f9d77ec0b73444863253042caed7f77bcec7a83d58cb8",
     "WavDecoder.cs": "c81f38bec9ac2407826e20cbf6d59c496e827dbec5097fdb5be16cacbe3d03b5",
     "WavEncoder.cs": "7de6cfa1287a00979f512e4f16cb13863315e0aa7dc3fb47d78a862c1468356c"
@@ -70,7 +70,7 @@
     "compile_exit_code": 0,
     "compiler_errors": 0,
     "absolute_build_path_embedded": false,
-    "backend_and_contract_tests": "121/121 automated tests passed on 2026-08-27"
+    "backend_and_contract_tests": "127/127 source tests pass; signed Android build and responsive browser bridge checks pass"
   },
-  "boundary": "Creator 0.11.272 / Unity 2017.3.1p4 only; Unity 2021 authoring exports neutral PNG and JSON assets."
+  "boundary": "Compilation, local browser bridge, Android package and portable tests only; physical Samsung install and live VPS deployment are external checks."
 }

@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Barro\'s Pizza Creator</string>
+    <string name="launch_url">https://creator.daveai.tech/</string>
+    <string name="asset_statements">[{"relation":["delegate_permission/common.handle_all_urls"],"target":{"namespace":"web","site":"https://creator.daveai.tech"}}]</string>
+</resources>

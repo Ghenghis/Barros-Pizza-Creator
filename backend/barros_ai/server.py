@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import base64
+import hmac
 import json
 import os
 import threading
 import time
+from collections import defaultdict, deque
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -18,6 +20,7 @@ from .music import MusicLibrary
 from .orchestrator import PizzaOrchestrator
 from .proof_status import ProofStatusError, latest_proof_status
 from .providers import ProviderClient, ProviderError, ProviderSettings
+from .remote_bridge import LocalRemoteInbox, RemoteBridgeStore
 from .tts import AzureSpeechService
 
 
@@ -37,6 +40,25 @@ class App:
         assets_root = root.parent / "assets" if (root.parent / "assets").is_dir() else root / "assets"
         self.music = MusicLibrary(assets_root / "music")
         self.history = HistoryStore(root / "data" / "conversation_history.json")
+        self.remote_bridge = RemoteBridgeStore(root / "data" / "remote_bridge.json")
+        self.remote_inbox = LocalRemoteInbox()
+        self.api_token = os.getenv("BARROS_API_TOKEN", "").strip()
+        configured_origins = os.getenv("BARROS_ALLOWED_ORIGINS", "").strip()
+        self.allowed_origins = {
+            item.strip().rstrip("/")
+            for item in configured_origins.split(",")
+            if item.strip()
+        }
+        if not self.allowed_origins:
+            self.allowed_origins = {
+                "http://127.0.0.1",
+                "http://localhost",
+                "http://127.0.0.1:48173",
+                "http://localhost:48173",
+            }
+        self.rate_limit = max(10, min(int(os.getenv("BARROS_RATE_LIMIT_PER_MINUTE", "120")), 2000))
+        self.rate_windows: dict[str, deque[float]] = defaultdict(deque)
+        self.rate_lock = threading.Lock()
         self.started = time.time()
         self.server: ThreadingHTTPServer | None = None
 
@@ -134,7 +156,7 @@ class App:
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "BarrosPizzaAI/1.6"
+    server_version = "BarrosPizzaAI/1.6.1"
 
     @property
     def app(self) -> App:
@@ -148,9 +170,57 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(raw)))
-        self.send_header("Access-Control-Allow-Origin", "*")
+        origin = self._allowed_origin()
+        if origin:
+            self.send_header("Access-Control-Allow-Origin", origin)
+            self.send_header("Vary", "Origin")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Referrer-Policy", "no-referrer")
         self.end_headers()
         self.wfile.write(raw)
+
+    def _allowed_origin(self) -> str:
+        origin = self.headers.get("Origin", "").rstrip("/")
+        if not origin:
+            return ""
+        if origin in self.app.allowed_origins:
+            return origin
+        return ""
+
+    def _authorized(self) -> bool:
+        if not self.app.api_token:
+            return True
+        supplied = self.headers.get("Authorization", "")
+        if supplied.lower().startswith("bearer "):
+            supplied = supplied[7:].strip()
+        else:
+            supplied = self.headers.get("X-Barros-Token", "").strip()
+        return bool(supplied) and hmac.compare_digest(supplied, self.app.api_token)
+
+    def _rate_allowed(self) -> bool:
+        address = self.client_address[0] if self.client_address else "unknown"
+        now = time.monotonic()
+        with self.app.rate_lock:
+            window = self.app.rate_windows[address]
+            while window and now - window[0] >= 60:
+                window.popleft()
+            if len(window) >= self.app.rate_limit:
+                return False
+            window.append(now)
+        return True
+
+    def _guard(self, public: bool = False) -> bool:
+        origin = self.headers.get("Origin", "").rstrip("/")
+        if origin and not self._allowed_origin():
+            self._json(HTTPStatus.FORBIDDEN, {"ok": False, "error": "This web origin is not allowed."})
+            return False
+        if not self._rate_allowed():
+            self._json(HTTPStatus.TOO_MANY_REQUESTS, {"ok": False, "error": "Too many requests. Try again shortly."})
+            return False
+        if not public and not self._authorized():
+            self._json(HTTPStatus.UNAUTHORIZED, {"ok": False, "error": "A valid Barro's access token is required."})
+            return False
+        return True
 
     def _body(self) -> dict[str, Any]:
         length = int(self.headers.get("Content-Length", "0") or 0)
@@ -174,14 +244,22 @@ class Handler(BaseHTTPRequestHandler):
                 self.wfile.write(chunk)
 
     def do_OPTIONS(self) -> None:  # noqa: N802
+        if self.headers.get("Origin") and not self._allowed_origin():
+            self._json(HTTPStatus.FORBIDDEN, {"ok": False, "error": "This web origin is not allowed."})
+            return
         self.send_response(HTTPStatus.NO_CONTENT)
-        self.send_header("Access-Control-Allow-Origin", "*")
+        origin = self._allowed_origin()
+        if origin:
+            self.send_header("Access-Control-Allow-Origin", origin)
+            self.send_header("Vary", "Origin")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Barros-Token")
         self.end_headers()
 
     def do_GET(self) -> None:  # noqa: N802
         path = urlparse(self.path).path
+        if not self._guard(public=path == "/health"):
+            return
         if path.startswith("/music/playback/"):
             track = self.app.music.resolve_track(unquote(path[len("/music/playback/"):]))
             if track is None:
@@ -201,7 +279,8 @@ class Handler(BaseHTTPRequestHandler):
                 {
                     "ok": True,
                     "name": "Barro's AI Pizza Designer",
-                    "version": "1.6.0",
+                    "version": "1.6.1",
+                    "mobile_api": "1.0.0",
                     "provider": self.app.settings.provider,
                     "online": self.app.provider.online,
                     "image_parser": "png+jpeg+webp-v1",
@@ -220,6 +299,8 @@ class Handler(BaseHTTPRequestHandler):
                         "pizza_art": True,
                         "stt_configured": stt_configured,
                         "tts_configured": self.app.tts.configured,
+                        "remote_pairing": True,
+                        "windows_bridge": True,
                     },
                     "inspiration": inspiration,
                     "stt": stt,
@@ -228,6 +309,14 @@ class Handler(BaseHTTPRequestHandler):
                     "uptime_seconds": round(time.time() - self.app.started, 1),
                 },
             )
+            return
+        if path == "/catalog":
+            catalog_path = self.app.root / "catalog.bootstrap.json"
+            catalog = json.loads(catalog_path.read_text(encoding="utf-8-sig"))
+            self._json(HTTPStatus.OK, {"ok": True, "catalog": catalog})
+            return
+        if path == "/remote/latest":
+            self._json(HTTPStatus.OK, self.app.remote_inbox.pop())
             return
         if path == "/inspiration":
             self._json(HTTPStatus.OK, {"ok": True, **self.app.inspiration.status()})
@@ -251,8 +340,48 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:  # noqa: N802
         path = urlparse(self.path).path
+        if not self._guard():
+            return
         try:
             payload = self._body()
+            if path == "/pairing/bridge/register":
+                self._json(HTTPStatus.OK, self.app.remote_bridge.register_bridge(payload.get("name")))
+                return
+            if path == "/pairing/connect":
+                self._json(
+                    HTTPStatus.OK,
+                    self.app.remote_bridge.connect(payload.get("pair_code"), payload.get("device_name")),
+                )
+                return
+            if path == "/bridge/jobs":
+                self._json(
+                    HTTPStatus.OK,
+                    self.app.remote_bridge.enqueue(
+                        payload.get("pair_token"), payload.get("payload"), payload.get("action")
+                    ),
+                )
+                return
+            if path == "/bridge/jobs/next":
+                self._json(
+                    HTTPStatus.OK,
+                    self.app.remote_bridge.next_job(payload.get("bridge_id"), payload.get("bridge_secret")),
+                )
+                return
+            if path == "/bridge/jobs/ack":
+                self._json(
+                    HTTPStatus.OK,
+                    self.app.remote_bridge.acknowledge(
+                        payload.get("bridge_id"),
+                        payload.get("bridge_secret"),
+                        payload.get("job_id"),
+                        payload.get("state"),
+                        payload.get("detail"),
+                    ),
+                )
+                return
+            if path == "/remote/import":
+                self._json(HTTPStatus.OK, self.app.remote_inbox.push(payload))
+                return
             if path == "/inspect-attachment":
                 attachment = normalize_attachment(payload)
                 public = {
@@ -327,6 +456,8 @@ class Handler(BaseHTTPRequestHandler):
 
 def run(root: Path, settings_path: Path, host: str = "127.0.0.1", port: int = 48173) -> None:
     app = App(root, settings_path)
+    if host not in {"127.0.0.1", "localhost", "::1"} and not app.api_token:
+        raise RuntimeError("BARROS_API_TOKEN is required when listening beyond the local computer.")
     server = ThreadingHTTPServer((host, port), Handler)
     server.app = app  # type: ignore[attr-defined]
     app.server = server

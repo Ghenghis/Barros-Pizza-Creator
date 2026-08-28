@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.6.1 / Mobile 1.0.0 — 2026-08-28
+
+- Added an installable responsive PWA with dedicated Samsung phone and tablet layouts for Design, Crew, Voice and Windows pairing.
+- Added signed Android APK and AAB projects using a Trusted Web Activity and verified Digital Asset Links contract for `creator.daveai.tech`.
+- Added microphone capture/transcription, selectable Azure English voices, speech rate and mute controls to the companion UI.
+- Added an outbound-only Windows bridge with six-digit pairing, per-device and per-bridge secrets, durable remote jobs and delivery acknowledgement.
+- Wired remote recipes into the existing local sidecar and in-game Barro's tab so a mobile design enters the same catalog validation and Preview/Apply/Save workflow.
+- Added a Hostinger-ready Docker Compose package with separate web/API containers, Caddy HTTPS, health checks, restart policies, persistent data/music volumes and a private internal network.
+- Hardened the Python service with bearer-token protection for private endpoints, allowlisted CORS, request rate limits, secure headers and a refusal to bind publicly without an API token.
+- Added mobile, bridge, security, manifest and release-contract tests plus phone/tablet browser verification without horizontal clipping.
+- Preserved the commercial game boundary: Android is a companion and never redistributes or pretends to port the original Unity game.
+
 ## 1.6.0 — 2026-08-27
 
 - Added a real Windows Setup EXE with game auto-detection, exact-build verification, Start-menu/optional desktop shortcuts, repair and Add/Remove Programs uninstall support.

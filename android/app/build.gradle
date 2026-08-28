@@ -1,0 +1,53 @@
+plugins { id "com.android.application" }
+
+def signingFile = System.getenv("BARROS_ANDROID_KEYSTORE")
+def signingPassword = System.getenv("BARROS_ANDROID_KEYSTORE_PASSWORD")
+def signingAlias = System.getenv("BARROS_ANDROID_KEY_ALIAS") ?: "barros-mobile"
+
+android {
+    namespace "tech.daveai.barroscreator"
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "tech.daveai.barroscreator"
+        minSdk 26
+        targetSdk 35
+        versionCode 10000
+        versionName "1.0.0"
+    }
+
+    if (signingFile && signingPassword) {
+        signingConfigs {
+            release {
+                storeFile file(signingFile)
+                storePassword signingPassword
+                keyAlias signingAlias
+                keyPassword signingPassword
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+            if (signingFile && signingPassword) signingConfig signingConfigs.release
+        }
+        debug { applicationIdSuffix ".debug" }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation "com.google.androidbrowserhelper:androidbrowserhelper:2.6.2"
+    implementation "androidx.browser:browser:1.8.0"
+}
+
+configurations.configureEach {
+    resolutionStrategy.force "androidx.browser:browser:1.8.0"
+}

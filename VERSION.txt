@@ -1,5 +1,6 @@
 Pizza Connection 3 / Barro's Pizza — Barro's Pizza Creator
-Version: 1.6.0
+Version: 1.6.1
+Mobile version: 1.0.0
 Runtime profile: creator-0.11.272
 Target: Pizza Connection 3 - Pizza Creator 0.11.272 / Windows x64 / Unity 2017.3.1p4
 Default game root: S:\Unity_Games\PC3 - Pizza Creator
@@ -11,3 +12,6 @@ Agent voices: optional 24-voice English Azure roster, sequential roundtable, mut
 Music library: recursive albums, named playlists, search/filter/sort, automatic OGG inbox
 Microphone: Windows device picker, refresh, live meter, gain and mute
 Ecosystem: Workbench 2.3 RC + Runtime Proof Studio 1.2 RC
+Mobile companion: installable PWA + Android APK/AAB for phone and tablet
+Remote bridge: outbound-only Windows polling with six-digit pairing and in-game recipe inbox
+VPS package: Docker Compose + Caddy HTTPS + protected API for creator.daveai.tech

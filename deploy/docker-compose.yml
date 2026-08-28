@@ -1,0 +1,46 @@
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.api
+    restart: unless-stopped
+    environment:
+      BARROS_API_TOKEN: ${BARROS_API_TOKEN:?Set BARROS_API_TOKEN in the private .env file}
+      BARROS_ALLOWED_ORIGINS: https://${BARROS_SITE_HOST}
+      BARROS_RATE_LIMIT_PER_MINUTE: ${BARROS_RATE_LIMIT_PER_MINUTE:-120}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      MINIMAX_API_KEY: ${MINIMAX_API_KEY:-}
+      AZURE_SPEECH_KEY: ${AZURE_SPEECH_KEY:-}
+    volumes:
+      - barros-data:/app/backend/data
+      - barros-music:/app/assets/music
+    networks: [barros-internal]
+    security_opt: [no-new-privileges:true]
+
+  web:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.web
+    restart: unless-stopped
+    environment:
+      BARROS_SITE_HOST: ${BARROS_SITE_HOST:-creator.daveai.tech}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+    networks: [barros-internal]
+    security_opt: [no-new-privileges:true]
+
+networks:
+  barros-internal:
+
+volumes:
+  barros-data:
+  barros-music:
+  caddy-data:
+  caddy-config:

@@ -13,8 +13,8 @@ using Microsoft.Win32;
 [assembly: System.Reflection.AssemblyDescription("Windows installer, repair, launch and diagnostics manager for Barro's Pizza Creator 1.6")]
 [assembly: System.Reflection.AssemblyCompany("Ghenghis")]
 [assembly: System.Reflection.AssemblyProduct("Barro's Pizza Creator")]
-[assembly: System.Reflection.AssemblyVersion("1.6.0.0")]
-[assembly: System.Reflection.AssemblyFileVersion("1.6.0.0")]
+[assembly: System.Reflection.AssemblyVersion("1.6.1.0")]
+[assembly: System.Reflection.AssemblyFileVersion("1.6.1.0")]
 
 namespace BarrosPizzaCreator.Windows
 {
