@@ -491,14 +491,15 @@ class PizzaOrchestrator:
         )
         # Interactive screens must never sit in "Working" for the provider's
         # full retry window. One bounded attempt preserves online quality when
-        # the gateway is healthy; compose() then falls back to the deterministic
-        # local designer if it is slow or unavailable.
+        # the gateway is healthy; MiniMax needs enough time to read the exact
+        # 87-item catalog and return strict recipe JSON. compose() still falls
+        # back to the deterministic local designer if it is slow or unavailable.
         parsed = extract_json(
             self.provider.complete_multimodal(
                 system,
                 user,
                 attachments,
-                timeout_seconds=20,
+                timeout_seconds=45,
                 retries=0,
             )
         )
