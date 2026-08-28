@@ -1,4 +1,4 @@
-# Barro's Creator Mobile 1.0 and Windows 1.6.1
+# Barro's Creator Mobile 1.0.1 and Windows 1.6.1
 
 ## Release boundary
 
@@ -8,8 +8,10 @@ Supported first-party test layouts:
 
 | Device | Layout | Android package |
 |---|---|---|
-| Samsung Galaxy Tab S9+ 12 GB | tablet/landscape and tablet/portrait | `Barros_Pizza_Creator_Mobile_v1.0.0.apk` |
-| Samsung Galaxy S21 Ultra 5G 12 GB | phone portrait and phone landscape | `Barros_Pizza_Creator_Mobile_v1.0.0.apk` |
+| Samsung Galaxy Tab S9+ 12 GB | tablet/landscape and tablet/portrait | `Barros_Pizza_Creator_Mobile_v1.0.1.apk` |
+| Samsung Galaxy S21 Ultra 5G 12 GB | phone portrait and phone landscape | `Barros_Pizza_Creator_Mobile_v1.0.1.apk` |
+
+Mobile 1.0.1 uses an embedded HTTPS WebView instead of depending on Android's browser-provider selection. It delegates microphone access only to `https://creator.daveai.tech`, supports Android file selection, keeps the app alive through rotation, and shows a browser recovery action if the WebView renderer is unavailable.
 
 ## Architecture
 
@@ -36,7 +38,7 @@ The game, game port and local AI helper remain unreachable from the public inter
 ## Hostinger deployment
 
 1. Create an `A` record for `creator.daveai.tech` pointing to the Hostinger VPS.
-2. Extract `Barros_Creator_Hostinger_Server_v1.0.0.zip` on the VPS.
+2. Extract `Barros_Creator_Hostinger_Server_v1.0.1.zip` on the VPS.
 3. Copy `deploy/.env.example` to `deploy/.env`.
 4. Replace `BARROS_API_TOKEN` with a long random value. Add provider and Azure Speech keys only to this private file.
 5. Run `docker compose up -d --build` from `deploy`, or import `deploy/docker-compose.yml` through Hostinger Docker Manager.

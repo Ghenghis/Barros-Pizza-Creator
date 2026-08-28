@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [string]$Version = "1.0.0",
+    [string]$Version = "1.0.1",
     [string]$SiteUrl = "https://creator.daveai.tech/",
     [string]$PrivateRoot = "C:\private\barros-mobile",
     [switch]$SkipToolchainDownload
@@ -85,6 +85,7 @@ if (-not (Test-Path -LiteralPath $signingPath)) {
 $env:BARROS_ANDROID_KEYSTORE = $signingPath
 $env:BARROS_ANDROID_KEYSTORE_PASSWORD = $signing.password
 $env:BARROS_ANDROID_KEY_ALIAS = $signing.alias
+$env:BARROS_MOBILE_VERSION = $Version
 $sdkEscaped = $sdkRoot.Replace("\", "\\")
 "sdk.dir=$sdkEscaped" | Set-Content -LiteralPath (Join-Path $androidRoot "local.properties") -Encoding ascii
 

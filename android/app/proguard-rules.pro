@@ -1,2 +1,1 @@
 -keep class tech.daveai.barroscreator.** { *; }
--keep class com.google.androidbrowserhelper.** { *; }

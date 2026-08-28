@@ -38,6 +38,16 @@ class MobileCompanionTests(unittest.TestCase):
         asset_links = json.loads((ROOT / "web" / ".well-known" / "assetlinks.json").read_text(encoding="utf-8"))
         self.assertEqual("tech.daveai.barroscreator", asset_links[0]["target"]["package_name"])
 
+    def test_android_shell_survives_browser_provider_and_webview_failures(self) -> None:
+        activity = (ROOT / "android" / "app" / "src" / "main" / "java" / "tech" / "daveai" / "barroscreator" / "MainActivity.java").read_text(encoding="utf-8")
+        gradle = (ROOT / "android" / "app" / "build.gradle").read_text(encoding="utf-8")
+        self.assertIn("extends Activity", activity)
+        self.assertIn("new WebView(this)", activity)
+        self.assertIn("showRecoveryScreen()", activity)
+        self.assertIn("RESOURCE_AUDIO_CAPTURE", activity)
+        self.assertIn("onShowFileChooser", activity)
+        self.assertNotIn("androidbrowserhelper", gradle)
+
     def test_remote_bridge_pair_send_poll_ack(self) -> None:
         with tempfile.TemporaryDirectory() as folder:
             store = RemoteBridgeStore(Path(folder) / "bridge.json")

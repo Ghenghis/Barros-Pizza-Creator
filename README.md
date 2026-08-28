@@ -1,6 +1,6 @@
-# Pizza Connection 3 / Barro's Pizza — Barro's Pizza Creator 1.6.1 + Mobile 1.0
+# Pizza Connection 3 / Barro's Pizza — Barro's Pizza Creator 1.6.1 + Mobile 1.0.1
 
-Version **1.6.1** is the in-game AI design layer for the exact standalone Windows x64 **Pizza Connection 3 - Pizza Creator 0.11.272** binary profile. Mobile **1.0.0** adds an installable phone/tablet companion, signed Android package, Hostinger-ready service and an outbound-only Windows pairing bridge.
+Version **1.6.1** is the in-game AI design layer for the exact standalone Windows x64 **Pizza Connection 3 - Pizza Creator 0.11.272** binary profile. Mobile **1.0.1** adds an installable phone/tablet companion, signed Android package, Hostinger-ready service and an outbound-only Windows pairing bridge. The 1.0.1 Android shell replaces the browser-provider trampoline that could close on Samsung devices with a same-site embedded view, microphone/file-picker delegation and a visible Chrome recovery action.
 
 The ecosystem-facing brand is **Pizza Connection 3 / Barro's Pizza**. The technical Creator target remains the original standalone executable/data/assembly identity because changing those names would invalidate reverse-engineering and proof contracts.
 
@@ -83,14 +83,14 @@ Run `CONFIGURE_AI_PROVIDER.bat` for model/voice provider setup. Offline recipe d
 
 ## Android, mobile web and Hostinger VPS
 
-Mobile 1.0 is a companion to the Windows game, not a redistribution or Android conversion of the commercial Unity executable. It works without root on the Samsung Tab S9+ and S21 Ultra and provides phone/tablet layouts, installable PWA behavior, AI design and Crew requests, microphone transcription, Azure voice playback, secure six-digit Windows pairing and one-tap recipe delivery.
+Mobile 1.0.1 is a companion to the Windows game, not a redistribution or Android conversion of the commercial Unity executable. It works without root on the Samsung Tab S9+ and S21 Ultra and provides phone/tablet layouts, installable PWA behavior, AI design and Crew requests, microphone transcription, Azure voice playback, secure six-digit Windows pairing and one-tap recipe delivery.
 
 Release files:
 
-- `Barros_Pizza_Creator_Mobile_v1.0.0.apk` — signed personal Android installer for the two Samsung devices;
-- `Barros_Pizza_Creator_Mobile_v1.0.0.aab` — Play/managed-distribution bundle using the same signing identity;
-- `Barros_Creator_Hostinger_Server_v1.0.0.zip` — web, protected API, Docker Compose, Caddy HTTPS and persistent-volume package for `creator.daveai.tech`;
-- `Barros_Creator_Windows_Bridge_v1.0.0.zip` — outbound-only pairing bridge for the Windows Creator.
+- `Barros_Pizza_Creator_Mobile_v1.0.1.apk` — signed personal Android installer for the two Samsung devices;
+- `Barros_Pizza_Creator_Mobile_v1.0.1.aab` — Play/managed-distribution bundle using the same signing identity;
+- `Barros_Creator_Hostinger_Server_v1.0.1.zip` — web, protected API, Docker Compose, Caddy HTTPS and persistent-volume package for `creator.daveai.tech`;
+- `Barros_Creator_Windows_Bridge_v1.0.1.zip` — outbound-only pairing bridge for the Windows Creator.
 
 The hosted API refuses a non-local listener without `BARROS_API_TOKEN`, limits requests, restricts browser origins and keeps provider keys in the VPS environment. The Windows bridge polls outward, so no game or home-router port is exposed. A remote design enters the existing game-valid recipe pipeline and appears in the Barro's tab for human Preview, Apply and Save approval.
 
