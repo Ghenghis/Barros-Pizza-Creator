@@ -67,6 +67,14 @@ class MobileCompanionTests(unittest.TestCase):
         self.assertNotIn("sk-", compose)
         self.assertNotIn("Access-Control-Allow-Origin\", \"*", (ROOT / "backend" / "barros_ai" / "server.py").read_text(encoding="utf-8"))
 
+    def test_mobile_release_builder_excludes_runtime_state(self) -> None:
+        builder = (ROOT / "scripts" / "build_mobile_release.ps1").read_text(encoding="utf-8")
+        self.assertIn('backend\\data', builder)
+        self.assertIn('__pycache__', builder)
+        self.assertIn('conversation_history.json', builder)
+        self.assertIn('remote_bridge.json', builder)
+        self.assertIn('Packaging stopped', builder)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -101,7 +101,14 @@ Copy-Item -LiteralPath $aabSource -Destination $aabTarget -Force
 
 $certificate = (& keytool -list -v -keystore $signingPath -storepass $signing.password -alias $signing.alias | Select-String "SHA256:").ToString().Split("SHA256:", 2)[1].Trim()
 $assetLinksPath = Join-Path $repoRoot "web\.well-known\assetlinks.json"
-$assetLinks = @(@{ relation = @("delegate_permission/common.handle_all_urls"); target = @{ namespace = "android_app"; package_name = "tech.daveai.barroscreator"; sha256_cert_fingerprints = @($certificate) } })
+$assetLinks = @([ordered]@{
+    relation = @("delegate_permission/common.handle_all_urls")
+    target = [ordered]@{
+        namespace = "android_app"
+        package_name = "tech.daveai.barroscreator"
+        sha256_cert_fingerprints = @($certificate)
+    }
+})
 ConvertTo-Json -InputObject $assetLinks -Depth 6 | Set-Content -LiteralPath $assetLinksPath -Encoding utf8NoBOM
 
 $staging = Join-Path $repoRoot "work\mobile-release-staging"
@@ -112,6 +119,27 @@ foreach ($name in @("backend", "contracts", "deploy", "web", "bridge")) {
 }
 Copy-Item -LiteralPath (Join-Path $repoRoot "README.md") -Destination $staging
 Copy-Item -LiteralPath (Join-Path $repoRoot "docs\MOBILE_VPS_RELEASE.md") -Destination $staging -ErrorAction SilentlyContinue
+
+# Runtime state can contain conversation text, pairing secrets and queued jobs.
+# It belongs only in the deployment volume and must never enter a public ZIP.
+$runtimeData = Join-Path $staging "backend\data"
+if (Test-Path -LiteralPath $runtimeData) {
+    Remove-Item -LiteralPath $runtimeData -Recurse -Force
+}
+Get-ChildItem -LiteralPath $staging -Directory -Filter "__pycache__" -Recurse | `
+    Sort-Object { $_.FullName.Length } -Descending | `
+    Remove-Item -Recurse -Force
+Get-ChildItem -LiteralPath $staging -File -Recurse | `
+    Where-Object { $_.Extension -in @(".pyc", ".pyo") } | `
+    Remove-Item -Force
+
+$forbiddenRuntimeFiles = @(Get-ChildItem -LiteralPath $staging -File -Recurse | Where-Object {
+    $_.Name -in @("conversation_history.json", "remote_bridge.json") -or
+    $_.FullName -match "[\\/]backend[\\/]data[\\/]"
+})
+if ($forbiddenRuntimeFiles.Count -gt 0) {
+    throw "Release staging contains forbidden runtime data. Packaging stopped."
+}
 
 $serverZip = Join-Path $outputRoot "Barros_Creator_Hostinger_Server_v$Version.zip"
 $bridgeZip = Join-Path $outputRoot "Barros_Creator_Windows_Bridge_v$Version.zip"
