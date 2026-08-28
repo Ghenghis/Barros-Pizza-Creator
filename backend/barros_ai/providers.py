@@ -288,6 +288,10 @@ class ProviderClient:
         payload = {
             "model": self.settings.model,
             "temperature": temperature,
+            # Reasoning-capable MiniMax/OpenAI-compatible models may otherwise
+            # spend the whole interactive window generating an unbounded answer.
+            # One repaired recipe fits comfortably inside this ceiling.
+            "max_tokens": 1200,
             "messages": [
                 {"role": "system", "content": system},
                 {"role": "user", "content": user_content},

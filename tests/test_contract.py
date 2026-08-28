@@ -180,9 +180,11 @@ class ProofContractTests(unittest.TestCase):
 
     def test_interactive_provider_requests_are_bounded_and_have_local_fallback(self):
         orchestrator = (ROOT / "backend" / "barros_ai" / "orchestrator.py").read_text(encoding="utf-8")
+        providers = (ROOT / "backend" / "barros_ai" / "providers.py").read_text(encoding="utf-8")
         client = (ROOT / "plugin-src" / "BackendClient.cs").read_text(encoding="utf-8")
         self.assertIn("timeout_seconds=45", orchestrator)
         self.assertIn("retries=0", orchestrator)
+        self.assertIn('"max_tokens": 1200', providers)
         self.assertIn("Online provider failed; used the built-in designer", orchestrator)
         self.assertIn("request.Timeout = 45000", client)
 
