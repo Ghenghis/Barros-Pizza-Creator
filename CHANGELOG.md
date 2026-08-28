@@ -5,6 +5,7 @@
 - Added a real Windows Setup EXE with game auto-detection, exact-build verification, Start-menu/optional desktop shortcuts, repair and Add/Remove Programs uninstall support.
 - Added a complete offline portable ZIP with the graphical Barro's manager, verified BepInEx 5.4.23.5 x64 and private Python 3.12.10 runtime; commercial game files remain excluded.
 - Added clean-install, settings-preserving repair and safe-uninstall lifecycle proof. Uninstall removes Barro's files while preserving the original game and shared BepInEx.
+- Replaced the clipped title art with the complete 1280×143 Barro's header, retained both decorative end caps, centered it inside the native close-button-safe area and increased its live height by eight pixels.
 - Added secure Azure Speech-to-Text support with language selection, live Windows microphone capture, truthful readiness states and automatic hands-free continuation after spoken agent replies.
 - Wired microphone transcripts into either the Pizza Designer or the full four-agent Design Crew while eliminating duplicate voice transcript entries.
 - Added an explicit four-voice check and polished sequential agent speech so music pauses for the complete roundtable and resumes only after the final voice finishes.
@@ -16,7 +17,7 @@
 - Added a real Unity 2021.3.45f2 Barro's UI authoring lab with an interactive 1920×1080 five-page prototype, a protected original-tab rail and beginner-safe menu commands.
 - Added a neutral PNG/JSON compatibility exporter instead of attempting to load forward-incompatible Unity 2021 AssetBundles in the Unity 2017.3.1p4 game.
 - Wired exported rounded skins into the live plug-in with bounded file validation, automatic built-in fallbacks and retained `ui.exported_theme_loaded` proof.
-- Added 1080p Unity-lab and exact-game proof images plus automated authoring/export/hash/fallback checks; the original runtime suite was 115/115 and the complete source with Windows packaging gates is 120/120.
+- Added 1080p Unity-lab and exact-game proof images plus automated authoring/export/hash/fallback checks; the original runtime suite was 115/115 and the complete source with Windows packaging/final-header gates is 121/121.
 - Kept OCR-generated audio lyrics out of the release after review found transcription defects; MP4 visual lyrics remain the verified high-quality path while reviewed same-name `.lrc` files remain supported.
 
 ## 1.5.0 — 2026-08-27

@@ -6,8 +6,8 @@ Release date: 2026-08-27
 
 | File | Bytes | SHA-256 |
 |---|---:|---|
-| `Barros_Pizza_Creator_v1.6.0_Setup.exe` | 90,505,226 | `c718d70924d3567df00762c147eebaff5227dddcf965d1a2561ad95afc906eb5` |
-| `Barros_Pizza_Creator_v1.6.0_Portable.zip` | 88,244,813 | `d2169a9410609dead777eae017bf1dbf3d62e83b02b4fcf2247c72c410cd7a5f` |
+| `Barros_Pizza_Creator_v1.6.0_Setup.exe` | 90,517,927 | `fc1af74cc8a0fdd89bd5794b2b310cadf38ac34ce38e1b4a32dc78d1d5699d94` |
+| `Barros_Pizza_Creator_v1.6.0_Portable.zip` | 88,254,229 | `211f5465a7973d16f86664a602eb9ae0dad752479975de3af4fa1d84aca74dbe` |
 
 The Setup EXE is a normal Windows installer with a modern wizard, game-folder detection, exact-build verification, Start-menu shortcuts, optional desktop shortcut, repair support and an Add/Remove Programs uninstaller. The portable ZIP contains the same offline payload plus `Barros_Pizza_Creator_Manager.exe` and `INSTALL_OFFLINE.cmd`.
 
@@ -44,7 +44,7 @@ uninstall_preserved_original_game=PASS
 commercial_game_packaged=NO
 ```
 
-The graphical manager was opened through the normal Windows UI, detected the Steam Creator directory and reported `PASS — Verified Pizza Creator 0.11.272 / Unity 2017.3.1p4`. The complete automated source suite passes 120/120.
+The graphical manager was opened through the normal Windows UI, detected the Steam Creator directory and reported `PASS — Verified Pizza Creator 0.11.272 / Unity 2017.3.1p4`. The complete automated source suite passes 121/121. The final live header proof also retains both end caps, remains clear of all five tabs and is centered inside the native close-button-safe area.
 
 ## Build and verification
 

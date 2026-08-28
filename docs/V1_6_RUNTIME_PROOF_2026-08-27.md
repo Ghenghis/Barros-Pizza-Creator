@@ -9,8 +9,8 @@
 | Authoring lab | Unity 2021.3.45f2 |
 | Plug-in | Barro's AI Pizza Designer 1.6.0 |
 | Plug-in bytes | 157,184 |
-| Plug-in SHA-256 | `520c67b88c3cd06a1bc0089efa828c04e16b5a4323edb9ef6c8e33a8a3e15895` |
-| Automated tests | 115/115 passed |
+| Plug-in SHA-256 | `c052adc8ee12a5c3a5e1c36d67b0366d22e917ce744c1664c43684b42e7d54bb` |
+| Automated tests | 121/121 passed |
 
 ## Unity authoring/export proof
 
@@ -35,6 +35,14 @@ Retained runtime events:
 At 1920×1080 the live Chat and Media modes displayed all five mode tabs. The compact Media layout kept transport, lyric status, volume, three-band tone, playlist buttons and the vertical scroll area inside the panel. Barro's soundtrack was ON while Stock was OFF, so only one music source played.
 
 ![Exact Unity 2017 live Media proof](images/v16-live-media-proof.jpg)
+
+## Final complete header proof
+
+The final `1280×143` header asset SHA-256 is `9c33eaa474e9d53cd568e1f38432760f0b4ec178b5b7aa7cb21ebaba123d756f`. Unlike the earlier clipped artwork, it retains the chef medallion, exact `BARRO'S PIZZA CREATOR` wording and both decorative end caps. The runtime centers it within the usable title strip by reserving the native 78-pixel close-button area and shifts the banner center 39 pixels left. Its render height is increased by eight pixels for clearer 1080p presentation.
+
+The retained 1920×1080 game screenshot shows the complete sign with safe clearance above all five tabs and before the close control. Screenshot SHA-256 is `6e46d6ceaeb3ed6df820f24e6317e3a93beec8410ab63fc6ba83810419b04ffb`.
+
+![Final complete centered Barro's header](images/v16-final-header-centered.png)
 
 ## Lyric videos
 

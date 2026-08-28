@@ -84,6 +84,13 @@ class ProofContractTests(unittest.TestCase):
         installer = (ROOT / "plugin-src" / "RuntimeTabInstaller.cs").read_text(encoding="utf-8")
         self.assertIn("blocker.raycastTarget = true", installer)
 
+    def test_complete_header_is_centered_inside_the_close_button_safe_area(self):
+        installer = (ROOT / "plugin-src" / "RuntimeTabInstaller.cs").read_text(encoding="utf-8")
+        self.assertIn("rect.anchorMin = new Vector2(0.5f, 0f)", installer)
+        self.assertIn("rect.anchoredPosition = new Vector2(-39f, 0f)", installer)
+        self.assertIn("rect.sizeDelta = new Vector2(width, 8f)", installer)
+        self.assertIn("close_reserve=78", installer)
+
     def test_music_uses_native_service_and_releases_one_clip_before_loading_the_next(self):
         deck = (ROOT / "plugin-src" / "MediaDeck.cs").read_text(encoding="utf-8")
         bridge = (ROOT / "plugin-src" / "GameBridge.cs").read_text(encoding="utf-8")

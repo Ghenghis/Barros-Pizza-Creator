@@ -241,15 +241,18 @@ namespace Barros.PizzaCreator.AI
                 GameObject banner = new GameObject("Barros Pizza Creator Header", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
                 RectTransform rect = banner.GetComponent<RectTransform>();
                 rect.SetParent(header.rectTransform, false);
-                rect.anchorMin = new Vector2(0f, 0f);
-                rect.anchorMax = new Vector2(0f, 1f);
-                rect.pivot = new Vector2(0f, 0.5f);
-                rect.anchoredPosition = Vector2.zero;
+                rect.anchorMin = new Vector2(0.5f, 0f);
+                rect.anchorMax = new Vector2(0.5f, 1f);
+                rect.pivot = new Vector2(0.5f, 0.5f);
+                // Center within the usable title area while reserving the rightmost
+                // 78 pixels for the native close button. A small height increase
+                // improves legibility at 1080p without covering the tab row.
+                rect.anchoredPosition = new Vector2(-39f, 0f);
                 float width = 470f;
                 RectTransform parentRect = header.rectTransform.parent as RectTransform;
                 if (parentRect != null && parentRect.rect.width > 200f)
                     width = Mathf.Clamp(parentRect.rect.width - 78f, 280f, 560f);
-                rect.sizeDelta = new Vector2(width, 0f);
+                rect.sizeDelta = new Vector2(width, 8f);
                 Image image = banner.GetComponent<Image>();
                 image.sprite = Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0f, 0.5f), 100f);
                 image.preserveAspect = true;
